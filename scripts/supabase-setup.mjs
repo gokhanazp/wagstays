@@ -36,24 +36,30 @@ let databaseUrl = cfg.DATABASE_URL;
 let directUrl = cfg.DIRECT_URL;
 
 if (token) {
-  console.log("• Reading API keys and pooler settings via the Management API…");
-  const keys = await mgmt(`/projects/${REF}/api-keys?reveal=true`);
-  anon ||= keys.find((k) => k.name === "anon")?.api_key;
-  service ||= keys.find((k) => k.name === "service_role")?.api_key;
+  if (!anon || !service) {
+    console.log("• Reading API keys via the Management API…");
+    const keys = await mgmt(`/projects/${REF}/api-keys?reveal=true`);
+    anon ||= keys.find((k) => k.name === "anon")?.api_key;
+    service ||= keys.find((k) => k.name === "service_role")?.api_key;
+  }
   if (password && !databaseUrl) {
     const pooler = await mgmt(`/projects/${REF}/config/database/pooler`);
     const p = (Array.isArray(pooler) ? pooler : [pooler]).find((x) => x.database_type === "PRIMARY") ?? pooler[0];
     const host = p.db_host;
     const user = p.db_user ?? `postgres.${REF}`;
     const pw = encodeURIComponent(password);
-    databaseUrl = `postgresql://${user}:${pw}@${host}:6543/postgres?pgbouncer=true&connection_limit=1`;
+    databaseUrl = `postgresql://${user}:${pw}@${host}:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20`;
     directUrl = `postgresql://${user}:${pw}@${host}:5432/postgres`;
   }
   console.log("• Configuring Auth site URL and redirect allow-list…");
-  await mgmt(`/projects/${REF}/config/auth`, {
-    method: "PATCH",
-    body: JSON.stringify({ site_url: SITE_URL, uri_allow_list: `${SITE_URL}/**,http://localhost:3000/**` }),
-  });
+  try {
+    await mgmt(`/projects/${REF}/config/auth`, {
+      method: "PATCH",
+      body: JSON.stringify({ site_url: SITE_URL, uri_allow_list: `${SITE_URL}/**,http://localhost:3000/**` }),
+    });
+  } catch (e) {
+    console.warn(`  ! Skipped (${e.message.slice(0, 160)}). Set Site URL / Redirect URLs in Auth → URL Configuration.`);
+  }
 }
 
 const missing = Object.entries({ anon, service, databaseUrl, directUrl }).filter(([, v]) => !v).map(([k]) => k);

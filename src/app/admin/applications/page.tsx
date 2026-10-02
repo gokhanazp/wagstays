@@ -53,7 +53,14 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
           { email: { contains: q.toLowerCase(), mode: "insensitive" } },
           { trackingCode: { contains: q.toUpperCase().replace(/^#/, ""), mode: "insensitive" } },
           ...(q.includes(" ")
-            ? [{ AND: [{ firstName: { contains: q.split(/\s+/)[0], mode: "insensitive" } }, { lastName: { contains: q.split(/\s+/).slice(1).join(" "), mode: "insensitive" } }] }]
+            ? [
+                {
+                  AND: [
+                    { firstName: { contains: q.split(/\s+/)[0], mode: "insensitive" } },
+                    { lastName: { contains: q.split(/\s+/).slice(1).join(" "), mode: "insensitive" } },
+                  ],
+                } satisfies Prisma.SitterApplicationWhereInput,
+              ]
             : []),
         ],
       }

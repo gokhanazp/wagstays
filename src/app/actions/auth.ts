@@ -68,6 +68,7 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     if (error.code === "email_not_confirmed") return { error: "Please confirm your email first — check your inbox for the link." };
+    if (error.code === "user_banned") return { error: "This account is suspended. Please contact support@wagstays.ca." };
     return { error: "That email and password don't match our records." };
   }
   redirect(safeNext(formData.get("next")));
