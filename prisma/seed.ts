@@ -6,11 +6,11 @@ const img = (n: number) => `/images/img-${String(n).padStart(2, "0")}.${n === 1 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000);
 
 const CITIES = [
-  { slug: "toronto", name: "Toronto", province: "Ontario", provinceCode: "ON", taxRateBps: 1300, isActive: true, lat: 43.6532, lng: -79.3832 },
-  { slug: "ottawa", name: "Ottawa", province: "Ontario", provinceCode: "ON", taxRateBps: 1300, isActive: false, lat: 45.4215, lng: -75.6972 },
-  { slug: "vancouver", name: "Vancouver", province: "British Columbia", provinceCode: "BC", taxRateBps: 1200, isActive: false, lat: 49.2827, lng: -123.1207 },
-  { slug: "montreal", name: "Montréal", province: "Quebec", provinceCode: "QC", taxRateBps: 1498, isActive: false, lat: 45.5019, lng: -73.5674 },
-  { slug: "calgary", name: "Calgary", province: "Alberta", provinceCode: "AB", taxRateBps: 500, isActive: false, lat: 51.0447, lng: -114.0719 },
+  { slug: "toronto", timeZone: "America/Toronto", name: "Toronto", province: "Ontario", provinceCode: "ON", taxRateBps: 1300, isActive: true, lat: 43.6532, lng: -79.3832 },
+  { slug: "ottawa", timeZone: "America/Toronto", name: "Ottawa", province: "Ontario", provinceCode: "ON", taxRateBps: 1300, isActive: false, lat: 45.4215, lng: -75.6972 },
+  { slug: "vancouver", timeZone: "America/Vancouver", name: "Vancouver", province: "British Columbia", provinceCode: "BC", taxRateBps: 1200, isActive: false, lat: 49.2827, lng: -123.1207 },
+  { slug: "montreal", timeZone: "America/Toronto", name: "Montréal", province: "Quebec", provinceCode: "QC", taxRateBps: 1498, isActive: false, lat: 45.5019, lng: -73.5674 },
+  { slug: "calgary", timeZone: "America/Edmonton", name: "Calgary", province: "Alberta", provinceCode: "AB", taxRateBps: 500, isActive: false, lat: 51.0447, lng: -114.0719 },
 ];
 
 const HOODS = [
@@ -74,6 +74,8 @@ const SITTERS: SitterSeed[] = [
     flags: { isSuperSitter: true, idVerified: true, backgroundChecked: true, firstAidCertified: true, professionalTrainer: true, hasYard: true, smokeFree: true, hasChildren: false, hasOtherPets: true, acceptsSmall: true, acceptsMedium: true, acceptsLarge: true, acceptsGiant: false },
     extra: {
       serviceRadiusKm: 3.5,
+      residentPetName: "Luna",
+      about: "Hi! I'm Sarah. I've been surrounded by animals since I was a kid, and for the past 6 years I've lived in The Beaches with my best friend Luna, a gentle, spayed 4-year-old Golden Retriever.\n\nI graduated from the University of Toronto with a degree in Biology. For the last 4 years I've worked full-time offering dog walking, positive-reinforcement obedience support and in-home boarding. I hold an APDT (Association of Professional Dog Trainers) positive-reinforcement training certification and a Pet First Aid & CPR certificate.\n\nWhen your furry friend is with me, they're never kept in a crate or a closed-off room. They stretch out on the couch like they're at home, play in the yard and enjoy the breeze at Woodbine Beach. On every outing I send a live GPS map, potty updates and at least 10 happy, high-resolution photos and videos in real time.",
       serviceAreaNote: "The Beaches, Upper Beaches, Leslieville, Riverside and East Danforth",
       homeType: "HOUSE_WITH_YARD",
       homeTitle: "Ground-Floor Home with Yard",
@@ -248,6 +250,7 @@ const SITTERS: SitterSeed[] = [
 async function main() {
   // wipe (order matters for FKs)
   await db.$transaction([
+    db.auditLog.deleteMany(), db.message.deleteMany(), db.conversation.deleteMany(), db.platformSettings.deleteMany(),
     db.applicationService.deleteMany(), db.sitterApplication.deleteMany(), db.favorite.deleteMany(),
     db.review.deleteMany(), db.booking.deleteMany(), db.service.deleteMany(), db.sitterPhoto.deleteMany(),
     db.sitterTag.deleteMany(), db.sitterSkill.deleteMany(), db.sitterProfile.deleteMany(), db.petTrait.deleteMany(),
@@ -265,7 +268,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("wagstays123", 10);
 
-  await db.user.create({
+  const admin = await db.user.create({
     data: { email: "admin@wagstays.ca", firstName: "Admin", lastName: "WagStays", role: "ADMIN", passwordHash },
   });
 
@@ -304,7 +307,8 @@ async function main() {
         cityId: toronto.id, neighbourhoodId: hood.id, locationNote: s.locationNote,
         lat: hood.lat + s.offset[0], lng: hood.lng + s.offset[1],
         avatarUrl: s.avatar, cardPhotoUrl: s.card ?? s.avatar, mapPhotoUrl: s.map ?? s.avatar,
-        rating: s.rating, reviewCount: s.reviewCount, completedBookings: s.completedBookings,
+        rating: s.rating, reviewCount: s.reviewCount, importedReviewCount: s.reviewCount, importedRating: s.rating,
+        completedBookings: s.completedBookings,
         responseTimeMins: s.responseTimeMins, repeatClientPct: s.repeatClientPct, yearsExperience: s.yearsExperience,
         ratingCommunication: s.rating, ratingReliability: s.rating, ratingCare: s.rating,
         ...s.flags,
@@ -372,10 +376,125 @@ async function main() {
     ],
   });
 
+  // Demo sitter application shown on /become-a-sitter/submitted?code=WS-84920
+  await db.sitterApplication.create({
+    data: {
+      trackingCode: "WS-84920", status: "IN_REVIEW", firstName: "Megan", lastName: "Reid", email: "megan.reid@example.ca",
+      phone: "+1 (416) 555-0163", neighbourhood: "leslieville", experience: "3-6", acceptsSmall: true, acceptsMedium: true,
+      certFirstAid: true, homeType: "HOUSE", smokeFree: true, fencedYard: true,
+      bio: "Lifelong dog lover in Leslieville. I walk the Kew Gardens and Ashbridges Bay loops daily.",
+      idDocumentName: "ontario-drivers-licence.pdf", backgroundCheckName: "vulnerable-sector-check.pdf",
+      services: { create: [{ type: "DOG_WALKING", priceCents: 3200 }, { type: "DROP_IN", priceCents: 2400 }] },
+    },
+  });
+
   await db.favorite.create({ data: { userId: emily.id, sitterId: sitterIds["sarah-mitchell"] } });
 
+  await db.platformSettings.create({ data: { id: "default" } });
+
+  // ---- Extra pet parents so the admin lists aren't empty ----
+  const owners = await Promise.all(
+    [
+      ["noah.campbell", "Noah", "Campbell", "Biscuit", "DOG", "Beagle", "MEDIUM"],
+      ["ava.singh", "Ava", "Singh", "Mochi", "CAT", "Ragdoll", "SMALL"],
+      ["lucas.martin", "Lucas", "Martin", "Bear", "DOG", "Bernese Mountain Dog", "GIANT"],
+    ].map(([handle, first, last, pet, species, breed, size]) =>
+      db.user.create({
+        data: {
+          email: `${handle}@example.ca`, firstName: first, lastName: last, role: "OWNER", passwordHash,
+          pets: { create: [{ name: pet, species, breed, size, ageYears: 3, rabiesVaccinated: true }] },
+        },
+        include: { pets: true },
+      }),
+    ),
+  );
+
+  // ---- Bookings across the lifecycle ----
+  const emilyPets = await db.pet.findMany({ where: { ownerId: emily.id }, orderBy: { createdAt: "asc" } });
+  const maple = emilyPets[0];
+  const sarahServices = await db.service.findMany({ where: { sitterId: sitterIds["sarah-mitchell"] } });
+  const sarahWalk = sarahServices.find((x) => x.type === "DOG_WALKING")!;
+  const sarahBoard = sarahServices.find((x) => x.type === "BOARDING")!;
+  const at = (dayOffset: number, hour: number, minute = 0) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + dayOffset);
+    d.setUTCHours(hour + 4, minute, 0, 0); // Toronto is UTC-4 in summer/fall (EDT)
+    return d;
+  };
+  const price = (unit: number) => {
+    const fees = 350 + 225;
+    const tax = Math.round(((unit + fees) * 1300) / 10_000);
+    return { subtotalCents: unit, protectionFeeCents: 350, serviceFeeCents: 225, discountCents: 0, taxCents: tax, totalCents: unit + fees + tax };
+  };
+  const base = {
+    meetingAddress: "1820 Queen St E, Unit 4, The Beaches, Toronto, ON M4L 1G9",
+    emergencyName: "Daniel Young", emergencyPhone: "+1 (416) 555-0163",
+    vetClinic: "Kew Paws Veterinary Clinic", vetPhone: "Dr. Kevin Walsh · (416) 555-0187",
+    cardBrand: "Visa", cardLast4: "4242",
+  };
+  const completed = await db.booking.create({
+    data: { ...base, ownerId: emily.id, sitterId: sitterIds["sarah-mitchell"], serviceId: sarahWalk.id, petId: maple.id,
+      startAt: at(-12, 9), endAt: at(-12, 10), status: "COMPLETED", confirmedAt: daysAgo(14), completedAt: daysAgo(12), ...price(sarahWalk.priceCents) },
+  });
+  await db.booking.create({
+    data: { ...base, ownerId: emily.id, sitterId: sitterIds["sarah-mitchell"], serviceId: sarahWalk.id, petId: maple.id,
+      startAt: at(4, 11), endAt: at(4, 12), status: "CONFIRMED", confirmedAt: daysAgo(1), sitterNote: "Can't wait to meet Maple! I'll bring extra lamb treats.", ...price(sarahWalk.priceCents) },
+  });
+  await db.booking.create({
+    data: { ...base, ownerId: owners[0].id, sitterId: sitterIds["sarah-mitchell"], serviceId: sarahBoard.id, petId: owners[0].pets[0].id,
+      startAt: at(9, 17), endAt: at(11, 17), status: "PENDING", notes: "Biscuit is a little nervous on the first night — a blanket from home helps.", ...price(sarahBoard.priceCents * 2) },
+  });
+  await db.booking.create({
+    data: { ...base, ownerId: owners[1].id, sitterId: sitterIds["sarah-mitchell"], serviceId: sarahServices.find((x) => x.type === "DROP_IN")!.id, petId: owners[1].pets[0].id,
+      startAt: at(6, 19, 30), endAt: at(6, 20, 30), status: "PENDING", ...price(2400) },
+  });
+  const ryanWalk = await db.service.findFirstOrThrow({ where: { sitterId: sitterIds["ryan-s"], type: "DOG_WALKING" } });
+  await db.booking.create({
+    data: { ...base, ownerId: owners[2].id, sitterId: sitterIds["ryan-s"], serviceId: ryanWalk.id, petId: owners[2].pets[0].id,
+      startAt: at(-3, 9), endAt: at(-3, 10), status: "CANCELLED", cancelledAt: daysAgo(5), cancelledBy: "OWNER", cancelReason: "Travel plans changed.", ...price(ryanWalk.priceCents) },
+  });
+  // The completed walk was reviewed by Emily
+  await db.review.create({
+    data: { sitterId: sitterIds["sarah-mitchell"], authorId: emily.id, authorName: "Emily Y.", authorAvatar: img(2), petLabel: "Maple (Golden Retriever) Parent",
+      rating: 5, bookingId: completed.id, createdAt: daysAgo(11), walkSummary: "3.1 km · 60 min · Kew Gardens",
+      body: "Sarah sent the sweetest photos and a full GPS map. Maple napped for hours afterwards — the perfect walk!" },
+  });
+
+  // ---- Applications in every state ----
+  await db.sitterApplication.create({
+    data: { trackingCode: "WS-31877", status: "MEET_GREET", firstName: "Priya", lastName: "Raman", email: "priya.raman@example.ca", phone: "+1 (647) 555-0148",
+      neighbourhood: "the-annex", experience: "6+", acceptsSmall: true, acceptsMedium: true, acceptsLarge: true, certFirstAid: true, certMedication: true,
+      homeType: "APARTMENT", smokeFree: true, noChildren: true, bio: "Former vet clinic receptionist who has looked after senior dogs and diabetic cats for over 6 years.",
+      idDocumentName: "passport.pdf", backgroundCheckName: "vsc-toronto-police.pdf", meetGreetAt: at(1, 16, 15), createdAt: daysAgo(2),
+      services: { create: [{ type: "DOG_WALKING", priceCents: 3000 }, { type: "DROP_IN", priceCents: 2500 }] } },
+  });
+  await db.sitterApplication.create({
+    data: { trackingCode: "WS-55210", status: "REJECTED", firstName: "Tyler", lastName: "Brooks", email: "tyler.brooks@example.ca",
+      neighbourhood: "liberty-village", experience: "1-3", acceptsSmall: true, homeType: "CONDO", bio: "I like dogs and have walked my neighbour's dog a few times.",
+      reviewedAt: daysAgo(6), reviewNotes: "No verifiable experience and missing police check.", createdAt: daysAgo(9),
+      services: { create: [{ type: "DOG_WALKING", priceCents: 2200 }] } },
+  });
+
+  // ---- A conversation between Emily and Sarah ----
+  const sarahUser = await db.user.findUniqueOrThrow({ where: { email: "sarah-mitchell@wagstays.ca" } });
+  await db.conversation.create({
+    data: {
+      ownerId: emily.id, sitterId: sitterIds["sarah-mitchell"], lastMessageAt: daysAgo(1), ownerReadAt: daysAgo(2),
+      messages: {
+        create: [
+          { senderId: emily.id, body: "Hi Sarah! Maple has a chicken allergy — is it OK if I pack his own treats?", createdAt: daysAgo(2) },
+          { senderId: sarahUser.id, body: "Absolutely! I'll only use the lamb treats you pack. See you Thursday 🐾", createdAt: daysAgo(1) },
+        ],
+      },
+    },
+  });
+
+  await db.auditLog.create({
+    data: { actorId: admin.id, action: "application.reject", entityType: "SitterApplication", entityId: "WS-55210", details: JSON.stringify({ reason: "No verifiable experience" }), createdAt: daysAgo(6) },
+  });
+
   console.log(`Seeded ${cities.length} cities, ${HOODS.length} neighbourhoods, ${SITTERS.length} sitters.`);
-  console.log("Demo login: emily@wagstays.ca / wagstays123 (admin: admin@wagstays.ca)");
+  console.log("Demo logins (password wagstays123): emily@wagstays.ca (owner), sarah-mitchell@wagstays.ca (sitter), admin@wagstays.ca (admin)");
 }
 
 main()

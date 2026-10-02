@@ -94,9 +94,15 @@ export function Footer() {
             </span>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant">
-            <span className="cursor-pointer hover:text-on-surface">Terms of Service</span>
-            <span className="cursor-pointer hover:text-on-surface">Privacy Policy</span>
-            <span className="cursor-pointer hover:text-on-surface">PIPEDA Privacy Notice</span>
+            <Link className="hover:text-on-surface transition-colors" href="/terms">
+              Terms of Service
+            </Link>
+            <Link className="hover:text-on-surface transition-colors" href="/privacy">
+              Privacy Policy
+            </Link>
+            <Link className="hover:text-on-surface transition-colors" href="/pipeda">
+              PIPEDA Privacy Notice
+            </Link>
           </div>
         </div>
       </div>

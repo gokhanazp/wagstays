@@ -19,6 +19,7 @@ model City {
   provinceCode   String
   currency       String          @default("CAD")
   taxRateBps     Int             @default(1300) // HST 13% for Ontario, in basis points
+  timeZone       String          @default("America/Toronto")
   isActive       Boolean         @default(false)
   lat            Float
   lng            Float
@@ -36,6 +37,7 @@ model Neighbourhood {
   lat     Float
   lng     Float
   sitters SitterProfile[]
+  applications SitterApplication[]
 
   @@unique([cityId, slug])
 }
@@ -49,6 +51,7 @@ model User {
   phone        String?
   avatarUrl    String?
   role         String              @default("OWNER") // OWNER | SITTER | ADMIN
+  suspended    Boolean             @default(false)
   wagPointsCents Int               @default(0)
   createdAt    DateTime            @default(now())
   pets         Pet[]
@@ -57,6 +60,10 @@ model User {
   favorites    Favorite[]
   reviews      Review[]
   applications SitterApplication[]
+  conversationsAsOwner Conversation[] @relation("ConversationOwner")
+  messages     Message[]
+  auditLogs    AuditLog[]
+  passwordTokens PasswordToken[]
 }
 
 model Pet {
@@ -73,6 +80,7 @@ model Pet {
   rabiesVaccinated Boolean @default(false)
   microchip     String?
   photoUrl      String?
+  archivedAt    DateTime? // archived pets keep their booking history but are hidden from the owner
   traits        PetTrait[]
   bookings      Booking[]
   createdAt     DateTime  @default(now())
@@ -94,7 +102,9 @@ model SitterProfile {
   slug              String        @unique
   displayName       String
   headline          String
-  bio               String
+  bio               String        // short blurb for cards
+  about             String?       // long-form profile text, paragraphs separated by blank lines
+  residentPetName   String?
   cityId            String
   city              City          @relation(fields: [cityId], references: [id])
   neighbourhoodId   String
@@ -117,8 +127,10 @@ model SitterProfile {
   professionalTrainer Boolean     @default(false)
   responseTimeMins  Int           @default(60)
   repeatClientPct   Int           @default(0)
-  rating            Float         @default(0)
-  reviewCount       Int           @default(0)
+  rating            Float         @default(0)   // derived: imported + visible WagStays reviews
+  reviewCount       Int           @default(0)   // derived: importedReviewCount + visible reviews
+  importedReviewCount Int         @default(0)   // reviews carried over from before WagStays (no rows)
+  importedRating    Float         @default(0)
   ratingCommunication Float       @default(0)
   ratingReliability Float         @default(0)
   ratingCare        Float         @default(0)
@@ -150,6 +162,8 @@ model SitterProfile {
   reviews           Review[]
   bookings          Booking[]
   favorites         Favorite[]
+  conversations     Conversation[]
+  application       SitterApplication?
   createdAt         DateTime      @default(now())
 }
 
@@ -210,7 +224,8 @@ model Booking {
   startAt            DateTime
   endAt              DateTime
   recurringWeekly    Boolean       @default(false)
-  status             String        @default("DRAFT") // DRAFT | PENDING | CONFIRMED | COMPLETED | CANCELLED
+  meetAndGreet       Boolean       @default(false) // owner asked for a free Meet & Greet first
+  status             String        @default("DRAFT") // DRAFT | PENDING | CONFIRMED | DECLINED | COMPLETED | CANCELLED
   meetingAddress     String?
   leashPreference    String?
   otherAnimalsReaction String?
@@ -229,7 +244,15 @@ model Booking {
   totalCents         Int           @default(0)
   cardLast4          String?
   cardBrand          String?
+  confirmedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelledBy        String?       // OWNER | SITTER | ADMIN
+  cancelReason       String?
+  sitterNote         String?       // message from the sitter when accepting / declining
+  review             Review?
   createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @default(now()) @updatedAt
 }
 
 model Review {
@@ -247,6 +270,9 @@ model Review {
   walkSummary  String?       // e.g. "2.8 km · 58 min · Trinity Bellwoods"
   walkPhotoUrl String?
   featuredOnHome Boolean     @default(false)
+  bookingId    String?       @unique
+  booking      Booking?      @relation(fields: [bookingId], references: [id])
+  hidden       Boolean       @default(false) // hidden by admin moderation
   createdAt    DateTime      @default(now())
 }
 
@@ -270,7 +296,9 @@ model SitterApplication {
   lastName        String
   email           String
   phone           String?
-  neighbourhood   String?
+  neighbourhood   String?              // display name at the time of applying
+  neighbourhoodId String?
+  neighbourhoodRef Neighbourhood?      @relation(fields: [neighbourhoodId], references: [id])
   experience      String               // "1-3" | "3-6" | "6+" | "VET"
   acceptsSmall    Boolean              @default(false)
   acceptsMedium   Boolean              @default(false)
@@ -289,6 +317,10 @@ model SitterApplication {
   idDocumentName  String?
   backgroundCheckName String?
   meetGreetAt     DateTime?
+  reviewedAt      DateTime?
+  reviewNotes     String?              // internal admin notes / rejection reason
+  sitterProfileId String?              @unique
+  sitterProfile   SitterProfile?       @relation(fields: [sitterProfileId], references: [id])
   services        ApplicationService[]
   createdAt       DateTime             @default(now())
 }
@@ -305,4 +337,70 @@ model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+// Single-row platform configuration edited from /admin/settings (id is always "default").
+model PlatformSettings {
+  id                     String   @id @default("default")
+  wagShieldFeeCents      Int      @default(350)
+  serviceFeeCents        Int      @default(225)
+  wagPointsDiscountCents Int      @default(300)
+  vetCoverageCents       Int      @default(500000)
+  supportEmail           String   @default("support@wagstays.ca")
+  supportPhone           String   @default("+1 (416) 555-0142")
+  updatedAt              DateTime @default(now()) @updatedAt
+}
+
+model Conversation {
+  id            String        @id @default(cuid())
+  ownerId       String
+  owner         User          @relation("ConversationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  sitterId      String
+  sitter        SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime      @default(now())
+  ownerReadAt   DateTime?
+  sitterReadAt  DateTime?
+  messages      Message[]
+  createdAt     DateTime      @default(now())
+
+  @@unique([ownerId, sitterId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// Every admin mutation writes a row here (see src/lib/audit.ts).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  action     String   // e.g. "city.activate", "application.approve"
+  entityType String   // City | SitterApplication | SitterProfile | Booking | User | Review | PlatformSettings
+  entityId   String
+  details    String?  // JSON string with before/after or notes
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// One-time links to set or reset a password. Only the SHA-256 hash of the token is stored.
+// Local dev shows the link to the admin; with Supabase this becomes Auth's email flow.
+model PasswordToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  purpose   String    // SETUP | RESET
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }

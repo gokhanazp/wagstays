@@ -5,8 +5,25 @@ import { distanceKm } from "./format";
 import { PET_SIZES, SERVICE_SLUGS, serviceFromSlug, type PetSize, type ServiceType } from "./constants";
 import { getCurrentUser } from "./session";
 
-/** The launch city. Later the admin panel toggles City.isActive and the user picks a city. */
-export const getActiveCity = cache(async (slug = "toronto") => {
+export const DEFAULT_CITY_SLUG = "toronto";
+
+/** All cities switched on from /admin/cities, with neighbourhoods. Default city first. */
+export const getActiveCities = cache(async () => {
+  const cities = await db.city.findMany({
+    where: { isActive: true },
+    include: { neighbourhoods: { orderBy: { name: "asc" } } },
+    orderBy: { name: "asc" },
+  });
+  return cities.sort((a, b) => Number(b.slug === DEFAULT_CITY_SLUG) - Number(a.slug === DEFAULT_CITY_SLUG));
+});
+
+/** Neighbourhood used as the distance origin when the visitor hasn't picked one. */
+export function defaultHoodOf<T extends { slug: string }>(city: { slug: string; neighbourhoods: T[] }): T | undefined {
+  return (city.slug === DEFAULT_CITY_SLUG ? city.neighbourhoods.find((n) => n.slug === "the-beaches") : undefined) ?? city.neighbourhoods[0];
+}
+
+/** An active city by slug, falling back to the default (or first) active city. */
+export const getActiveCity = cache(async (slug: string = DEFAULT_CITY_SLUG) => {
   const city = await db.city.findFirst({
     where: { slug, isActive: true },
     include: { neighbourhoods: { orderBy: { name: "asc" } } },
@@ -28,27 +45,27 @@ async function favoriteIds() {
   return new Set(favs.map((f) => f.sitterId));
 }
 
-export async function getFeaturedSitters() {
-  const city = await getActiveCity();
+export async function getFeaturedSitters(citySlug?: string) {
+  const city = await getActiveCity(citySlug);
   const [sitters, favs] = await Promise.all([
     db.sitterProfile.findMany({
-      where: { cityId: city.id, featured: true, status: "ACTIVE" },
+      where: { cityId: city.id, featured: true, status: "ACTIVE", user: { suspended: false } },
       include: sitterCardInclude,
       orderBy: { createdAt: "asc" },
     }),
     favoriteIds(),
   ]);
-  const centre = city.neighbourhoods.find((n) => n.slug === "the-beaches") ?? city;
+  const centre = defaultHoodOf(city) ?? city;
   return sitters.map((s) => ({ ...s, distanceKm: distanceKm(centre, s), isFavorite: favs.has(s.id) }));
 }
 
 export async function getHomeTestimonials() {
-  return db.review.findMany({ where: { featuredOnHome: true }, orderBy: { createdAt: "desc" }, take: 3 });
+  return db.review.findMany({ where: { featuredOnHome: true, hidden: false }, orderBy: { createdAt: "desc" }, take: 3 });
 }
 
 export async function getPlatformStats() {
   const [sitters, reviews] = await Promise.all([
-    db.sitterProfile.aggregate({ _sum: { completedBookings: true, reviewCount: true }, _count: true, where: { status: "ACTIVE" } }),
+    db.sitterProfile.aggregate({ _sum: { completedBookings: true, reviewCount: true }, _count: true, where: { status: "ACTIVE", user: { suspended: false } } }),
     db.review.aggregate({ _avg: { rating: true } }),
   ]);
   return {
@@ -61,6 +78,7 @@ export async function getPlatformStats() {
 // ---------- Search ----------
 
 export type SearchFilters = {
+  city?: string;
   service?: ServiceType;
   hood?: string;
   minPrice?: number; // dollars
@@ -97,6 +115,7 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
     .filter((s): s is PetSize => (PET_SIZES as readonly string[]).includes(s));
   const sort = one("sort");
   return {
+    city: one("city") || undefined,
     service: serviceFromSlug(one("service")),
     hood: one("hood") || undefined,
     minPrice: num("minPrice"),
@@ -119,6 +138,7 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
 /** Serialises filters back to a query string (used for links / pagination). */
 export function toSearchQuery(f: Partial<SearchFilters>) {
   const q = new URLSearchParams();
+  if (f.city) q.set("city", f.city);
   if (f.service) q.set("service", SERVICE_SLUGS[f.service]);
   if (f.hood) q.set("hood", f.hood);
   if (f.minPrice !== undefined) q.set("minPrice", String(f.minPrice));
@@ -135,10 +155,10 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
 }
 
 export async function searchSitters(f: SearchFilters) {
-  const city = await getActiveCity();
-  const centreHood = city.neighbourhoods.find((n) => n.slug === (f.hood ?? "the-beaches")) ?? city.neighbourhoods[0];
+  const city = await getActiveCity(f.city);
+  const centreHood = city.neighbourhoods.find((n) => n.slug === f.hood) ?? defaultHoodOf(city) ?? city.neighbourhoods[0];
   const [all, favs] = await Promise.all([
-    db.sitterProfile.findMany({ where: { cityId: city.id, status: "ACTIVE" }, include: sitterCardInclude }),
+    db.sitterProfile.findMany({ where: { cityId: city.id, status: "ACTIVE", user: { suspended: false } }, include: sitterCardInclude }),
     favoriteIds(),
   ]);
 
@@ -200,7 +220,7 @@ export async function searchSitters(f: SearchFilters) {
     pageSize: SEARCH_PAGE_SIZE,
     sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE),
     /** every match, for map pins */
-    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm })),
+    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm })),
     serviceCounts,
     medicalCount,
   };
@@ -221,18 +241,38 @@ export const getSitterBySlug = cache(async (slug: string) => {
       photos: { orderBy: { sortOrder: "asc" } },
       tags: { orderBy: { sortOrder: "asc" } },
       skills: { orderBy: { sortOrder: "asc" } },
-      reviews: { orderBy: { createdAt: "desc" } },
+      reviews: { where: { hidden: false }, orderBy: { createdAt: "desc" } },
       _count: { select: { photos: true } },
     },
   });
-  if (!sitter) return null;
+  // Hidden when the account is suspended or the city hasn't been opened yet.
+  if (!sitter || !sitter.city.isActive) return null;
+  if (await db.user.count({ where: { id: sitter.userId, suspended: true } })) return null;
   const favs = await favoriteIds();
-  const centre = sitter.city.lat ? (await getActiveCity()).neighbourhoods.find((n) => n.slug === "the-beaches") : undefined;
+  const hoods = await db.neighbourhood.findMany({ where: { cityId: sitter.cityId }, select: { slug: true, lat: true, lng: true } });
+  const centre = defaultHoodOf({ slug: sitter.city.slug, neighbourhoods: hoods });
   return { ...sitter, isFavorite: favs.has(sitter.id), distanceKm: centre ? distanceKm(centre, sitter) : undefined };
 });
 
 export type SitterDetail = NonNullable<Awaited<ReturnType<typeof getSitterBySlug>>>;
 
 export async function getOwnerPets(userId: string) {
-  return db.pet.findMany({ where: { ownerId: userId }, include: { traits: true }, orderBy: { createdAt: "asc" } });
+  return db.pet.findMany({ where: { ownerId: userId, archivedAt: null }, include: { traits: true }, orderBy: { createdAt: "asc" } });
+}
+
+/** Favourited sitters in the same shape as search cards. */
+export async function getFavoriteSitters(userId: string) {
+  const city = await getActiveCity();
+  const centre = defaultHoodOf(city) ?? city;
+  const favs = await db.favorite.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { sitter: { include: sitterCardInclude } },
+  });
+  return favs.map(({ sitter: s }) => ({
+    ...s,
+    price: s.services.find((x) => x.type === "DOG_WALKING") ?? [...s.services].sort((a, b) => a.priceCents - b.priceCents)[0],
+    distanceKm: distanceKm(centre, s),
+    isFavorite: true,
+  })) satisfies SitterCard[];
 }

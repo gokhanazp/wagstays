@@ -53,9 +53,10 @@ export const getCurrentUser = cache(async () => {
       lastName: true,
       avatarUrl: true,
       role: true,
+      suspended: true,
       phone: true,
       wagPointsCents: true,
-      _count: { select: { pets: true, favorites: true } },
+      _count: { select: { pets: { where: { archivedAt: null } }, favorites: true } },
     },
   });
 });

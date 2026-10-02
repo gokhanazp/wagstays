@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WagStays
 
-## Getting Started
+Pet sitting & dog walking marketplace — Toronto first, Canada-wide later.
+Next.js 16 (App Router) · Tailwind CSS 3 (design tokens from the Stitch "Warm Paw Companion" system) · Prisma · SQLite (local) → Supabase (later).
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
+npx prisma migrate dev   # creates prisma/dev.db
+npm run db:seed          # Toronto data, demo users
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Demo accounts (password `wagstays123`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Account | Role | What to try |
+|---|---|---|
+| `emily@wagstays.ca` | Pet parent | `/account/bookings` (upcoming, completed + reviewed), `/account/pets`, `/messages`, book Sarah |
+| `sarah-mitchell@wagstays.ca` | Sitter | `/sitter` — 2 pending requests to accept/decline, profile & rates editor |
+| `admin@wagstays.ca` | Admin | `/admin` — approve application WS-31877, cities, fees, users, reviews |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Other sitters log in as `<slug>@wagstays.ca`; extra owners: `noah.campbell@example.ca`, `ava.singh@example.ca`, `lucas.martin@example.ca`.
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+| Path | What |
+|---|---|
+| `src/app/(site)/` | Public pages (header + footer layout) |
+| `src/app/actions/` | Server actions (auth, favourites, booking, applications…) |
+| `src/lib/queries.ts` | Data access used by pages |
+| `src/lib/pricing.ts` | Single source of truth for booking prices (fees, WagPoints, HST) |
+| `src/lib/session.ts` | Local JWT cookie auth — to be replaced by Supabase Auth |
+| `prisma/schema.prisma` | Data model (Postgres-compatible; enum-like fields are strings) |
+| `docs/LOCALIZATION.md` | TR design → EN-CA copy, names, places, prices |
+| `src/app/admin/` | Admin panel (requireAdmin): dashboard, applications, sitters, bookings, users, reviews, cities, settings, audit log |
+| `src/app/(site)/account/` · `sitter/` · `messages/` | Pet parent area · sitter dashboard · messaging |
+| `src/lib/auth.ts` | `requireUser` / `requireSitter` / `requireAdmin` guards (every server action re-checks) |
+| `src/lib/booking-lifecycle.ts` | Allowed booking status transitions per actor, WagPoints refunds, rating recompute |
+| `src/lib/settings.ts` | Platform fees from `PlatformSettings` (edited in /admin/settings) |
+| `src/lib/audit.ts` | Admin audit trail |
+| `src/proxy.ts` | Redirects signed-out visitors away from private areas |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Booking lifecycle
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`PENDING` (owner requests) → `CONFIRMED` / `DECLINED` (sitter or admin) → `COMPLETED` (sitter or admin, after start) → owner can review.
+`CANCELLED` by the owner (pending/confirmed), the sitter (confirmed) or an admin. WagPoints used are refunded on cancel/decline.
 
-## Deploy on Vercel
+## Cities
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Only Toronto is active (`City.isActive`). Other cities are seeded inactive and are switched on from `/admin/cities` (a city needs at least one neighbourhood). Active cities automatically appear in the home search suggestions, the search location picker (`/sitters?city=<slug>`) and the sitter application form; approved sitters are placed in the city of the neighbourhood they applied for. Taxes come from `City.taxRateBps`, time zones from `City.timeZone` (date formatting still defaults to Toronto time — pass `city.timeZone` through when a second time zone goes live).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Moving to Supabase
+
+1. `provider = "postgresql"` in `prisma/schema.prisma`, set `DATABASE_URL` (pooled) and `directUrl` (direct) to the Supabase strings.
+2. Re-create migrations (`prisma migrate dev --name init`) — SQLite migrations don't carry over.
+3. Replace `src/lib/session.ts` internals with Supabase Auth; keep `getCurrentUser()` as the interface.
+4. Uploads: `src/lib/uploads.ts` writes to `public/uploads` — swap its body for Supabase Storage. Application documents (ID / police check) are currently only stored by file name.
+5. Password set/reset links (`src/lib/password-tokens.ts`, `/set-password`) are shown to admins instead of emailed; replace with Supabase Auth's email flows.
+6. Text search uses Prisma `contains` (case-insensitive on SQLite only) — add `mode: "insensitive"` on Postgres.
+7. Messaging polls every 10 s; Supabase Realtime can replace the polling.

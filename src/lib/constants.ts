@@ -36,13 +36,35 @@ export const PET_SIZE_LABELS: Record<PetSize, { label: string; range: string }> 
   GIANT: { label: "Giant", range: "45+ kg" },
 };
 
+// Launch-city time zone. Per-city zones live in City.timeZone; date helpers default to this until
+// multiple cities are active and callers pass city.timeZone through.
+export const DEFAULT_TIME_ZONE = "America/Toronto";
+
 export const ROLES = ["OWNER", "SITTER", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const BOOKING_STATUSES = ["DRAFT", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
-export const APPLICATION_STATUSES = ["IN_REVIEW", "MEET_GREET", "APPROVED", "REJECTED"] as const;
+export const BOOKING_STATUSES = ["DRAFT", "PENDING", "CONFIRMED", "DECLINED", "COMPLETED", "CANCELLED"] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
-// Platform-wide fees (cents). Kept here until an admin settings table exists.
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, { label: string; tone: "neutral" | "primary" | "warning" | "danger" | "success" }> = {
+  DRAFT: { label: "Draft", tone: "neutral" },
+  PENDING: { label: "Awaiting sitter", tone: "warning" },
+  CONFIRMED: { label: "Confirmed", tone: "primary" },
+  DECLINED: { label: "Declined", tone: "danger" },
+  COMPLETED: { label: "Completed", tone: "success" },
+  CANCELLED: { label: "Cancelled", tone: "neutral" },
+};
+export const APPLICATION_STATUSES = ["IN_REVIEW", "MEET_GREET", "APPROVED", "REJECTED"] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, { label: string; tone: "neutral" | "primary" | "warning" | "danger" | "success" }> = {
+  IN_REVIEW: { label: "In review", tone: "warning" },
+  MEET_GREET: { label: "Meet & Greet", tone: "primary" },
+  APPROVED: { label: "Approved", tone: "success" },
+  REJECTED: { label: "Rejected", tone: "danger" },
+};
+
+// Fallback platform fees (cents). Live values come from PlatformSettings via getPlatformSettings().
 export const WAGSHIELD_FEE_CENTS = 350;
 export const SERVICE_FEE_CENTS = 225;
 export const WAGPOINTS_DISCOUNT_CENTS = 300;

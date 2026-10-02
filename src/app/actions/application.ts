@@ -1,0 +1,124 @@
+"use server";
+
+import { randomInt } from "node:crypto";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
+import { SERVICE_TYPES, type ServiceType } from "@/lib/constants";
+import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
+
+export type ApplicationState =
+  | { error?: string; fieldErrors?: Record<string, string[] | undefined> }
+  | undefined;
+
+const checkbox = z.preprocess((v) => v === "on" || v === "true", z.boolean());
+
+const fileName = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .transform((v) => v || undefined);
+
+const ApplicationSchema = z.object({
+  firstName: z.string().trim().min(1, "Please enter your first name.").max(60),
+  lastName: z.string().trim().min(1, "Please enter your last name.").max(60),
+  email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")),
+  phone: z
+    .string()
+    .trim()
+    .refine((v) => /^\+?1?\D*(\d\D*){10}$/.test(v), "Please enter a 10-digit phone number."),
+  neighbourhood: z.string({ error: "Please choose your neighbourhood." }).trim().min(1, "Please choose your neighbourhood."),
+  experience: z.enum(["1-3", "3-6", "6+", "VET"], { error: "Please choose your experience level." }),
+  acceptsSmall: checkbox,
+  acceptsMedium: checkbox,
+  acceptsLarge: checkbox,
+  acceptsGiant: checkbox,
+  certFirstAid: checkbox,
+  certMedication: checkbox,
+  certPuppy: checkbox,
+  certBehaviour: checkbox,
+  homeType: z.enum(["HOUSE_WITH_YARD", "APARTMENT", "CONDO_BALCONY"], { error: "Please choose your home type." }),
+  smokeFree: checkbox,
+  noChildren: checkbox,
+  ownPets: checkbox,
+  fencedYard: checkbox,
+  bio: z
+    .string()
+    .trim()
+    .min(80, "Tell pet parents a bit more — at least 80 characters.")
+    .max(500, "Please keep your bio under 500 characters."),
+  idDocumentName: fileName.refine((v) => !!v, "Please upload a government-issued photo ID."),
+  backgroundCheckName: fileName,
+  agreeTerms: checkbox.refine((v) => v, "Please accept the Sitter Service Agreement to continue."),
+  agreeAccuracy: checkbox.refine((v) => v, "Please confirm your information is accurate."),
+});
+
+export async function submitApplication(_: ApplicationState, formData: FormData): Promise<ApplicationState> {
+  const raw = Object.fromEntries(
+    [...formData.entries()].filter(([, v]) => typeof v === "string"),
+  ) as Record<string, string>;
+
+  const parsed = ApplicationSchema.safeParse(raw);
+  const fieldErrors: Record<string, string[] | undefined> = parsed.success
+    ? {}
+    : { ...z.flattenError(parsed.error).fieldErrors };
+
+  // Services: toggles + prices
+  const services: { type: ServiceType; priceCents: number }[] = [];
+  for (const type of SERVICE_TYPES) {
+    if (raw[`service_${type}`] !== "on") continue;
+    const rule = SERVICE_PRICE_RULES[type];
+    const price = Number(raw[`price_${type}`]);
+    if (!Number.isFinite(price) || price < rule.min || price > rule.max) {
+      fieldErrors[`price_${type}`] = [`Enter a rate between $${rule.min} and $${rule.max}.`];
+      continue;
+    }
+    services.push({ type, priceCents: Math.round(price * 100) });
+  }
+  if (services.length === 0 && !SERVICE_TYPES.some((t) => fieldErrors[`price_${t}`])) {
+    fieldErrors.services = ["Turn on at least one service you'd like to offer."];
+  }
+
+  // Neighbourhood (submitted as its id) must belong to an active city
+  const hood = parsed.success
+    ? await db.neighbourhood.findFirst({ where: { id: parsed.data.neighbourhood, city: { isActive: true } }, select: { id: true, name: true } })
+    : null;
+  if (parsed.success && !hood) fieldErrors.neighbourhood = ["Please choose your neighbourhood."];
+
+  if (!parsed.success || Object.keys(fieldErrors).length > 0) {
+    return { error: "Please fix the highlighted fields below.", fieldErrors };
+  }
+
+  const { agreeTerms: _t, agreeAccuracy: _a, ...data } = parsed.data;
+  void _t;
+  void _a;
+  const user = await getCurrentUser();
+
+  let trackingCode = "";
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const code = `WS-${randomInt(10000, 100000)}`;
+    try {
+      await db.sitterApplication.create({
+        data: {
+          ...data,
+          neighbourhood: hood!.name,
+          neighbourhoodId: hood!.id,
+          trackingCode: code,
+          userId: user?.id ?? null,
+          services: { create: services },
+        },
+      });
+      trackingCode = code;
+      break;
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
+      throw e;
+    }
+  }
+  if (!trackingCode) return { error: "Something went wrong saving your application. Please try again." };
+
+  redirect(`/become-a-sitter/submitted?code=${encodeURIComponent(trackingCode)}`);
+}

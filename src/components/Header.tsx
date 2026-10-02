@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { logout } from "@/app/actions/auth";
+import { getUnreadCount } from "@/lib/messaging";
 import { getCurrentUser } from "@/lib/session";
 import { Logo } from "./Logo";
 import { BecomeSitterPill, HeaderNav, MobileMenu } from "./HeaderNav";
@@ -11,6 +12,18 @@ const ICON_BTN =
 
 export async function Header() {
   const user = await getCurrentUser();
+  const unread = user ? await getUnreadCount(user.id) : 0;
+  const menu = user
+    ? [
+        ...(user.role === "ADMIN" ? [{ href: "/admin", label: "Admin Panel", icon: "admin_panel_settings" }] : []),
+        ...(user.role === "SITTER" ? [{ href: "/sitter", label: "Sitter Dashboard", icon: "space_dashboard" }] : []),
+        { href: "/account/bookings", label: "My Bookings", icon: "event_note" },
+        { href: "/account/pets", label: "My Pets", icon: "pets" },
+        { href: "/messages", label: "Messages", icon: "chat_bubble" },
+        { href: "/favourites", label: "Favourites", icon: "favorite" },
+        { href: "/account/settings", label: "Account Settings", icon: "manage_accounts" },
+      ]
+    : [];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(83,72,62,0.05)]">
@@ -31,9 +44,10 @@ export async function Header() {
               <span className="material-symbols-outlined text-xl">favorite</span>
               {!!user?._count.favorites && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
             </Link>
-            <button aria-label="Messages" className={`${ICON_BTN} hidden sm:flex`} type="button">
+            <Link aria-label="Messages" className={`${ICON_BTN} hidden sm:flex relative`} href="/messages">
               <span className="material-symbols-outlined text-xl">chat_bubble</span>
-            </button>
+              {unread > 0 && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
+            </Link>
             <MobileMenu signedIn={!!user} />
           </div>
           {user ? (
@@ -44,7 +58,12 @@ export async function Header() {
                     {user.firstName} {user.lastName.charAt(0)}.
                   </div>
                   <div className="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-surface-container-high px-2 py-0.5 rounded-full mt-0.5">
-                    <span className="text-xs">🐾</span> {user._count.pets} {user._count.pets === 1 ? "Pet" : "Pets"}
+                    <span className="text-xs">🐾</span>{" "}
+                    {user.role === "ADMIN" && !user._count.pets
+                      ? "Admin"
+                      : user.role === "SITTER" && !user._count.pets
+                        ? "Sitter"
+                        : `${user._count.pets} ${user._count.pets === 1 ? "Pet" : "Pets"}`}
                   </div>
                 </div>
                 {user.avatarUrl ? (
@@ -61,13 +80,17 @@ export async function Header() {
                   </span>
                 )}
               </summary>
-              <div className="absolute right-0 top-12 w-56 p-space-sm rounded-2xl bg-surface-container-lowest shadow-[0_20px_36px_-6px_rgba(83,72,62,0.12)] border border-surface-container-high flex flex-col gap-space-xs z-50">
+              <div className="absolute right-0 top-12 w-64 p-space-sm rounded-2xl bg-surface-container-lowest shadow-[0_20px_36px_-6px_rgba(83,72,62,0.12)] border border-surface-container-high flex flex-col gap-space-xs z-50">
                 <div className="px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant truncate">{user.email}</div>
-                <Link className="px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low" href="/favourites">
-                  Favourites
-                </Link>
+                {menu.map((m) => (
+                  <Link key={m.href} className="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low" href={m.href}>
+                    <span className="material-symbols-outlined text-lg text-on-surface-variant">{m.icon}</span>
+                    {m.label}
+                  </Link>
+                ))}
                 <form action={logout}>
-                  <button className="w-full text-left px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-secondary hover:bg-surface-container-low" type="submit">
+                  <button className="w-full flex items-center gap-space-sm text-left px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-secondary hover:bg-surface-container-low" type="submit">
+                    <span className="material-symbols-outlined text-lg">logout</span>
                     Log out
                   </button>
                 </form>
