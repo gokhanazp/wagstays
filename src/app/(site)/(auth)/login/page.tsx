@@ -7,12 +7,12 @@ import { LoginForm } from "./LoginForm";
 export const metadata: Metadata = { title: "Log in" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   const nextPath = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/";
   if (await getCurrentUser()) redirect(nextPath);
   return (
     <AuthShell eyebrow="Welcome back" subtitle="Log in to book trusted sitters, track walks live and manage your pets." title="Good to see you again!">
-      <LoginForm next={nextPath} />
+      <LoginForm linkError={error === "link"} next={nextPath} />
     </AuthShell>
   );
 }

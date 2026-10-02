@@ -1,14 +1,15 @@
-// Local development uses SQLite. To move to Supabase, switch provider to "postgresql"
-// and point DATABASE_URL / DIRECT_URL at the Supabase connection strings.
-// Enum-like fields are plain strings (validated in src/lib/constants.ts) to keep both providers identical.
+// Supabase Postgres. DATABASE_URL = transaction pooler (runtime), DIRECT_URL = session pooler (migrations).
+// Enum-like fields are plain strings validated in src/lib/constants.ts.
+// RLS is enabled on every table with no policies: only the server (Prisma, postgres role) reads data.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model City {
@@ -43,9 +44,8 @@ model Neighbourhood {
 }
 
 model User {
-  id           String              @id @default(cuid())
+  id           String              @id @default(uuid()) // = Supabase auth.users.id
   email        String              @unique
-  passwordHash String
   firstName    String
   lastName     String
   phone        String?
@@ -63,7 +63,6 @@ model User {
   conversationsAsOwner Conversation[] @relation("ConversationOwner")
   messages     Message[]
   auditLogs    AuditLog[]
-  passwordTokens PasswordToken[]
 }
 
 model Pet {
@@ -390,17 +389,4 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
-}
-
-// One-time links to set or reset a password. Only the SHA-256 hash of the token is stored.
-// Local dev shows the link to the admin; with Supabase this becomes Auth's email flow.
-model PasswordToken {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique
-  purpose   String    // SETUP | RESET
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
 }

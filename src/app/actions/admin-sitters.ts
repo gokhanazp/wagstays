@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getAdminOrNull } from "@/lib/auth";
-import { createPasswordLink } from "@/lib/password-tokens";
+import { createPasswordLink } from "@/lib/password-links";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
 import { getActiveCity } from "@/lib/queries";
 import { DEFAULT_TIME_ZONE } from "@/lib/constants";
@@ -95,10 +96,27 @@ export async function approveApplication(_: AdminFormState, formData: FormData):
   if (!parsed.success) return { error: "Invalid application." };
 
   const city = await getActiveCity();
+  // Applicants without a WagStays account get a Supabase auth user first (confirmed, no password yet).
+  const app = await db.sitterApplication.findUnique({ where: { id: parsed.data.applicationId }, select: { email: true, userId: true, firstName: true, lastName: true } });
+  if (!app) return { error: "Application not found." };
+  const email = app.email.trim().toLowerCase();
+  const hasAccount = !!app.userId || !!(await db.user.findUnique({ where: { email }, select: { id: true } }));
+  let newAuthUserId: string | undefined;
+  const supabaseAdmin = createSupabaseAdminClient();
+  if (!hasAccount) {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: { firstName: app.firstName, lastName: app.lastName },
+    });
+    if (error || !data.user) return { error: `Couldn't create the sitter's login: ${error?.message ?? "unknown error"}` };
+    newAuthUserId = data.user.id;
+  }
   let result: Awaited<ReturnType<typeof approveApplicationTx>>;
   try {
-    result = await db.$transaction((tx) => approveApplicationTx(tx, parsed.data.applicationId, city.id), { timeout: 15_000 });
+    result = await db.$transaction((tx) => approveApplicationTx(tx, parsed.data.applicationId, city.id, newAuthUserId), { timeout: 15_000 });
   } catch (e) {
+    if (newAuthUserId) await supabaseAdmin.auth.admin.deleteUser(newAuthUserId); // roll back the auth user
     if (e instanceof ApprovalError) return { error: e.message };
     throw e;
   }
@@ -109,11 +127,13 @@ export async function approveApplication(_: AdminFormState, formData: FormData):
   });
   revalidateApplication(parsed.data.applicationId);
   revalidateSitter(profile.id, profile.slug);
-  const setup = createdUser ? await createPasswordLink(user.id, "SETUP") : null;
+  const setup = createdUser ? await createPasswordLink(user.email).catch(() => null) : null;
   return {
     ok: true,
     message: setup
       ? `Approved. A new sitter account was created for ${user.email}. Send them this one-time link (valid ${setup.expiresInHours} h) to set their password: ${setup.url}`
+      : createdUser
+        ? `Approved. A new sitter account was created for ${user.email} — create a password link for them from the Users page.`
       : `Approved. ${profile.displayName}'s profile is live at /sitters/${profile.slug}.`,
   };
 }

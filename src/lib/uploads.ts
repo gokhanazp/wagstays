@@ -1,10 +1,8 @@
 import "server-only";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { STORAGE_BUCKETS, createSupabaseAdminClient } from "./supabase/admin";
 
-// Local-dev storage: files are written to public/uploads and served statically.
-// Swap the body of saveUpload() for Supabase Storage later; keep the signature.
+// Photos go to the public "media" bucket in Supabase Storage (uploaded server-side with the service role).
 const MAX_BYTES = 5 * 1024 * 1024;
 const IMAGE_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
@@ -13,9 +11,22 @@ export async function saveUpload(file: File, folder: "pets" | "sitters" | "avata
   if (file.size > MAX_BYTES) return { error: "Images must be 5 MB or smaller." };
   const ext = IMAGE_TYPES[file.type];
   if (!ext) return { error: "Please upload a JPG, PNG or WebP image." };
-  const dir = path.join(process.cwd(), "public", "uploads", folder);
-  await mkdir(dir, { recursive: true });
-  const name = `${randomUUID()}.${ext}`;
-  await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-  return { url: `/uploads/${folder}/${name}` };
+
+  const storage = createSupabaseAdminClient().storage.from(STORAGE_BUCKETS.media);
+  const objectPath = `${folder}/${randomUUID()}.${ext}`;
+  const { error } = await storage.upload(objectPath, Buffer.from(await file.arrayBuffer()), {
+    contentType: file.type,
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (error) return { error: "Upload failed — please try again." };
+  return { url: storage.getPublicUrl(objectPath).data.publicUrl };
+}
+
+/** Removes a previously uploaded media object (ignores seed images under /images). */
+export async function deleteUpload(url: string | null | undefined) {
+  const marker = `/storage/v1/object/public/${STORAGE_BUCKETS.media}/`;
+  const i = url?.indexOf(marker) ?? -1;
+  if (!url || i < 0) return;
+  await createSupabaseAdminClient().storage.from(STORAGE_BUCKETS.media).remove([url.slice(i + marker.length)]);
 }

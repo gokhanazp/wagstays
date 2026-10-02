@@ -41,9 +41,9 @@ export default async function AdminSittersPage({ searchParams }: { searchParams:
     ...(q
       ? {
           OR: [
-            { displayName: { contains: q } },
-            { slug: { contains: q.toLowerCase() } },
-            { user: { email: { contains: q.toLowerCase() } } },
+            { displayName: { contains: q, mode: "insensitive" } },
+            { slug: { contains: q.toLowerCase(), mode: "insensitive" } },
+            { user: { email: { contains: q.toLowerCase(), mode: "insensitive" } } },
           ],
         }
       : {}),

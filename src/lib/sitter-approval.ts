@@ -1,6 +1,4 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
-import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
 import { DEFAULT_TIME_ZONE, type ServiceType } from "./constants";
 
@@ -104,7 +102,8 @@ type Tx = Prisma.TransactionClient;
  * application APPROVED. Must run inside `db.$transaction`. Throws ApprovalError for business-rule failures.
  */
 /** `defaultCityId` is used only for legacy applications without a neighbourhood reference. */
-export async function approveApplicationTx(tx: Tx, applicationId: string, defaultCityId: string) {
+/** `newAuthUserId` must be a freshly created Supabase auth user when no WagStays account exists for the applicant. */
+export async function approveApplicationTx(tx: Tx, applicationId: string, defaultCityId: string, newAuthUserId?: string) {
   const app = await tx.sitterApplication.findUnique({ where: { id: applicationId }, include: { services: true } });
   if (!app) throw new ApprovalError("Application not found.");
   if (app.status === "APPROVED" || app.sitterProfileId) throw new ApprovalError("This application has already been approved.");
@@ -117,15 +116,15 @@ export async function approveApplicationTx(tx: Tx, applicationId: string, defaul
   user ??= await tx.user.findUnique({ where: { email } });
   let createdUser = false;
   if (!user) {
+    if (!newAuthUserId) throw new ApprovalError("NEEDS_AUTH_USER");
     user = await tx.user.create({
       data: {
+        id: newAuthUserId,
         email,
         firstName: app.firstName,
         lastName: app.lastName,
         phone: app.phone,
         role: "SITTER",
-        // Unusable random password: the sitter sets their own via "set password" later.
-        passwordHash: await bcrypt.hash(randomBytes(24).toString("base64url"), 10),
       },
     });
     createdUser = true;

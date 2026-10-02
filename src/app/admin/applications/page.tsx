@@ -48,12 +48,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
   const search: Prisma.SitterApplicationWhereInput = q
     ? {
         OR: [
-          { firstName: { contains: q } },
-          { lastName: { contains: q } },
-          { email: { contains: q.toLowerCase() } },
-          { trackingCode: { contains: q.toUpperCase().replace(/^#/, "") } },
+          { firstName: { contains: q, mode: "insensitive" } },
+          { lastName: { contains: q, mode: "insensitive" } },
+          { email: { contains: q.toLowerCase(), mode: "insensitive" } },
+          { trackingCode: { contains: q.toUpperCase().replace(/^#/, ""), mode: "insensitive" } },
           ...(q.includes(" ")
-            ? [{ AND: [{ firstName: { contains: q.split(/\s+/)[0] } }, { lastName: { contains: q.split(/\s+/).slice(1).join(" ") } }] }]
+            ? [{ AND: [{ firstName: { contains: q.split(/\s+/)[0], mode: "insensitive" } }, { lastName: { contains: q.split(/\s+/).slice(1).join(" "), mode: "insensitive" } }] }]
             : []),
         ],
       }

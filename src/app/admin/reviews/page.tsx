@@ -43,7 +43,7 @@ export default async function AdminReviewsPage({ searchParams }: PageProps<"/adm
   if (f.rating) and.push({ rating: f.rating });
   if (f.visibility) and.push({ hidden: f.visibility === "hidden" });
   if (f.featured) and.push({ featuredOnHome: f.featured === "yes" });
-  if (f.q) and.push({ OR: [{ body: { contains: f.q } }, { authorName: { contains: f.q } }, { petLabel: { contains: f.q } }] });
+  if (f.q) and.push({ OR: [{ body: { contains: f.q, mode: "insensitive" } }, { authorName: { contains: f.q, mode: "insensitive" } }, { petLabel: { contains: f.q, mode: "insensitive" } }] });
   const where: Prisma.ReviewWhereInput = and.length ? { AND: and } : {};
 
   const [total, featuredCount, hiddenCount, sitters] = await Promise.all([

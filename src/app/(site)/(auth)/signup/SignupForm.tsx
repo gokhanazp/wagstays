@@ -13,6 +13,21 @@ const ROLES = [
 export function SignupForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState(signup, undefined);
   const [role, setRole] = useState<(typeof ROLES)[number]["value"]>("OWNER");
+  if (state?.checkEmail) {
+    return (
+      <div className="flex flex-col gap-space-md">
+        <div className="flex items-start gap-space-sm p-space-md rounded-xl bg-[#EBF3EF] text-primary font-body-md text-body-md">
+          <span className="material-symbols-outlined text-xl">mark_email_read</span>
+          <span>
+            Almost there! We sent a confirmation link to <strong>{state.checkEmail}</strong>. Open it to activate your account.
+          </span>
+        </div>
+        <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/login">
+          Back to log in
+        </Link>
+      </div>
+    );
+  }
   return (
     <form action={action} className="flex flex-col gap-space-md" noValidate>
       <input name="next" type="hidden" value={role === "SITTER" && next === "/" ? "/become-a-sitter" : next} />
@@ -58,6 +73,7 @@ export function SignupForm({ next }: { next: string }) {
         <input autoComplete="new-password" className={INPUT} name="password" placeholder="At least 8 characters" type="password" />
         <FieldError messages={state?.fieldErrors?.password} />
       </label>
+      {state?.error && <p className="font-body-sm text-body-sm text-error">{state.error}</p>}
       <button className={PRIMARY_BTN} disabled={pending} type="submit">
         <span className="material-symbols-outlined text-lg">pets</span>
         {pending ? "Creating account…" : "Create my account"}

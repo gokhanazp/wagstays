@@ -1,7 +1,37 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 
 const db = new PrismaClient();
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+const DEMO_PASSWORD = "wagstays123";
+
+/** Creates a confirmed Supabase auth user with the demo password and returns its id (= User.id). */
+async function authUser(email: string, firstName: string, lastName: string) {
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password: DEMO_PASSWORD,
+    email_confirm: true,
+    user_metadata: { firstName, lastName },
+  });
+  if (error || !data.user) throw new Error(`auth user ${email}: ${error?.message}`);
+  return data.user.id;
+}
+
+/** Deletes the auth users behind every WagStays User row (and any leftover demo addresses). */
+async function wipeAuthUsers() {
+  const ids = new Set((await db.user.findMany({ select: { id: true } })).map((u) => u.id));
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw error;
+    for (const u of data.users) {
+      const demo = u.email?.endsWith("@wagstays.ca") || u.email?.endsWith("@example.ca");
+      if (ids.has(u.id) || demo) await supabase.auth.admin.deleteUser(u.id);
+    }
+    if (data.users.length < 200) break;
+  }
+}
 const img = (n: number) => `/images/img-${String(n).padStart(2, "0")}.${n === 1 || n === 19 ? "png" : "jpg"}`;
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000);
 
@@ -248,6 +278,10 @@ const SITTERS: SitterSeed[] = [
 ];
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "1") {
+    throw new Error("Refusing to seed a production database (set ALLOW_SEED=1 to override).");
+  }
+  await wipeAuthUsers();
   // wipe (order matters for FKs)
   await db.$transaction([
     db.auditLog.deleteMany(), db.message.deleteMany(), db.conversation.deleteMany(), db.platformSettings.deleteMany(),
@@ -266,16 +300,16 @@ async function main() {
     ),
   );
 
-  const passwordHash = await bcrypt.hash("wagstays123", 10);
 
   const admin = await db.user.create({
-    data: { email: "admin@wagstays.ca", firstName: "Admin", lastName: "WagStays", role: "ADMIN", passwordHash },
+    data: { id: await authUser("admin@wagstays.ca", "Admin", "WagStays"), email: "admin@wagstays.ca", firstName: "Admin", lastName: "WagStays", role: "ADMIN" },
   });
 
   const emily = await db.user.create({
     data: {
+      id: await authUser("emily@wagstays.ca", "Emily", "Young"),
       email: "emily@wagstays.ca", firstName: "Emily", lastName: "Young", phone: "+1 (416) 555-0119",
-      avatarUrl: img(2), role: "OWNER", wagPointsCents: 700, passwordHash,
+      avatarUrl: img(2), role: "OWNER", wagPointsCents: 700,
       pets: {
         create: [
           {
@@ -299,7 +333,10 @@ async function main() {
   for (const [i, s] of SITTERS.entries()) {
     const hood = hoods[s.hood];
     const user = await db.user.create({
-      data: { email: `${s.slug}@wagstays.ca`, firstName: s.first, lastName: s.last, role: "SITTER", avatarUrl: s.avatar, passwordHash },
+      data: {
+        id: await authUser(`${s.slug}@wagstays.ca`, s.first, s.last),
+        email: `${s.slug}@wagstays.ca`, firstName: s.first, lastName: s.last, role: "SITTER", avatarUrl: s.avatar,
+      },
     });
     const profile = await db.sitterProfile.create({
       data: {
@@ -398,10 +435,11 @@ async function main() {
       ["noah.campbell", "Noah", "Campbell", "Biscuit", "DOG", "Beagle", "MEDIUM"],
       ["ava.singh", "Ava", "Singh", "Mochi", "CAT", "Ragdoll", "SMALL"],
       ["lucas.martin", "Lucas", "Martin", "Bear", "DOG", "Bernese Mountain Dog", "GIANT"],
-    ].map(([handle, first, last, pet, species, breed, size]) =>
+    ].map(async ([handle, first, last, pet, species, breed, size]) =>
       db.user.create({
         data: {
-          email: `${handle}@example.ca`, firstName: first, lastName: last, role: "OWNER", passwordHash,
+          id: await authUser(`${handle}@example.ca`, first, last),
+          email: `${handle}@example.ca`, firstName: first, lastName: last, role: "OWNER",
           pets: { create: [{ name: pet, species, breed, size, ageYears: 3, rabiesVaccinated: true }] },
         },
         include: { pets: true },

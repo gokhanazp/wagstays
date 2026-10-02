@@ -31,7 +31,7 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
     ...(entityType && { entityType }),
     ...(actor && { actorId: actor }),
     ...(entityId && { entityId }),
-    ...(q && { action: { contains: q } }),
+    ...(q && { action: { contains: q, mode: "insensitive" } }),
   };
   const [total, logs] = await Promise.all([
     db.auditLog.count({ where }),

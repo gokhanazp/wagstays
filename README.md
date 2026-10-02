@@ -1,16 +1,17 @@
 # WagStays
 
 Pet sitting & dog walking marketplace — Toronto first, Canada-wide later.
-Next.js 16 (App Router) · Tailwind CSS 3 (design tokens from the Stitch "Warm Paw Companion" system) · Prisma · SQLite (local) → Supabase (later).
+Next.js 16 (App Router) · Tailwind CSS 3 (design tokens from the Stitch "Warm Paw Companion" system) · Prisma · Supabase (Postgres, Auth, Storage).
 
 ## Run locally
 
 ```bash
 npm install
-npx prisma migrate dev   # creates prisma/dev.db
-npm run db:seed          # Toronto data, demo users
-npm run dev
+# fill .env.supabase (DB password + access token, or keys + connection strings), then:
+npm run supabase:setup   # writes .env, sets Auth URLs, runs migrations, seeds demo data
+npm run dev -- -p 3100
 ```
+Manual alternative: copy `.env.example` to `.env`, then `npx prisma migrate deploy && npm run db:seed`.
 
 Demo accounts (password `wagstays123`):
 
@@ -50,12 +51,11 @@ Other sitters log in as `<slug>@wagstays.ca`; extra owners: `noah.campbell@examp
 
 Only Toronto is active (`City.isActive`). Other cities are seeded inactive and are switched on from `/admin/cities` (a city needs at least one neighbourhood). Active cities automatically appear in the home search suggestions, the search location picker (`/sitters?city=<slug>`) and the sitter application form; approved sitters are placed in the city of the neighbourhood they applied for. Taxes come from `City.taxRateBps`, time zones from `City.timeZone` (date formatting still defaults to Toronto time — pass `city.timeZone` through when a second time zone goes live).
 
-## Moving to Supabase
+## Supabase
 
-1. `provider = "postgresql"` in `prisma/schema.prisma`, set `DATABASE_URL` (pooled) and `directUrl` (direct) to the Supabase strings.
-2. Re-create migrations (`prisma migrate dev --name init`) — SQLite migrations don't carry over.
-3. Replace `src/lib/session.ts` internals with Supabase Auth; keep `getCurrentUser()` as the interface.
-4. Uploads: `src/lib/uploads.ts` writes to `public/uploads` — swap its body for Supabase Storage. Application documents (ID / police check) are currently only stored by file name.
-5. Password set/reset links (`src/lib/password-tokens.ts`, `/set-password`) are shown to admins instead of emailed; replace with Supabase Auth's email flows.
-6. Text search uses Prisma `contains` (case-insensitive on SQLite only) — add `mode: "insensitive"` on Postgres.
-7. Messaging polls every 10 s; Supabase Realtime can replace the polling.
+- **Database:** Prisma → Supabase Postgres (`DATABASE_URL` transaction pooler at runtime, `DIRECT_URL` session pooler for migrations). RLS is enabled on every table with no policies, so the public Data API exposes nothing — all reads/writes go through server code. **Enable RLS on every new table** in future migrations.
+- **Auth:** Supabase Auth (email + password). `User.id` = `auth.users.id`; roles live in our `User` table, never in user-editable metadata. `src/proxy.ts` refreshes the session; `getCurrentUser()` in `src/lib/session.ts` is the only entry point pages use. Email links land on `/auth/callback` (PKCE code) or `/auth/confirm` (token hash). Suspending a user also bans them in Supabase Auth.
+- **Storage:** bucket `media` (public; pet, sitter and avatar photos) via `src/lib/uploads.ts`; bucket `documents` (private) is ready for ID / police-check files — the application form still stores only file names.
+- **Emails:** sign-up confirmation and password reset use Supabase's built-in mailer (rate-limited — configure custom SMTP in the dashboard before launch). Admins can also generate one-time password links from `/admin/users/<id>`.
+- The old SQLite migrations are archived in `prisma/sqlite-archive/`.
+- Messaging still polls every 10 s; Supabase Realtime can replace the polling later.

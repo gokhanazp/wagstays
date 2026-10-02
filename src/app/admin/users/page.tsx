@@ -25,7 +25,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
     ...(role && { role }),
     ...(status && { suspended: status === "suspended" }),
     ...(terms.length && {
-      AND: terms.map((t) => ({ OR: [{ email: { contains: t } }, { firstName: { contains: t } }, { lastName: { contains: t } }] })),
+      AND: terms.map((t) => ({ OR: [{ email: { contains: t, mode: "insensitive" } }, { firstName: { contains: t, mode: "insensitive" } }, { lastName: { contains: t, mode: "insensitive" } }] })),
     }),
   };
 

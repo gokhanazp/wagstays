@@ -46,3 +46,5 @@ prisma/*.db-journal
 
 # local uploads (Supabase Storage later)
 /public/uploads
+
+!.env.example

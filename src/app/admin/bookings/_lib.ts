@@ -47,7 +47,7 @@ export function baseWhere(f: BookingFilters): Prisma.BookingWhereInput {
   if (f.q) {
     const words = f.q.split(/\s+/).filter(Boolean).slice(0, 4);
     for (const w of words) {
-      and.push({ owner: { OR: [{ firstName: { contains: w } }, { lastName: { contains: w } }, { email: { contains: w } }] } });
+      and.push({ owner: { OR: [{ firstName: { contains: w, mode: "insensitive" } }, { lastName: { contains: w, mode: "insensitive" } }, { email: { contains: w, mode: "insensitive" } }] } });
     }
   }
   if (f.from || f.to) {

@@ -1,6 +1,8 @@
 "use server";
 
-import bcrypt from "bcryptjs";
+import { getOrigin } from "@/lib/origin";
+import { verifyPassword } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -318,21 +320,21 @@ export async function changeEmail(_: FormState, formData: FormData): Promise<For
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { email, currentPassword } = parsed.data;
 
-  const row = await db.user.findUnique({ where: { id: user.id }, select: { passwordHash: true, email: true } });
-  if (!row || !(await bcrypt.compare(currentPassword, row.passwordHash))) {
+  if (!(await verifyPassword(user.email, currentPassword))) {
     return { fieldErrors: { currentPassword: ["That password isn't right."] } };
   }
-  if (email === row.email) return { fieldErrors: { email: ["That's already your email."] } };
+  if (email === user.email) return { fieldErrors: { email: ["That's already your email."] } };
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
     return { fieldErrors: { email: ["An account with this email already exists."] } };
   }
-  try {
-    await db.user.update({ where: { id: user.id }, data: { email } });
-  } catch {
-    return { fieldErrors: { email: ["An account with this email already exists."] } };
-  }
-  revalidatePath("/", "layout");
-  return { ok: true, message: `Your login email is now ${email}.` };
+  // Supabase emails a confirmation link to the new address; the profile email syncs once it's confirmed.
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.updateUser(
+    { email },
+    { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/account/settings` },
+  );
+  if (error) return { error: error.message };
+  return { ok: true, message: `Check ${email} — click the confirmation link there to finish changing your email.` };
 }
 
 const PasswordSchema = z
@@ -349,13 +351,15 @@ export async function changePassword(_: FormState, formData: FormData): Promise<
   const parsed = PasswordSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
-  const row = await db.user.findUnique({ where: { id: user.id }, select: { passwordHash: true } });
-  if (!row || !(await bcrypt.compare(parsed.data.currentPassword, row.passwordHash))) {
+  if (!(await verifyPassword(user.email, parsed.data.currentPassword))) {
     return { fieldErrors: { currentPassword: ["That password isn't right."] } };
   }
-  if (await bcrypt.compare(parsed.data.newPassword, row.passwordHash)) {
-    return { fieldErrors: { newPassword: ["Choose a password you haven't used here before."] } };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+  if (error) {
+    return error.code === "same_password"
+      ? { fieldErrors: { newPassword: ["Choose a password you haven't used here before."] } }
+      : { error: error.message };
   }
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) } });
   return { ok: true, message: "Password changed." };
 }
