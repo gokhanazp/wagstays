@@ -4,6 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 /** Refreshes the Supabase session cookie on every request and reports whether a user is signed in. */
 export async function updateSession(request: NextRequest, requestHeaders: Headers) {
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error("WagStays: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are not set — see docs/DEPLOY.md.");
+    return { response, signedIn: false };
+  }
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),
