@@ -48,3 +48,6 @@ prisma/*.db-journal
 /public/uploads
 
 !.env.example
+
+# rotated demo passwords (scripts/rotate-demo-passwords.ts)
+.demo-credentials

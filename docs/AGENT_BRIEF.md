@@ -29,7 +29,7 @@ spacing, icons, hover states and interactions — but with **English (Canada) co
   every price breakdown), `src/lib/format.ts` (`formatMoney(cents)`, `formatDistance`, `formatRating`, `timeAgo`),
   `src/lib/constants.ts` (service/size labels, fees).
 - `src/components/FavoriteButton.tsx` — heart toggle (server action + optimistic UI). Use it for every favourite heart.
-- `prisma/schema.prisma` + `prisma/seed.ts` — read them to know the data. Demo owner: emily@wagstays.ca / wagstays123.
+- `prisma/schema.prisma` + `prisma/seed.ts` — read them to know the data. Demo owner: emily@wagstays.ca (passwords in `.demo-credentials`).
 - Routes: `/` home, `/sitters` search (query params per `parseSearchParams`), `/sitters/[slug]` profile,
   `/book/[slug]` checkout, `/become-a-sitter` application form, `/become-a-sitter/submitted?code=WS-XXXXX`,
   `/login`, `/signup` (both accept `?next=/path`).

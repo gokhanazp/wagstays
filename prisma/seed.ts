@@ -1,17 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
+import { writeFileSync } from "node:fs";
 
 const db = new PrismaClient();
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
-const DEMO_PASSWORD = "wagstays123";
+// Every seeded account gets its own random password (or SEED_PASSWORD for all, e.g. in CI);
+// they're written to .demo-credentials (git-ignored) at the end of the run.
+const credentials: string[] = [];
+const newPassword = () => process.env.SEED_PASSWORD || randomBytes(15).toString("base64url");
 
 /** Creates a confirmed Supabase auth user with the demo password and returns its id (= User.id). */
 async function authUser(email: string, firstName: string, lastName: string) {
+  const password = newPassword();
+  credentials.push(`${email.padEnd(36)} ${password}`);
   const { data, error } = await supabase.auth.admin.createUser({
     email,
-    password: DEMO_PASSWORD,
+    password,
     email_confirm: true,
     user_metadata: { firstName, lastName },
   });
@@ -532,7 +539,8 @@ async function main() {
   });
 
   console.log(`Seeded ${cities.length} cities, ${HOODS.length} neighbourhoods, ${SITTERS.length} sitters.`);
-  console.log("Demo logins (password wagstays123): emily@wagstays.ca (owner), sarah-mitchell@wagstays.ca (sitter), admin@wagstays.ca (admin)");
+  writeFileSync(".demo-credentials", ["# WagStays demo accounts — keep private", "", ...credentials, ""].join("\n"), { mode: 0o600 });
+  console.log("Demo logins written to .demo-credentials (admin@wagstays.ca, emily@wagstays.ca, sarah-mitchell@wagstays.ca, …)");
 }
 
 main()

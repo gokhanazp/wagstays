@@ -13,7 +13,7 @@ npm run dev -- -p 3100
 ```
 Manual alternative: copy `.env.example` to `.env`, then `npx prisma migrate deploy && npm run db:seed`.
 
-Demo accounts (password `wagstays123`):
+Demo accounts — each has its own random password, written to the git-ignored `.demo-credentials` file by the seed (or rotate them any time with `node --env-file=.env node_modules/.bin/tsx scripts/rotate-demo-passwords.ts`):
 
 | Account | Role | What to try |
 |---|---|---|

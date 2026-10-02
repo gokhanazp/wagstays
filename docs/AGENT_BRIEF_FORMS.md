@@ -40,7 +40,7 @@ on the site must look and behave the same, in the Warm Paw design language.
 - Keyboard: Tab to the trigger, Enter/Space/ArrowDown opens, arrows move, Enter selects, Esc closes.
 - Only edit the files listed in your task. `npx tsc --noEmit` + `npx eslint <your files>` clean.
 - Verify with Playwright (scratchpad dir `/private/tmp/claude-504/-Users-gokhan-yildirim-hayvan-bakici-v2/b2d2252e-e30f-460d-887f-3f19eaa21a3a/scratchpad`,
-  screenshot helper `shot.js`, `LOGIN=<email>` env for logged-in pages; demo password `wagstays123`, accounts
+  screenshot helper `shot.js`, `LOGIN=<email>` env for logged-in pages; passwords in `.demo-credentials`, accounts
   emily@wagstays.ca / sarah-mitchell@wagstays.ca / admin@wagstays.ca): open each migrated dropdown/date picker, take a
   screenshot with it open (1440 and 390 wide), pick a value and confirm the form/URL/server action still receives it.
   Restore any demo data you change.

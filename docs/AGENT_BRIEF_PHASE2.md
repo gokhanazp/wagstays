@@ -36,7 +36,7 @@ Material Symbols Outlined icons, generous spacing (`gap-space-lg`, `p-space-lg`)
 - `src/lib/format.ts`, `src/lib/queries.ts`, `src/lib/session.ts` (`getCurrentUser()`), `src/components/FavoriteButton.tsx`.
 - After a mutation call `revalidatePath(...)` for affected pages (public pages: `/`, `/sitters`, `/sitters/<slug>`).
 
-Demo logins (password `wagstays123`): `emily@wagstays.ca` (owner, 2 pets, bookings in several states, a conversation),
+Demo logins (passwords in `.demo-credentials`): `emily@wagstays.ca` (owner, 2 pets, bookings in several states, a conversation),
 `sarah-mitchell@wagstays.ca` (sitter with pending/confirmed bookings), `admin@wagstays.ca` (admin).
 Other owners: `noah.campbell@example.ca`, `ava.singh@example.ca`, `lucas.martin@example.ca`.
 
