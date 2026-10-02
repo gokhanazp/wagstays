@@ -1,14 +1,13 @@
 "use client";
 
+import { useRealtimeRefresh } from "@/components/useRealtimeRefresh";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { markConversationRead, sendMessage } from "@/app/actions/messages";
 import { clockTime, dayKey, dayLabel } from "./time";
 
 export type ThreadMessage = { id: string; body: string; mine: boolean; createdAt: string; sending?: boolean };
 
 const MAX = 2000;
-const POLL_MS = 10_000;
 
 export function ThreadView({
   conversationId,
@@ -21,7 +20,6 @@ export function ThreadView({
   otherFirstName: string;
   tz: string;
 }) {
-  const router = useRouter();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -37,18 +35,8 @@ export function ThreadView({
     startReadTransition(() => markConversationRead(conversationId));
   }, [conversationId, lastIncoming]);
 
-  // Light polling while the tab is visible.
-  useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState === "visible") router.refresh();
-    };
-    const t = setInterval(tick, POLL_MS);
-    document.addEventListener("visibilitychange", tick);
-    return () => {
-      clearInterval(t);
-      document.removeEventListener("visibilitychange", tick);
-    };
-  }, [router]);
+  // Live updates: the server pings this conversation's channel on every new message (fallback poll every 60 s).
+  useRealtimeRefresh(`conv:${conversationId}`);
 
   // Stick to the bottom when messages are added.
   useEffect(() => {

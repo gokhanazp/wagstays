@@ -1,5 +1,6 @@
 "use server";
 
+import { conversationChannel, inboxChannel, ping } from "@/lib/realtime";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -37,6 +38,14 @@ export async function sendMessage(conversationId: string, body: string): Promise
     }),
   ]);
   revalidatePath("/messages", "layout");
+  const conv = await db.conversation.findUnique({
+    where: { id: parsed.data.conversationId },
+    select: { ownerId: true, sitter: { select: { userId: true } } },
+  });
+  if (conv) {
+    const recipient = side === "owner" ? conv.sitter.userId : conv.ownerId;
+    await ping(conversationChannel(parsed.data.conversationId), inboxChannel(recipient));
+  }
   return { ok: true };
 }
 
