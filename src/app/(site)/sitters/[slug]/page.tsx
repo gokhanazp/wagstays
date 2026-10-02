@@ -1,3 +1,4 @@
+import { MobileBookBar } from "./_components/MobileBookBar";
 import type { Metadata } from "next";
 import { getFees } from "@/lib/settings";
 import Link from "next/link";
@@ -177,12 +178,16 @@ export default async function SitterProfilePage({ params }: Props) {
   }));
 
   return (
-    <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
+    <main className="w-full pt-20 pb-24 lg:pb-0 bg-background min-h-[calc(100vh-320px)]">
       <div className="flex flex-col w-full">
         <div className="max-w-[1440px] w-full mx-auto px-margin-mobile md:px-margin py-space-lg">
           {/* Breadcrumb & quick actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-lg">
-            <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">
+          <div className="flex flex-row items-center justify-between gap-space-md pb-space-md md:pb-space-lg">
+            <Link className="md:hidden flex items-center gap-1 font-label-lg text-label-lg text-on-surface-variant hover:text-primary" href="/sitters">
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              {sitter.city.name} Sitters
+            </Link>
+            <nav aria-label="Breadcrumb" className="hidden md:flex flex-wrap items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">
               <Link className="hover:text-primary transition-colors flex items-center gap-1" href="/">
                 <span className="material-symbols-outlined text-sm">home</span>
                 Home
@@ -203,19 +208,21 @@ export default async function SitterProfilePage({ params }: Props) {
             <ProfileActions isFavorite={sitter.isFavorite} name={sitter.displayName} sitterId={sitter.id} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+          {/* Mobile: one column where the booking widget sits right under the identity card (left column uses
+              `contents` so its sections can be ordered around the widget). Desktop: 8/4 grid with sticky widget. */}
+          <div className="flex flex-col gap-space-lg md:gap-space-xl lg:grid lg:grid-cols-12 items-start">
             {/* LEFT COLUMN */}
-            <div className="lg:col-span-8 flex flex-col gap-space-xl min-w-0">
+            <div className="contents lg:col-span-8 lg:flex lg:flex-col lg:gap-space-xl min-w-0 max-lg:[&>*]:order-3">
               {/* Identity hero */}
-              <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col md:flex-row gap-space-lg items-start md:items-center justify-between relative overflow-hidden">
+              <div className="max-lg:!order-1 w-full bg-surface-container-lowest p-space-md sm:p-space-xl rounded-3xl shadow-sm flex flex-col md:flex-row gap-space-lg items-start md:items-center justify-between relative overflow-hidden">
                 <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
-                <div className="flex flex-col sm:flex-row gap-space-lg items-start sm:items-center">
-                  <div className="relative">
+                <div className="flex flex-row gap-space-md sm:gap-space-lg items-start sm:items-center min-w-0">
+                  <div className="relative shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt={`Portrait of ${sitter.displayName}`} className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover shadow-md" src={sitter.avatarUrl} />
+                    <img alt={`Portrait of ${sitter.displayName}`} className="w-20 h-20 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl object-cover shadow-md" src={sitter.avatarUrl} />
                     {sitter.idVerified && (
                       <div
-                        className="absolute -bottom-2 -right-2 bg-primary text-on-primary p-1.5 rounded-xl shadow-md flex items-center justify-center"
+                        className="absolute -bottom-2 -right-2 bg-primary text-on-primary p-1 sm:p-1.5 rounded-lg sm:rounded-xl shadow-md flex items-center justify-center"
                         title={sitter.isSuperSitter ? "Verified Super Sitter" : "Verified Sitter"}
                       >
                         <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -224,7 +231,7 @@ export default async function SitterProfilePage({ params }: Props) {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-space-xs">
+                  <div className="flex flex-col gap-space-xs min-w-0">
                     {(sitter.isSuperSitter || sitter.professionalTrainer) && (
                       <div className="flex flex-wrap items-center gap-2">
                         {sitter.isSuperSitter && (
@@ -243,7 +250,7 @@ export default async function SitterProfilePage({ params }: Props) {
                         )}
                       </div>
                     )}
-                    <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">{sitter.displayName}</h1>
+                    <h1 className="font-headline-md text-headline-md sm:font-headline-lg sm:text-headline-lg text-on-surface tracking-tight mt-1">{sitter.displayName}</h1>
                     <div className="flex items-center gap-space-xs font-body-sm text-body-sm text-on-surface-variant flex-wrap">
                       <span className="material-symbols-outlined text-base text-secondary">location_on</span>
                       <span className="font-medium text-on-surface">{location}</span>
@@ -264,7 +271,7 @@ export default async function SitterProfilePage({ params }: Props) {
                         ({sitter.reviewCount} review{sitter.reviewCount === 1 ? "" : "s"})
                       </span>
                     </div>
-                    <div className="flex items-center gap-space-sm pt-1">
+                    <div className="hidden sm:flex items-center gap-space-sm pt-1">
                       <div className="flex flex-wrap items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface-variant">
                         <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                         <span>
@@ -276,8 +283,15 @@ export default async function SitterProfilePage({ params }: Props) {
                     </div>
                   </div>
                 </div>
+                {/* Mobile-only response line (the pill above is hidden on small screens) */}
+                <div className="sm:hidden -mt-space-sm flex flex-wrap items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Responds in <strong>{formatResponseTime(sitter.responseTimeMins)}</strong>
+                  <span className="text-outline">·</span>
+                  <span className="text-primary font-bold">100% response rate</span>
+                </div>
                 {headlineService && (
-                  <div className="flex md:flex-col gap-space-sm self-stretch md:self-auto justify-end">
+                  <div className="hidden md:flex md:flex-col gap-space-sm self-stretch md:self-auto justify-end">
                     <div className="bg-surface-container-low rounded-2xl p-4 text-center min-w-[130px]">
                       <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">
                         {HEADER_PRICE_LABEL[headlineService.unit] ?? "From"}
@@ -487,7 +501,7 @@ export default async function SitterProfilePage({ params }: Props) {
             </div>
 
             {/* RIGHT COLUMN: booking widget */}
-            <div className="lg:col-span-4 lg:sticky top-24 min-w-0">
+            <div className="max-lg:order-2 w-full lg:col-span-4 lg:sticky top-24 min-w-0 scroll-mt-24" id="book">
               <BookingWidget
                 askHref={`/messages/new?sitter=${sitter.id}`}
                 defaultDate={ymd(tomorrow)}
@@ -504,6 +518,14 @@ export default async function SitterProfilePage({ params }: Props) {
           </div>
         </div>
       </div>
+      {headlineService && (
+        <MobileBookBar
+          priceLabel={formatMoney(headlineService.priceCents)}
+          rating={formatRating(sitter.rating)}
+          reviewCount={sitter.reviewCount}
+          unitLabel={HEADER_PRICE_LABEL[headlineService.unit]?.replace("Per ", "") ?? ""}
+        />
+      )}
     </main>
   );
 }
