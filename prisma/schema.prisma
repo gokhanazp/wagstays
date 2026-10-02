@@ -1,0 +1,308 @@
+// Local development uses SQLite. To move to Supabase, switch provider to "postgresql"
+// and point DATABASE_URL / DIRECT_URL at the Supabase connection strings.
+// Enum-like fields are plain strings (validated in src/lib/constants.ts) to keep both providers identical.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model City {
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  name           String
+  province       String
+  provinceCode   String
+  currency       String          @default("CAD")
+  taxRateBps     Int             @default(1300) // HST 13% for Ontario, in basis points
+  isActive       Boolean         @default(false)
+  lat            Float
+  lng            Float
+  neighbourhoods Neighbourhood[]
+  sitters        SitterProfile[]
+  createdAt      DateTime        @default(now())
+}
+
+model Neighbourhood {
+  id      String          @id @default(cuid())
+  cityId  String
+  city    City            @relation(fields: [cityId], references: [id])
+  slug    String
+  name    String
+  lat     Float
+  lng     Float
+  sitters SitterProfile[]
+
+  @@unique([cityId, slug])
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  role         String              @default("OWNER") // OWNER | SITTER | ADMIN
+  wagPointsCents Int               @default(0)
+  createdAt    DateTime            @default(now())
+  pets         Pet[]
+  sitter       SitterProfile?
+  bookings     Booking[]
+  favorites    Favorite[]
+  reviews      Review[]
+  applications SitterApplication[]
+}
+
+model Pet {
+  id            String    @id @default(cuid())
+  ownerId       String
+  owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name          String
+  species       String    // DOG | CAT | OTHER
+  breed         String?
+  ageYears      Float?
+  size          String?   // SMALL | MEDIUM | LARGE | GIANT
+  sex           String?   // MALE | FEMALE
+  neutered      Boolean   @default(false)
+  rabiesVaccinated Boolean @default(false)
+  microchip     String?
+  photoUrl      String?
+  traits        PetTrait[]
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+}
+
+model PetTrait {
+  id    String @id @default(cuid())
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+  label String
+  icon  String?
+  tone  String @default("neutral") // neutral | primary | warning
+}
+
+model SitterProfile {
+  id                String        @id @default(cuid())
+  userId            String        @unique
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug              String        @unique
+  displayName       String
+  headline          String
+  bio               String
+  cityId            String
+  city              City          @relation(fields: [cityId], references: [id])
+  neighbourhoodId   String
+  neighbourhood     Neighbourhood @relation(fields: [neighbourhoodId], references: [id])
+  locationNote      String?       // e.g. "Near High Park"
+  lat               Float
+  lng               Float
+  serviceRadiusKm   Float         @default(3)
+  serviceAreaNote   String?
+  avatarUrl         String
+  cardPhotoUrl      String?       // tall photo used on search & home cards
+  mapPhotoUrl       String?       // small thumbnail in the map preview card
+  yearsExperience   Int           @default(0)
+  isSuperSitter     Boolean       @default(false)
+  instantBook       Boolean       @default(false)
+  idVerified        Boolean       @default(false)
+  backgroundChecked Boolean       @default(false)
+  firstAidCertified Boolean       @default(false)
+  vetKnowledge      Boolean       @default(false)
+  professionalTrainer Boolean     @default(false)
+  responseTimeMins  Int           @default(60)
+  repeatClientPct   Int           @default(0)
+  rating            Float         @default(0)
+  reviewCount       Int           @default(0)
+  ratingCommunication Float       @default(0)
+  ratingReliability Float         @default(0)
+  ratingCare        Float         @default(0)
+  completedBookings Int           @default(0)
+  homeType          String?       // HOUSE_WITH_YARD | APARTMENT | CONDO_BALCONY
+  homeTitle         String?
+  homeNote          String?
+  hasYard           Boolean       @default(false)
+  smokeFree         Boolean       @default(true)
+  hasChildren       Boolean       @default(false)
+  hasOtherPets      Boolean       @default(false)
+  otherPetsNote     String?
+  acceptsSmall      Boolean       @default(true)
+  acceptsMedium     Boolean       @default(true)
+  acceptsLarge      Boolean       @default(false)
+  acceptsGiant      Boolean       @default(false)
+  featured          Boolean       @default(false)
+  featuredBadge     String?       // e.g. "Super Sitter", "Cat Lover"
+  featuredBadgeIcon String?
+  credential        String?       // short line under the name, e.g. "Vet Technician"
+  highlight         String?       // pill like "Fast Response (<10 min)"
+  highlightIcon     String?
+  quote             String?       // short first-person blurb for home cards
+  status            String        @default("ACTIVE") // ACTIVE | PAUSED
+  services          Service[]
+  photos            SitterPhoto[]
+  tags              SitterTag[]
+  skills            SitterSkill[]
+  reviews           Review[]
+  bookings          Booking[]
+  favorites         Favorite[]
+  createdAt         DateTime      @default(now())
+}
+
+model SitterPhoto {
+  id        String        @id @default(cuid())
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  sortOrder Int           @default(0)
+}
+
+// Feature chips shown on search/listing cards (e.g. "Large Yard", "Live GPS Tracking")
+model SitterTag {
+  id        String        @id @default(cuid())
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  label     String
+  icon      String
+  tone      String        @default("neutral") // neutral | primary
+  sortOrder Int           @default(0)
+}
+
+// Skill pills in the profile "About" section (e.g. "Large Breed Experience")
+model SitterSkill {
+  id        String        @id @default(cuid())
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  label     String
+  emoji     String?
+  sortOrder Int           @default(0)
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  sitterId     String
+  sitter       SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  type         String        // DOG_WALKING | BOARDING | DAY_CARE | DROP_IN
+  priceCents   Int
+  unit         String        // WALK | NIGHT | DAY | VISIT
+  durationMins Int?
+  description  String?
+  extraNote    String?
+  active       Boolean       @default(true)
+  bookings     Booking[]
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  ownerId            String
+  owner              User          @relation(fields: [ownerId], references: [id])
+  sitterId           String
+  sitter             SitterProfile @relation(fields: [sitterId], references: [id])
+  serviceId          String
+  service            Service       @relation(fields: [serviceId], references: [id])
+  petId              String
+  pet                Pet           @relation(fields: [petId], references: [id])
+  startAt            DateTime
+  endAt              DateTime
+  recurringWeekly    Boolean       @default(false)
+  status             String        @default("DRAFT") // DRAFT | PENDING | CONFIRMED | COMPLETED | CANCELLED
+  meetingAddress     String?
+  leashPreference    String?
+  otherAnimalsReaction String?
+  feedingRules       String?
+  notes              String?
+  gpsUpdates         Boolean       @default(true)
+  emergencyName      String?
+  emergencyPhone     String?
+  vetClinic          String?
+  vetPhone           String?
+  subtotalCents      Int           @default(0)
+  protectionFeeCents Int           @default(0)
+  serviceFeeCents    Int           @default(0)
+  discountCents      Int           @default(0)
+  taxCents           Int           @default(0)
+  totalCents         Int           @default(0)
+  cardLast4          String?
+  cardBrand          String?
+  createdAt          DateTime      @default(now())
+}
+
+model Review {
+  id           String        @id @default(cuid())
+  sitterId     String
+  sitter       SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  authorId     String?
+  author       User?         @relation(fields: [authorId], references: [id])
+  authorName   String
+  authorAvatar String?
+  petLabel     String?       // e.g. "Milo (French Bulldog) Parent"
+  rating       Int
+  body         String
+  verifiedBooking Boolean    @default(true)
+  walkSummary  String?       // e.g. "2.8 km · 58 min · Trinity Bellwoods"
+  walkPhotoUrl String?
+  featuredOnHome Boolean     @default(false)
+  createdAt    DateTime      @default(now())
+}
+
+model Favorite {
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@id([userId, sitterId])
+}
+
+model SitterApplication {
+  id              String               @id @default(cuid())
+  trackingCode    String               @unique
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id])
+  status          String               @default("IN_REVIEW") // IN_REVIEW | MEET_GREET | APPROVED | REJECTED
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  neighbourhood   String?
+  experience      String               // "1-3" | "3-6" | "6+" | "VET"
+  acceptsSmall    Boolean              @default(false)
+  acceptsMedium   Boolean              @default(false)
+  acceptsLarge    Boolean              @default(false)
+  acceptsGiant    Boolean              @default(false)
+  certFirstAid    Boolean              @default(false)
+  certMedication  Boolean              @default(false)
+  certPuppy       Boolean              @default(false)
+  certBehaviour   Boolean              @default(false)
+  homeType        String
+  smokeFree       Boolean              @default(false)
+  noChildren      Boolean              @default(false)
+  ownPets         Boolean              @default(false)
+  fencedYard      Boolean              @default(false)
+  bio             String
+  idDocumentName  String?
+  backgroundCheckName String?
+  meetGreetAt     DateTime?
+  services        ApplicationService[]
+  createdAt       DateTime             @default(now())
+}
+
+model ApplicationService {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   SitterApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          String
+  priceCents    Int
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,865 @@
+// SOURCE: bak_c_ba_vurusu_al_nd_onay_s_reci
+// body class: bg-background font-body-md text-on-surface antialiased
+
+// ===== HEADER =====
+<>
+  <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(83,72,62,0.05)]">
+    <div className="h-20 max-w-[1440px] mx-auto px-margin flex items-center justify-between gap-space-lg">
+      <div className="flex items-center gap-space-xl">
+        <a className="flex items-center gap-space-sm group" data-path="ana-sayfa-kesif" href="#">
+          <img alt="PatiDostu Logo" className="h-8 w-auto object-contain" src="/images/img-01.png" />
+          <span className="font-headline-sm text-headline-sm text-primary tracking-tight">
+            PatiDostu
+          </span>
+        </a>
+        <nav className="hidden lg:flex items-center gap-space-xs p-space-xs bg-surface-container rounded-full" data-active-classes="bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full shadow-sm">
+          <a className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all" data-path="ana-sayfa-kesif" href="#">
+            Ana Sayfa & Keşif
+          </a>
+          <a className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all" data-path="bakici-bul" href="#">
+            Bakıcı Bul
+          </a>
+          <a className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all" data-path="kopek-gezdirme" href="#">
+            Köpek Gezdirme
+          </a>
+          <a className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all" data-path="nasil-calisir" href="#">
+            Nasıl Çalışır?
+          </a>
+          <a className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all" data-path="bakici-ol-basvuru-formu" href="#">
+            Bakıcı Ol
+          </a>
+        </nav>
+      </div>
+      <div className="flex items-center gap-space-md">
+        <a className="hidden xl:inline-flex items-center px-space-md py-space-sm rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-[0_4px_12px_rgba(162,62,36,0.2)]" data-path="bakici-ol-basvuru-formu" href="#">
+          <span className="material-symbols-outlined text-base mr-1.5">
+            pets
+          </span>
+          Bakıcı Ol
+        </a>
+        <div className="flex items-center gap-space-xs text-on-surface-variant">
+          <button aria-label="Destek" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors" type="button">
+            <span className="material-symbols-outlined text-xl">
+              help
+            </span>
+          </button>
+          <button aria-label="Favoriler" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors relative" type="button">
+            <span className="material-symbols-outlined text-xl">
+              favorite
+            </span>
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />
+          </button>
+          <button aria-label="Mesajlar" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors" type="button">
+            <span className="material-symbols-outlined text-xl">
+              chat_bubble
+            </span>
+          </button>
+        </div>
+        <div className="flex items-center gap-space-sm pl-space-sm">
+          <div className="text-right hidden sm:block">
+            <div className="font-label-lg text-label-lg text-on-surface leading-tight">
+              Ece Y.
+            </div>
+            <div className="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-surface-container-high px-2 py-0.5 rounded-full mt-0.5">
+              <span className="text-xs">
+                🐾
+              </span>
+              2 Pati Sahibi
+            </div>
+          </div>
+          <img alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-fixed" src="/images/img-02.jpg" />
+        </div>
+      </div>
+    </div>
+  </header>
+</>
+
+// ===== MAIN =====
+<>
+  <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
+    <div className="flex flex-col w-full">
+      <div className="max-w-[1440px] w-full mx-auto px-margin py-space-lg flex flex-col gap-space-xl">
+        {/* Breadcrumb & Step Progress Pill */}
+        <section className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+            <a className="hover:text-primary transition-colors flex items-center gap-1" href="#">
+              <span className="material-symbols-outlined text-base">
+                home
+              </span>
+              <span>
+                Ana Sayfa
+              </span>
+            </a>
+            <span className="text-outline-variant">
+              /
+            </span>
+            <a className="hover:text-primary transition-colors" href="#">
+              Pati Ailemize Katılın
+            </a>
+            <span className="text-outline-variant">
+              /
+            </span>
+            <span className="text-primary font-semibold">
+              Başvuru Durumu
+            </span>
+          </nav>
+          <div className="inline-flex items-center gap-space-sm bg-surface-container px-space-md py-1.5 rounded-full shadow-sm">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary" />
+            </span>
+            <span className="font-label-md text-label-md text-on-surface">
+              Adım 4/4 Tamamlandı
+            </span>
+            <span className="text-outline-variant">
+              •
+            </span>
+            <span className="font-label-md text-label-md text-secondary font-bold">
+              İnceleme Aşamasında
+            </span>
+          </div>
+        </section>
+        {/* Celebratory Hero Banner (Warm & Playful Cushion) */}
+        <section className="relative overflow-hidden rounded-3xl bg-surface-container-low shadow-[0_4px_24px_rgba(83,72,62,0.06)] p-space-xl lg:p-12">
+          {/* Decorative Organic Radial Glows */}
+          <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none" />
+          <div className="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-primary-fixed/30 blur-3xl pointer-events-none" />
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
+            {/* Left Text Content */}
+            <div className="lg:col-span-8 flex flex-col gap-space-md">
+              <div className="inline-flex items-center gap-space-xs px-space-md py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm w-fit shadow-xs">
+                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  celebration
+                </span>
+                <span>
+                  Başvurun Bize Ulaştı!
+                </span>
+              </div>
+              <h1 className="font-display-lg text-display-lg text-on-surface tracking-tight leading-tight">
+                Tebrikler! PatiDostu Ailesine
+                <span className="text-secondary">
+                  İlk Adımını
+                </span>
+                Attın 🐾🎉
+              </h1>
+              <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl leading-relaxed">
+                Başvuru formun ve belgelerin başarıyla sistemimize kaydedildi. Kadıköy ve çevresindeki minik dostlarımızla sevgi dolu anlar paylaşmana çok az kaldı!
+              </p>
+              {/* Badges cluster */}
+              <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
+                <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-2 rounded-xl shadow-xs">
+                  <span className="material-symbols-outlined text-primary text-lg">
+                    receipt_long
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      Takip Kodu
+                    </span>
+                    <span className="font-label-lg text-label-lg text-on-surface font-bold">
+                      #PD-84920
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-2 rounded-xl shadow-xs">
+                  <span className="material-symbols-outlined text-tertiary text-lg">
+                    schedule
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      Tahmini İnceleme
+                    </span>
+                    <span className="font-label-lg text-label-lg text-tertiary font-bold">
+                      12 - 24 Saat İçinde
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-space-xs bg-primary-fixed/50 px-space-md py-2 rounded-xl shadow-xs">
+                  <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    verified
+                  </span>
+                  <span className="font-label-md text-label-md text-on-primary-fixed-variant">
+                    Güvenlik Kontrolü Başladı
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* Right Visual Showcase / Photo Cushion */}
+            <div className="lg:col-span-4 flex justify-center lg:justify-end">
+              <div className="relative w-64 h-64 sm:w-72 sm:h-72">
+                {/* Backdrop circular accent */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-secondary-fixed to-primary-fixed-dim rotate-6 scale-105" />
+                {/* Pet Lover Hero Image */}
+                <img className="relative w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(83,72,62,0.12)]" data-alt="A warm, cheerful young woman smiling happily while hugging a fluffy golden retriever outdoors in a sunlit leafy Istanbul park, candid, warm gentle natural lighting, vibrant pastel tones" src="/images/img-21.jpg" />
+                {/* Floating Badge: Dog Paw */}
+                <div className="absolute -bottom-2 -left-2 bg-surface-container-lowest p- space-sm px-space-md py-2 rounded-2xl shadow-md flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    pets
+                  </span>
+                  <div className="flex flex-col text-left">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      Ön Onay Seviyesi
+                    </span>
+                    <span className="font-label-md text-label-md text-primary font-bold">
+                      %94 Uyum Skoru
+                    </span>
+                  </div>
+                </div>
+                {/* Floating Stamp */}
+                <div className="absolute -top-3 -right-3 w-12 h-12 bg-secondary text-on-secondary rounded-full flex items-center justify-center shadow-lg">
+                  <span className="material-symbols-outlined text-xl">
+                    favorite
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        {/* Main Asymmetric 2-Column Grid (Timeline + Summary) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+          {/* LEFT COLUMN: Onboarding Process Timeline (7 Cols) */}
+          <section className="lg:col-span-7 flex flex-col gap-space-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <h2 className="font-headline-md text-headline-md text-on-surface">
+                  Onay & Katılım Yolculuğun
+                </h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  4 adımda resmi PatiDostu Rozetli Bakıcısı ol
+                </p>
+              </div>
+              <span className="font-label-sm text-label-sm px-space-md py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-semibold">
+                Aktif Süreç
+              </span>
+            </div>
+            {/* Vertical Timeline Component */}
+            <div className="flex flex-col gap-space-md relative">
+              {/* STEP 1: In Progress */}
+              <div className="relative flex gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.05)] transition-all">
+                {/* Node Pin */}
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md">
+                    <span className="material-symbols-outlined text-xl animate-spin">
+                      sync
+                    </span>
+                  </div>
+                  <div className="w-0.5 h-full bg-primary-fixed-dim mt-2" />
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col gap-space-xs pb-space-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
+                      1. Belge & Güvenlik İncelemesi
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container-highest text-secondary font-bold flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                      Şu Anda İnceleniyor
+                    </span>
+                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Ekibimiz kimlik doğrulama, adli sicil kaydı ve adres teyit belgelerini KVKK kapsamında dikkatle inceliyor.
+                  </p>
+                  <div className="mt-space-xs flex items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm">
+                    <span className="flex items-center gap-1 text-primary font-medium">
+                      <span className="material-symbols-outlined text-base">
+                        timer
+                      </span>
+                      Tahmini Bitiş: Bugün 18:30
+                    </span>
+                    <span className="text-outline-variant">
+                      •
+                    </span>
+                    <span className="text-on-surface-variant">
+                      2/2 Belge Yüklendi
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* STEP 2: Actionable Next Step (Calendar / Meeting) */}
+              <div className="relative flex gap-space-md bg-surface-container-low p-space-lg rounded-2xl shadow-[0_8px_20px_rgba(83,72,62,0.06)] transition-all">
+                {/* Node Pin */}
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md">
+                    <span className="material-symbols-outlined text-xl">
+                      video_camera_front
+                    </span>
+                  </div>
+                  <div className="w-0.5 h-full bg-surface-container-highest mt-2" />
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col gap-space-sm pb-space-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="font-title-md text-title-md text-on-surface">
+                      2. 15 Dakikalık Online Tanışma Randevusu
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
+                      Sırada • Randevu Seçimi Açık
+                    </span>
+                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    PatiDostu topluluk koordinatörümüzle kısa ve samimi bir Google Meet görüşmesi yaparak merak ettiklerini sorabilirsin.
+                  </p>
+                  {/* Interactive Time Slot Quick Picker */}
+                  <div className="mt-space-xs p-space-md bg-surface-container-lowest rounded-xl flex flex-col gap-space-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base text-secondary">
+                          calendar_month
+                        </span>
+                        Yarın İçin Önerilen Saatler:
+                      </span>
+                      <span className="font-label-sm text-label-sm text-primary cursor-pointer hover:underline">
+                        Tüm Takvimi Gör
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2" id="slot-picker">
+                      <button className="time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-surface-container hover:bg-primary hover:text-on-primary transition-all text-on-surface" type="button">
+                        10:30
+                      </button>
+                      <button className="time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-surface-container hover:bg-primary hover:text-on-primary transition-all text-on-surface" type="button">
+                        14:00
+                      </button>
+                      <button className="time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-primary text-on-primary shadow-sm" type="button">
+                        16:15
+                      </button>
+                      <button className="time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-surface-container hover:bg-primary hover:text-on-primary transition-all text-on-surface" type="button">
+                        18:00
+                      </button>
+                    </div>
+                    <div className="pt-2 flex items-center justify-between">
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        Seçilen Saat:
+                        <strong className="text-on-surface">
+                          Yarın, 16:15
+                        </strong>
+                      </span>
+                      <button className="px-space-md py-2 rounded-full bg-secondary text-on-secondary font-label-md text-label-md hover:bg-secondary-container hover:text-on-secondary-container transition-all flex items-center gap-1 shadow-sm" type="button">
+                        <span>
+                          Randevuyu Onayla
+                        </span>
+                        <span className="material-symbols-outlined text-sm">
+                          arrow_forward
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* STEP 3: Pending Activation */}
+              <div className="relative flex gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.03)] opacity-85">
+                {/* Node Pin */}
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+                    <span className="material-symbols-outlined text-xl">
+                      verified_user
+                    </span>
+                  </div>
+                  <div className="w-0.5 h-full bg-surface-container-highest mt-2" />
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col gap-space-xs pb-space-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="font-title-md text-title-md text-on-surface">
+                      3. PatiDostu Rozeti & Profil Aktivasyonu
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant">
+                      Beklemede
+                    </span>
+                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Tanışma randevusundan sonra profilin anında Kadıköy ve çevresindeki hayvan sahiplerine görünür olacak ve rezervasyon almaya başlayacaksın.
+                  </p>
+                </div>
+              </div>
+              {/* STEP 4: Welcome Kit */}
+              <div className="relative flex gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.03)] opacity-75">
+                {/* Node Pin */}
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+                    <span className="material-symbols-outlined text-xl">
+                      redeem
+                    </span>
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 flex flex-col gap-space-xs">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="font-title-md text-title-md text-on-surface">
+                      4. Hoş Geldin Paketi & İlk Rezervasyon Desteği
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant">
+                      Son Aşama
+                    </span>
+                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Adresine özel PatiDostu reflektörlü gezdirme tasması, pet ilk yardım el kitabı, ödül maması çantası ve acil durum bilgi kartı kargolanacaktır.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+          {/* RIGHT COLUMN: Application Summary & Income Target (5 Cols) */}
+          <section className="lg:col-span-5 flex flex-col gap-space-lg">
+            {/* Summary Card */}
+            <div className="bg-surface-container-lowest p-space-lg rounded-3xl shadow-[0_4px_20px_rgba(83,72,62,0.06)] flex flex-col gap-space-md">
+              <div className="flex items-center justify-between pb-space-sm">
+                <div className="flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    badge
+                  </span>
+                  <h3 className="font-title-md text-title-md text-on-surface">
+                    Başvuru Özeti
+                  </h3>
+                </div>
+                <button className="font-label-sm text-label-sm text-secondary hover:underline flex items-center gap-1" type="button">
+                  <span className="material-symbols-outlined text-sm">
+                    edit
+                  </span>
+                  Düzenle
+                </button>
+              </div>
+              {/* User Quick Profile */}
+              <div className="flex items-center gap-space-md p-space-md rounded-2xl bg-surface-container-low">
+                <img alt="Ece Y." className="w-14 h-14 rounded-full object-cover shadow-sm" data-alt="Portrait of an energetic, friendly Turkish young woman smiling gently, wearing a warm cream sweater with a cozy natural backdrop" src="/images/img-22.jpg" />
+                <div className="flex flex-col">
+                  <span className="font-headline-sm text-headline-sm text-on-surface">
+                    Ece Y.
+                  </span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm text-secondary">
+                      location_on
+                    </span>
+                    Kadıköy / Caferağa Mahallesi
+                  </span>
+                </div>
+              </div>
+              {/* Detail List */}
+              <div className="flex flex-col gap-space-sm pt-space-xs">
+                <div className="flex justify-between items-center py-2 px-1">
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">
+                    Seçilen Hizmetler
+                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="font-label-md text-label-md text-on-surface">
+                      Köpek Gezdirme (220₺/saat)
+                    </span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      Kedi Ziyareti & Oyun (180₺)
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-px bg-surface-container" />
+                <div className="flex justify-between items-center py-2 px-1">
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">
+                    Kabul Edilen Boyutlar
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="px-2 py-0.5 bg-surface-container rounded-md font-label-sm text-label-sm text-on-surface">
+                      Küçük (0-7 kg)
+                    </span>
+                    <span className="px-2 py-0.5 bg-surface-container rounded-md font-label-sm text-label-sm text-on-surface">
+                      Orta (8-18 kg)
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-px bg-surface-container" />
+                <div className="flex justify-between items-center py-2 px-1">
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">
+                    Müsaitlik Durumu
+                  </span>
+                  <span className="font-label-md text-label-md text-on-surface">
+                    Hafta İçi & Hafta Sonu
+                  </span>
+                </div>
+                <div className="w-full h-px bg-surface-container" />
+                {/* Income Highlight Box */}
+                <div className="p-space-md rounded-2xl bg-primary-fixed/30 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-label-sm text-label-sm text-on-primary-fixed-variant">
+                      Hedeflenen Aylık Kazanç
+                    </span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      Haftada ~14 seans ile
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-headline-md text-headline-md text-primary font-extrabold">
+                      ₺28.400
+                    </span>
+                    <span className="block font-label-sm text-label-sm text-on-surface-variant">
+                      / ay net
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Assurance Micro-Banner */}
+              <div className="p-space-sm rounded-xl bg-surface-container flex items-center gap-space-xs text-on-surface-variant">
+                <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  shield
+                </span>
+                <span className="font-body-sm text-body-sm">
+                  Tüm hizmetler 50.000₺'ye kadar PatiDostu Veteriner Güvencesi altındadır.
+                </span>
+              </div>
+            </div>
+            {/* Community Stat Mini Tile */}
+            <div className="bg-surface-container-high p-space-md rounded-2xl flex items-center gap-space-md">
+              <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+                <span className="material-symbols-outlined text-2xl">
+                  groups
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-title-md text-title-md text-on-surface">
+                  1.200+ Aktif Bakıcı
+                </span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">
+                  İstanbul genelinde 28.000+ mutlu patiye hizmet verildi
+                </span>
+              </div>
+            </div>
+          </section>
+        </div>
+        {/* PREPARATION CARDS: "Onay Beklerken Neler Yapabilirsin?" */}
+        <section className="flex flex-col gap-space-lg pt-space-md">
+          <div className="flex flex-col">
+            <div className="inline-flex items-center gap-2 text-secondary font-label-lg text-label-lg mb-1">
+              <span className="material-symbols-outlined text-base">
+                rocket_launch
+              </span>
+              <span>
+                Hemen Hazırlan
+              </span>
+            </div>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">
+              Onay Beklerken Neler Yapabilirsin?
+            </h2>
+            <p className="font-body-lg text-body-lg text-on-surface-variant">
+              Görüşmen tamamlanana kadar bu mini görevlerle puanını artırabilirsin
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+            {/* Action Card 1: Pati Akademi */}
+            <div className="group bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.05)] hover:shadow-[0_10px_24px_-4px_rgba(83,72,62,0.08)] hover:-translate-y-1 transition-all flex flex-col justify-between gap-space-md">
+              <div className="flex flex-col gap-space-sm">
+                <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-2xl">
+                    school
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-label-sm text-label-sm text-primary bg-primary-fixed/40 px-2 py-0.5 rounded-full font-bold">
+                    15 Dakika
+                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">
+                    +100 Profil Puanı
+                  </span>
+                </div>
+                <h3 className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">
+                  Pati Akademi: Temel Davranış & İlk Yardım Rehberi
+                </h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                  Tasma gerginliği yönetimi, çekingen köpeklerle ilk temas ve acil durum önlemlerini içeren mini video serisi.
+                </p>
+              </div>
+              <button className="w-full py-2.5 px-space-md rounded-full bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-all flex items-center justify-center gap-1.5" type="button">
+                <span className="material-symbols-outlined text-base">
+                  play_circle
+                </span>
+                <span>
+                  Eğitimi İzle
+                </span>
+              </button>
+            </div>
+            {/* Action Card 2: Community Chat */}
+            <div className="group bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.05)] hover:shadow-[0_10px_24px_-4px_rgba(83,72,62,0.08)] hover:-translate-y-1 transition-all flex flex-col justify-between gap-space-md">
+              <div className="flex flex-col gap-space-sm">
+                <div className="w-12 h-12 rounded-xl bg-secondary-fixed flex items-center justify-center text-secondary">
+                  <span className="material-symbols-outlined text-2xl">
+                    forum
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-label-sm text-label-sm text-secondary bg-secondary-fixed/50 px-2 py-0.5 rounded-full font-bold">
+                    Topluluk
+                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">
+                    Kadıköy Grubu
+                  </span>
+                </div>
+                <h3 className="font-title-md text-title-md text-on-surface group-hover:text-secondary transition-colors">
+                  Bakıcı WhatsApp & Discord Topluluğuna Katıl
+                </h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                  Bölgendeki tecrübeli bakıcılarla tanış, en iyi park rotalarını öğren ve deneyim paylaşımlarına katıl.
+                </p>
+              </div>
+              <button className="w-full py-2.5 px-space-md rounded-full bg-surface-container hover:bg-secondary hover:text-on-secondary text-on-surface font-label-md text-label-md transition-all flex items-center justify-center gap-1.5" type="button">
+                <span className="material-symbols-outlined text-base">
+                  chat
+                </span>
+                <span>
+                  Gruba Katıl
+                </span>
+              </button>
+            </div>
+            {/* Action Card 3: Enhance Profile */}
+            <div className="group bg-surface-container-lowest p-space-lg rounded-2xl shadow-[0_4px_16px_-2px_rgba(83,72,62,0.05)] hover:shadow-[0_10px_24px_-4px_rgba(83,72,62,0.08)] hover:-translate-y-1 transition-all flex flex-col justify-between gap-space-md">
+              <div className="flex flex-col gap-space-sm">
+                <div className="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+                  <span className="material-symbols-outlined text-2xl">
+                    add_a_photo
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed/60 px-2 py-0.5 rounded-full font-bold">
+                    %35 Daha Fazla Talep
+                  </span>
+                </div>
+                <h3 className="font-title-md text-title-md text-on-surface group-hover:text-tertiary transition-colors">
+                  Fotoğraflarını ve Ev Ortamını Zenginleştir
+                </h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                  Hayvanlarla daha önce çekilmiş neşeli anılarını veya varsa evindeki güvenli dinlenme alanlarını ekle.
+                </p>
+              </div>
+              <button className="w-full py-2.5 px-space-md rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-all flex items-center justify-center gap-1.5" type="button">
+                <span className="material-symbols-outlined text-base">
+                  photo_library
+                </span>
+                <span>
+                  Fotoğraf Yükle
+                </span>
+              </button>
+            </div>
+          </div>
+        </section>
+        {/* SUPPORT & CONTACT BARREL */}
+        <section className="bg-surface-container-low p-space-lg md:p-space-xl rounded-3xl flex flex-col md:flex-row items-center justify-between gap-space-lg shadow-sm">
+          <div className="flex items-center gap-space-md">
+            <div className="w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary flex-shrink-0">
+              <span className="material-symbols-outlined text-3xl">
+                support_agent
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <h4 className="font-headline-sm text-headline-sm text-on-surface">
+                Aklına takılan bir konu mu var?
+              </h4>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Bakıcı Destek Ekibimiz haftanın 7 günü 09:00 - 21:00 arası sorularını yanıtlamaktan mutluluk duyar.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-space-sm flex-wrap w-full md:w-auto">
+            <a className="flex-1 md:flex-initial px-space-md py-3 rounded-full bg-surface-container-lowest text-on-surface hover:bg-surface-container-high font-label-lg text-label-lg transition-all flex items-center justify-center gap-2 shadow-xs" href="#">
+              <span className="material-symbols-outlined text-lg text-primary">
+                chat_bubble
+              </span>
+              <span>
+                WhatsApp Canlı Destek
+              </span>
+            </a>
+            <a className="flex-1 md:flex-initial px-space-md py-3 rounded-full bg-surface-container-lowest text-on-surface hover:bg-surface-container-high font-label-lg text-label-lg transition-all flex items-center justify-center gap-2 shadow-xs" href="#">
+              <span className="material-symbols-outlined text-lg text-on-surface-variant">
+                mail
+              </span>
+              <span>
+                E-posta Gönder
+              </span>
+            </a>
+          </div>
+        </section>
+        {/* STICKY / FLOATING BOTTOM ACTION DOCK */}
+        <div className="flex items-center justify-between flex-wrap gap-space-md pt-space-xs pb-space-sm">
+          <a className="px-space-lg py-3 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-lg text-label-lg transition-all flex items-center gap-2" href="#">
+            <span className="material-symbols-outlined text-base">
+              arrow_back
+            </span>
+            <span>
+              Ana Sayfaya Dön
+            </span>
+          </a>
+          <div className="flex items-center gap-space-md">
+            <span className="hidden sm:inline font-body-sm text-body-sm text-on-surface-variant">
+              Sıradaki: 15 Dk Görüşme Seçimi
+            </span>
+            <button className="px-space-xl py-3 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-[0_6px_16px_rgba(162,62,36,0.3)] flex items-center gap-2" type="button">
+              <span className="material-symbols-outlined text-lg">
+                calendar_month
+              </span>
+              <span>
+                Randevu Saatini Şimdi Seç
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</>
+
+// ===== FOOTER =====
+<>
+  <footer className="w-full bg-surface-container-low mt-space-xl pt-space-xl pb-space-lg">
+    <div className="max-w-[1440px] mx-auto px-margin">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl pb-space-xl">
+        <div className="flex flex-col gap-space-md">
+          <div className="flex items-center gap-space-sm">
+            <span className="material-symbols-outlined text-primary text-2xl">
+              pets
+            </span>
+            <span className="font-headline-sm text-headline-sm text-primary">
+              PatiDostu
+            </span>
+          </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Gözünüz arkada kalmasın. Güvenilir, sevgi dolu ve doğrulanmış bakıcılarla tüylü dostlarınız her an mutlu ellerde.
+          </p>
+          <div className="flex items-center gap-space-sm pt-space-xs">
+            <a aria-label="Sosyal Medya" className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-all" href="#">
+              <span className="material-symbols-outlined text-lg">
+                public
+              </span>
+            </a>
+            <a aria-label="Paylaşım" className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-all" href="#">
+              <span className="material-symbols-outlined text-lg">
+                share
+              </span>
+            </a>
+            <a aria-label="Fotoğraflar" className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-all" href="#">
+              <span className="material-symbols-outlined text-lg">
+                photo_camera
+              </span>
+            </a>
+          </div>
+        </div>
+        <div className="flex flex-col gap-space-sm">
+          <h3 className="font-title-md text-title-md text-on-surface">
+            Hizmetlerimiz
+          </h3>
+          <ul className="flex flex-col gap-space-xs">
+            <li className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+              Köpek Gezdirme
+            </li>
+            <li className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+              Kedi Ziyareti
+            </li>
+            <li className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+              Evde Bakım
+            </li>
+            <li className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+              Gündüz Kreşi
+            </li>
+            <li className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+              Pet Taksi
+            </li>
+          </ul>
+        </div>
+        <div className="flex flex-col gap-space-sm">
+          <h3 className="font-title-md text-title-md text-on-surface">
+            Güvenlik ve Standartlar
+          </h3>
+          <div className="flex flex-col gap-space-sm">
+            <div className="flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container">
+              <span className="material-symbols-outlined text-primary text-xl">
+                health_and_safety
+              </span>
+              <span className="font-label-md text-label-md text-on-surface">
+                %100 Veteriner Güvencesi
+              </span>
+            </div>
+            <div className="flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container">
+              <span className="material-symbols-outlined text-primary text-xl">
+                verified_user
+              </span>
+              <span className="font-label-md text-label-md text-on-surface">
+                Doğrulanmış Bakıcılar
+              </span>
+            </div>
+            <div className="flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container">
+              <span className="material-symbols-outlined text-primary text-xl">
+                support_agent
+              </span>
+              <span className="font-label-md text-label-md text-on-surface">
+                7/24 Canlı Destek
+              </span>
+            </div>
+            <div className="flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container">
+              <span className="material-symbols-outlined text-primary text-xl">
+                lock
+              </span>
+              <span className="font-label-md text-label-md text-on-surface">
+                Güvenli Ödeme Altyapısı
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-space-md">
+          <div className="p-space-md rounded-2xl bg-surface-container flex flex-col gap-space-sm">
+            <div className="flex items-center gap-space-xs">
+              <span className="material-symbols-outlined text-secondary text-xl">
+                mark_email_read
+              </span>
+              <span className="font-title-md text-title-md text-on-surface">
+                Aylık Pati Bülteni
+              </span>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              İpuçları, bakım rehberleri ve özel indirimleri kaçırmayın.
+            </p>
+            <div className="flex flex-col gap-space-xs">
+              <input className="w-full h-11 px-space-md rounded-full bg-surface-container-lowest font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none ring-1 ring-outline-variant focus:ring-2 focus:ring-primary" placeholder="E-posta adresiniz" type="email" />
+              <button className="w-full h-11 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all flex items-center justify-center gap-space-xs" type="button">
+                <span className="material-symbols-outlined text-sm">
+                  send
+                </span>
+                Abone Ol
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md">
+        <div className="flex items-center gap-space-md">
+          <div className="flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+            <span className="material-symbols-outlined text-sm">
+              language
+            </span>
+            <span>
+              TR / ₺ TRY
+            </span>
+          </div>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            © 2025 PatiDostu Teknolojileri A.Ş. Tüm hakları saklıdır.
+          </span>
+        </div>
+        <div className="flex items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant">
+          <span className="cursor-pointer hover:text-on-surface">
+            Kullanım Koşulları
+          </span>
+          <span className="cursor-pointer hover:text-on-surface">
+            Gizlilik Politikası
+          </span>
+          <span className="cursor-pointer hover:text-on-surface">
+            KVKK Aydınlatma Metni
+          </span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</>
+
+// ===== ORIGINAL SCRIPTS (reimplement with React state) =====
+/*
+
+  // Simple micro-interaction for the time slot selection
+  document.querySelectorAll('#slot-picker .time-slot-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#slot-picker .time-slot-btn').forEach(b => {
+        b.className = 'time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-surface-container hover:bg-primary hover:text-on-primary transition-all text-on-surface';
+      });
+      this.className = 'time-slot-btn py-2 px-3 rounded-lg text-center font-label-md text-label-md bg-primary text-on-primary shadow-sm';
+    });
+  });
+
+*/
