@@ -112,6 +112,8 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
   const [homeType, setHomeType] = useState("HOUSE_WITH_YARD");
   const [bio, setBio] = useState("");
   const [idDoc, setIdDoc] = useState("");
+  // Storage folder for this form session's uploads (applications/<draftId>/ in the private bucket)
+  const [draftId] = useState(() => crypto.randomUUID());
   const [vscDoc, setVscDoc] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeAccuracy, setAgreeAccuracy] = useState(false);
@@ -534,7 +536,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   ))}
                 </div>
               </div>
-              <HomePhotos />
+              <HomePhotos draftId={draftId} />
             </fieldset>
 
             {/* SECTION D: Biography */}
@@ -610,7 +612,10 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   buttonIcon="cloud_upload"
                   buttonLabel="Upload Document"
                   description="Encrypted with 256-bit SSL and handled under PIPEDA"
+                  draftId={draftId}
                   error={err("idDocumentName")}
+                  fileField="idDocumentFile"
+                  kind="ID_DOCUMENT"
                   icon="badge"
                   iconBox="bg-primary-fixed text-primary"
                   name="idDocumentName"
@@ -622,7 +627,10 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   buttonIcon="attach_file"
                   buttonLabel="Upload PDF"
                   description="Issued by your local police service within the last 6 months"
+                  draftId={draftId}
                   error={err("backgroundCheckName")}
+                  fileField="backgroundCheckFile"
+                  kind="BACKGROUND_CHECK"
                   icon="policy"
                   iconBox="bg-secondary-fixed text-secondary"
                   name="backgroundCheckName"

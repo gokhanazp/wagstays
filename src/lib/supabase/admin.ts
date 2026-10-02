@@ -8,12 +8,7 @@ export function createSupabaseAdminClient() {
   });
 }
 
-export const STORAGE_BUCKETS = {
-  /** pet, sitter and avatar photos — public read */
-  media: "media",
-  /** ID / police-check documents — private, served through signed URLs */
-  documents: "documents",
-} as const;
+export { STORAGE_BUCKETS } from "./buckets";
 
 /** Checks a password without touching the request's session (isolated, non-persisting client). */
 export async function verifyPassword(email: string, password: string) {

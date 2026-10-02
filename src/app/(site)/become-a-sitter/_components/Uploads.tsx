@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createApplicationUploadUrl } from "@/app/actions/application-uploads";
+import { APPLICATION_FILE_RULES, MAX_HOME_PHOTOS, type ApplicationFileKind, type UploadedFile } from "@/lib/application-files";
+import { STORAGE_BUCKETS } from "@/lib/supabase/buckets";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
+/** Uploads a file straight to the private documents bucket through a server-issued signed URL. */
+async function uploadApplicationFile(draftId: string, kind: ApplicationFileKind, file: File): Promise<UploadedFile> {
+  const signed = await createApplicationUploadUrl({ draftId, kind, contentType: file.type, sizeBytes: file.size });
+  if ("error" in signed) throw new Error(signed.error);
+  const { error } = await getSupabaseBrowserClient()
+    .storage.from(STORAGE_BUCKETS.documents)
+    .uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+  if (error) throw new Error("Upload failed — please try again.");
+  return { kind, path: signed.path, fileName: file.name, contentType: file.type, sizeBytes: file.size };
+}
+
 /**
- * Document picker. Only the selected file's NAME is submitted (hidden input) — the file itself is not uploaded
- * yet; it will go to Supabase Storage later. The <input type="file"> has no name so its bytes never hit the action.
+ * Document picker. The file is uploaded to Supabase Storage as soon as it's chosen; the form posts the file name
+ * (`name`, used for validation/display) and the stored object reference as JSON (`fileField`).
  */
 export function FileUploadRow({
   name,
@@ -19,7 +34,13 @@ export function FileUploadRow({
   value,
   onFile,
   error,
+  draftId,
+  kind,
+  fileField,
 }: {
+  draftId: string;
+  kind: ApplicationFileKind;
+  fileField: string;
   name: string;
   title: string;
   description: string;
@@ -33,6 +54,8 @@ export function FileUploadRow({
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
   const msg = localError || error;
 
   return (
@@ -48,7 +71,12 @@ export function FileUploadRow({
           </div>
           <div className="min-w-0">
             <h3 className="font-title-md text-title-md text-on-surface">{title}</h3>
-            {value ? (
+            {uploading ? (
+              <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                Uploading securely…
+              </p>
+            ) : value ? (
               <p className="font-body-sm text-body-sm text-primary font-semibold truncate flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">description</span>
                 <span className="truncate">{value}</span>
@@ -58,12 +86,13 @@ export function FileUploadRow({
             )}
           </div>
         </div>
-        <input name={name} type="hidden" value={value} />
+        <input name={name} type="hidden" value={uploaded ? value : ""} />
+        <input name={fileField} type="hidden" value={uploaded ? JSON.stringify(uploaded) : ""} />
         <input
-          accept="image/png,image/jpeg,application/pdf"
+          accept={APPLICATION_FILE_RULES[kind].types.join(",")}
           aria-label={title}
           className="sr-only"
-          onChange={(e) => {
+          onChange={async (e) => {
             const file = e.target.files?.[0];
             e.target.value = "";
             if (!file) return;
@@ -72,14 +101,24 @@ export function FileUploadRow({
               return;
             }
             setLocalError("");
-            onFile(file.name);
+            setUploading(true);
+            try {
+              const up = await uploadApplicationFile(draftId, kind, file);
+              setUploaded(up);
+              onFile(file.name);
+            } catch (err) {
+              setLocalError((err as Error).message);
+            } finally {
+              setUploading(false);
+            }
           }}
           ref={ref}
           tabIndex={-1}
           type="file"
         />
         <button
-          className="px-space-md py-2 rounded-full bg-surface-container-highest text-primary font-label-md text-label-md hover:bg-primary-fixed transition-colors flex items-center justify-center gap-1 self-start sm:self-auto shrink-0"
+          className="px-space-md py-2 rounded-full bg-surface-container-highest text-primary font-label-md text-label-md hover:bg-primary-fixed transition-colors flex items-center justify-center gap-1 self-start sm:self-auto shrink-0 disabled:opacity-60"
+          disabled={uploading}
           onClick={() => ref.current?.click()}
           type="button"
         >
@@ -99,12 +138,12 @@ export function FileUploadRow({
   );
 }
 
-type Photo = { id: string; url: string; name: string };
+type Photo = { id: string; url: string; name: string; uploaded?: UploadedFile; failed?: boolean };
 
 const SLOT_HINTS = ["Living room & bed", "Yard or outdoor space", "Where pets sleep"];
 
-/** Home photos — previewed client-side only (object URLs), not uploaded or stored yet. */
-export function HomePhotos() {
+/** Home photos — previewed instantly, uploaded to the private documents bucket, posted as JSON (`homePhotos`). */
+export function HomePhotos({ draftId }: { draftId: string }) {
   const ref = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState("");
@@ -121,7 +160,14 @@ export function HomePhotos() {
       urls.current.push(url);
       return { id: `${f.name}-${f.lastModified}-${Math.random().toString(36).slice(2)}`, url, name: f.name };
     });
-    setPhotos((p) => [...p, ...next].slice(0, 9));
+    const accepted = next.slice(0, Math.max(0, MAX_HOME_PHOTOS - photos.length));
+    setPhotos((p) => [...p, ...accepted]);
+    accepted.forEach((photo, i) => {
+      const file = ok[i];
+      uploadApplicationFile(draftId, "HOME_PHOTO", file)
+        .then((up) => setPhotos((p) => p.map((x) => (x.id === photo.id ? { ...x, uploaded: up } : x))))
+        .catch(() => setPhotos((p) => p.map((x) => (x.id === photo.id ? { ...x, failed: true } : x))));
+    });
   }
 
   function remove(id: string) {
@@ -132,7 +178,8 @@ export function HomePhotos() {
     });
   }
 
-  const emptySlots = Math.max(1, 3 - photos.length);
+  const emptySlots = photos.length >= MAX_HOME_PHOTOS ? 0 : Math.max(1, 3 - photos.length);
+  const uploadedPhotos = photos.flatMap((p) => (p.uploaded ? [p.uploaded] : []));
   const open = () => ref.current?.click();
 
   return (
@@ -148,6 +195,7 @@ export function HomePhotos() {
           {Math.min(photos.length, 3)}/3 Added
         </span>
       </div>
+      <input name="homePhotos" type="hidden" value={JSON.stringify(uploadedPhotos)} />
       <input
         accept="image/png,image/jpeg,image/webp"
         aria-label="Add home photos"
@@ -173,7 +221,9 @@ export function HomePhotos() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3">
               <div className="flex items-center justify-between gap-2 w-full min-w-0">
                 <span className="font-label-sm text-label-sm text-white flex items-center gap-1 min-w-0">
-                  <span className="material-symbols-outlined text-sm text-primary-fixed">check_circle</span>
+                  <span className={`material-symbols-outlined text-sm ${p.failed ? "text-error-container" : "text-primary-fixed"} ${!p.uploaded && !p.failed ? "animate-spin" : ""}`}>
+                    {p.failed ? "error" : p.uploaded ? "check_circle" : "progress_activity"}
+                  </span>
                   <span className="truncate">{p.name}</span>
                 </span>
                 <button

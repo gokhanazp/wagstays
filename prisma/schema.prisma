@@ -321,7 +321,23 @@ model SitterApplication {
   sitterProfileId String?              @unique
   sitterProfile   SitterProfile?       @relation(fields: [sitterProfileId], references: [id])
   services        ApplicationService[]
+  files           ApplicationFile[]
   createdAt       DateTime             @default(now())
+}
+
+// Uploaded verification documents and home photos, stored in the private "documents" bucket.
+model ApplicationFile {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   SitterApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  kind          String            // ID_DOCUMENT | BACKGROUND_CHECK | HOME_PHOTO
+  path          String            @unique // object path inside the bucket
+  fileName      String
+  contentType   String
+  sizeBytes     Int
+  createdAt     DateTime          @default(now())
+
+  @@index([applicationId])
 }
 
 model ApplicationService {

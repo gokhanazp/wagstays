@@ -1,5 +1,6 @@
 "use server";
 
+import { verifyApplicationFiles } from "@/lib/application-files-server";
 import { randomInt } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -88,6 +89,12 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
     : null;
   if (parsed.success && !hood) fieldErrors.neighbourhood = ["Please choose your neighbourhood."];
 
+  // Uploaded documents must really exist in the private bucket
+  const uploads = await verifyApplicationFiles(formData);
+  if (parsed.success && parsed.data.idDocumentName && !uploads.idOk) {
+    fieldErrors.idDocumentName = ["We couldn't find your ID upload — please upload it again."];
+  }
+
   if (!parsed.success || Object.keys(fieldErrors).length > 0) {
     return { error: "Please fix the highlighted fields below.", fieldErrors };
   }
@@ -109,6 +116,8 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
           trackingCode: code,
           userId: user?.id ?? null,
           services: { create: services },
+          backgroundCheckName: uploads.backgroundOk ? data.backgroundCheckName : null,
+          files: { create: uploads.files },
         },
       });
       trackingCode = code;

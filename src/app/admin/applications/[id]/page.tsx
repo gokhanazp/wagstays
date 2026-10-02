@@ -1,3 +1,4 @@
+import { signedApplicationFileUrl } from "@/lib/application-files-server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -16,7 +17,7 @@ import {
   type ServiceType,
 } from "@/lib/constants";
 import { EXPERIENCE_LABELS, HOME_TYPE_LABELS, SERVICE_UNIT_FOR, toZonedInput } from "@/lib/sitter-approval";
-import { Card, CardHeader, PageHeader, StatusChip, formatDate, formatDateTime } from "@/components/ui";
+import { BTN, Card, CardHeader, PageHeader, StatusChip, formatDate, formatDateTime } from "@/components/ui";
 import { DecisionPanel, MeetGreetForm, NotesForm, ViewProfileLinks } from "./_components/ApplicationActions";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -41,9 +42,16 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       services: true,
       user: { select: { id: true, email: true, role: true, createdAt: true } },
       sitterProfile: { select: { id: true, slug: true, displayName: true, status: true } },
+      files: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!app) notFound();
+
+  // Private files: short-lived signed links, generated on each page view (5 min).
+  const signed = await Promise.all(app.files.map(async (f) => ({ ...f, url: await signedApplicationFileUrl(f.path) })));
+  const idFile = signed.find((f) => f.kind === "ID_DOCUMENT");
+  const bgFile = signed.find((f) => f.kind === "BACKGROUND_CHECK");
+  const homePhotos = signed.filter((f) => f.kind === "HOME_PHOTO");
 
   const [city, logs, existingUser] = await Promise.all([
     getActiveCity(),
@@ -187,12 +195,27 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           <Card className="pb-space-lg">
             <CardHeader icon="folder_open" title="Documents" />
             <ul className="flex flex-col gap-space-sm px-space-lg pt-space-md">
-              <DocRow icon="badge" label="Government photo ID" name={app.idDocumentName} />
-              <DocRow icon="local_police" label="Police / vulnerable sector check" name={app.backgroundCheckName} />
+              <DocRow icon="badge" label="Government photo ID" name={idFile?.fileName ?? app.idDocumentName} url={idFile?.url} stored={!!idFile} />
+              <DocRow icon="local_police" label="Police / vulnerable sector check" name={bgFile?.fileName ?? app.backgroundCheckName} url={bgFile?.url} stored={!!bgFile} />
             </ul>
+            {homePhotos.length > 0 && (
+              <div className="px-space-lg pt-space-md flex flex-col gap-space-sm">
+                <span className="font-label-lg text-label-lg text-on-surface">Home photos ({homePhotos.length})</span>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-space-sm">
+                  {homePhotos.map((p) =>
+                    p.url ? (
+                      <a className="block aspect-square rounded-xl overflow-hidden bg-surface-container hover:opacity-90" href={p.url} key={p.id} rel="noreferrer" target="_blank">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL */}
+                        <img alt={p.fileName} className="w-full h-full object-cover" src={p.url} />
+                      </a>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            )}
             <p className="flex items-start gap-space-xs px-space-lg pt-space-md font-body-sm text-body-sm text-on-surface-variant">
-              <span className="material-symbols-outlined text-base">info</span>
-              Only file names are recorded for now — the files themselves aren&apos;t stored yet. Ask the applicant to bring originals to the Meet &amp; Greet.
+              <span className="material-symbols-outlined text-base">lock</span>
+              Files are kept in private storage. Links expire 5 minutes after this page loads — refresh to get new ones.
             </p>
           </Card>
         </div>
@@ -293,7 +316,7 @@ function CheckList({ items, columns }: { items: { on: boolean; label: string }[]
   );
 }
 
-function DocRow({ icon, label, name }: { icon: string; label: string; name: string | null }) {
+function DocRow({ icon, label, name, url, stored }: { icon: string; label: string; name: string | null; url?: string | null; stored?: boolean }) {
   return (
     <li className="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container-low">
       <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${name ? "bg-[#EBF3EF] text-primary" : "bg-surface-container text-outline"}`}>
@@ -303,7 +326,14 @@ function DocRow({ icon, label, name }: { icon: string; label: string; name: stri
         <span className="font-label-lg text-label-lg text-on-surface">{label}</span>
         <span className="font-body-sm text-body-sm text-on-surface-variant truncate">{name ?? "Not provided"}</span>
       </span>
-      <StatusChip tone={name ? "success" : "warning"}>{name ? "Provided" : "Missing"}</StatusChip>
+      {url ? (
+        <a className={`${BTN.small} bg-primary text-on-primary hover:bg-primary-container`} href={url} rel="noreferrer" target="_blank">
+          <span className="material-symbols-outlined text-base">visibility</span>
+          View
+        </a>
+      ) : (
+        <StatusChip tone={name ? (stored === false ? "neutral" : "success") : "warning"}>{name ? "Name only" : "Missing"}</StatusChip>
+      )}
     </li>
   );
 }
