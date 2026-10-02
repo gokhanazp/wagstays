@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { createBooking } from "@/app/actions/booking";
 import { Select } from "@/components/forms/Select";
+import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { formatMoney, formatRating } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { SERVICE_ICONS, plainTrait } from "../_lib";
@@ -175,7 +176,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
   const unitWord = service.type === "DOG_WALKING" ? "walks" : "bookings";
 
   return (
-    <form action={formAction} onSubmit={onSubmit} className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin py-space-xl">
+    <form action={formAction} onSubmit={onSubmit} className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin py-space-lg md:py-space-xl">
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="petId" value={petId} />
       <input type="hidden" name="date" value={schedule.date} />
@@ -185,8 +186,8 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
       {brand && <input type="hidden" name="cardBrand" value={brand} />}
       <input type="hidden" name="cardLast4" value={cardDigits.slice(-4)} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-        <div className="lg:col-span-8 flex flex-col gap-space-xl min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg md:gap-space-xl items-start">
+        <div className="lg:col-span-8 flex flex-col gap-space-lg md:gap-space-xl min-w-0">
           {/* 1. Selected pet */}
           <section className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-md">
             <div className="flex items-center justify-between gap-space-sm">
@@ -628,7 +629,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
         </div>
 
         {/* RIGHT COLUMN: summary */}
-        <div className="lg:col-span-4 lg:sticky top-24 flex flex-col gap-space-md min-w-0">
+        <div className="lg:col-span-4 lg:sticky top-24 flex flex-col gap-space-md min-w-0 scroll-mt-24" id="booking-summary">
           <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-md flex flex-col gap-space-md">
             <h2 className="font-headline-sm text-headline-sm text-on-surface pb-space-xs">Booking Summary</h2>
             <div className="bg-surface-container-low p-space-md rounded-xl flex items-center gap-space-md">
@@ -792,6 +793,22 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
           </div>
         </div>
       </div>
+
+      {/* Mobile: the summary and pay button sit below a long form — keep the total and a way there in reach. */}
+      <MobileStickyBar targetId="booking-summary">
+        <div className="flex flex-col min-w-0">
+          <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Total due</span>
+          <span className="font-headline-sm text-headline-sm text-primary leading-tight">{total}</span>
+        </div>
+        <button
+          className={STICKY_BAR_BTN}
+          onClick={() => document.getElementById("booking-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          type="button"
+        >
+          <span className="material-symbols-outlined text-lg">shield_lock</span>
+          Review &amp; Pay
+        </button>
+      </MobileStickyBar>
     </form>
   );
 }

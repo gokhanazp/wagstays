@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useState, type ReactNode } from "react";
 import { submitApplication } from "@/app/actions/application";
 import { Select } from "@/components/forms/Select";
+import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { PET_SIZE_LABELS, PET_SIZES, SERVICE_LABELS, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
 import { FileUploadRow, HomePhotos } from "./Uploads";
@@ -169,16 +170,17 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
   return (
     <>
-      <section aria-label="Application steps" className="mb-space-xl">
+      <section aria-label="Application steps" className="mb-space-lg md:mb-space-xl">
         <div className="bg-surface-container-lowest p-space-md md:p-space-lg rounded-2xl shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-space-md">
+          {/* Mobile: four compact icon + title tiles in one row; md+: the full cards with status line */}
+          <div className="grid grid-cols-4 gap-space-xs md:gap-space-md">
             {STEPS.map((step, i) => {
               const done = stepDone[i];
               const current = i === currentStep;
               const status = done ? "Done" : current ? "Current" : "Up Next";
               return (
                 <button
-                  className={`flex items-center gap-space-sm p-space-sm rounded-xl text-left transition-all ${
+                  className={`flex flex-col md:flex-row items-center gap-1 md:gap-space-sm p-space-xs md:p-space-sm rounded-xl text-center md:text-left transition-all ${
                     current
                       ? "bg-surface-container-highest/60 ring-2 ring-secondary shadow-xs"
                       : done
@@ -205,16 +207,16 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                       {done ? "check" : step.icon}
                     </span>
                   </div>
-                  <div className="flex flex-col min-w-0">
+                  <div className="flex flex-col min-w-0 max-w-full">
                     <span
-                      className={`font-label-sm text-label-sm uppercase ${
+                      className={`hidden md:inline font-label-sm text-label-sm uppercase ${
                         done ? "text-primary font-bold" : current ? "text-secondary font-bold" : "text-on-surface-variant"
                       }`}
                     >
                       Step {i + 1} • {status}
                     </span>
                     <span
-                      className={`font-label-lg text-label-lg truncate ${
+                      className={`font-label-sm text-label-sm md:font-label-lg md:text-label-lg leading-tight md:leading-[20px] md:truncate ${
                         done ? "text-on-surface" : current ? "text-on-surface font-extrabold" : "text-on-surface-variant"
                       }`}
                     >
@@ -695,7 +697,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
             )}
 
             {/* Bottom Action Navigation */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-sm pb-space-lg">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-sm pb-space-lg" id="application-actions">
               <button
                 className="w-full sm:w-auto px-space-xl py-3 rounded-full bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all flex items-center justify-center gap-2"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -705,7 +707,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 Previous Step
               </button>
               <button
-                className="w-full sm:w-auto px-space-xl py-3.5 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-md flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-wait"
+                className="w-full sm:w-auto px-space-md sm:px-space-xl py-3.5 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-md flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-wait"
                 disabled={pending}
                 type="submit"
               >
@@ -723,6 +725,27 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
         </div>
         {sidebar}
       </div>
+
+      {/* Mobile: the submit button is ~5 screens down — keep progress and the next step (or submit) in reach. */}
+      <MobileStickyBar targetId="application-actions">
+        <div className="flex flex-col min-w-0">
+          <span className="font-label-lg text-label-lg text-on-surface">{pct}% complete</span>
+          <span className="font-label-sm text-label-sm text-secondary font-bold truncate">
+            {stepsLeft === 0 ? "Ready to submit!" : `Next: ${STEPS[currentStep].title}`}
+          </span>
+        </div>
+        {stepsLeft === 0 ? (
+          <button className={`${STICKY_BAR_BTN} disabled:opacity-70`} disabled={pending} form="sitterApplicationForm" type="submit">
+            <span className={`material-symbols-outlined text-lg ${pending ? "animate-spin" : ""}`}>{pending ? "progress_activity" : "rocket_launch"}</span>
+            {pending ? "Submitting…" : "Submit"}
+          </button>
+        ) : (
+          <button className={STICKY_BAR_BTN} onClick={() => scrollTo(STEPS[currentStep].anchor)} type="button">
+            Continue
+            <span className="material-symbols-outlined text-lg">arrow_downward</span>
+          </button>
+        )}
+      </MobileStickyBar>
     </>
   );
 }

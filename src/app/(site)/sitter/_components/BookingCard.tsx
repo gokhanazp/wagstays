@@ -22,7 +22,7 @@ export function BookingCard({ booking: b, tz, withActions = false }: { booking: 
   const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
   const size = petSizeLabel(b.pet.size);
   return (
-    <article className="flex flex-col gap-space-md p-space-lg rounded-2xl border border-[#EFE7DE] bg-surface-container-lowest">
+    <article className="flex flex-col gap-space-md p-space-md sm:p-space-lg rounded-2xl border border-[#EFE7DE] bg-surface-container-lowest">
       <div className="flex items-start gap-space-md">
         <PetPhoto className="w-16 h-16 rounded-2xl" name={b.pet.name} url={b.pet.photoUrl} />
         <div className="flex flex-col gap-1 min-w-0 flex-1">

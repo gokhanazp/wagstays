@@ -36,7 +36,7 @@ function AddPhotoForm({ disabled }: { disabled: boolean }) {
       <span className="font-label-lg text-label-lg text-on-surface">Add a photo</span>
       <div className="flex flex-col sm:flex-row gap-space-sm">
         <input accept="image/jpeg,image/png,image/webp" aria-label="Photo file" className="font-body-sm text-body-sm text-on-surface-variant file:mr-space-sm file:h-9 file:px-space-md file:rounded-full file:border-0 file:bg-[#EBF3EF] file:text-primary-container file:font-semibold min-w-0" disabled={disabled} name="file" required type="file" />
-        <input aria-label="Caption" className={`${INPUT} h-10 flex-1`} disabled={disabled} maxLength={80} name="caption" placeholder="Caption (optional)" />
+        <input aria-label="Caption" className={`${INPUT} h-10 sm:flex-1`} disabled={disabled} maxLength={80} name="caption" placeholder="Caption (optional)" />
         <button className={`${BTN.small} bg-primary text-on-primary hover:bg-primary-container shrink-0`} disabled={pending || disabled} type="submit">
           <span className="material-symbols-outlined text-base">add_photo_alternate</span>
           {pending ? "Uploading…" : "Upload"}

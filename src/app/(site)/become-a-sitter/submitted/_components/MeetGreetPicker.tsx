@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { bookMeetGreet } from "@/app/actions/meet-greet";
 import type { MeetGreetSlot } from "@/lib/meet-greet";
 
-const SLOT_BASE = "py-2 px-3 rounded-lg text-center font-label-md text-label-md";
+const SLOT_BASE = "py-3 sm:py-2 px-3 rounded-lg text-center font-label-md text-label-md";
 const SLOT_IDLE = `${SLOT_BASE} bg-surface-container hover:bg-primary hover:text-on-primary transition-all text-on-surface`;
 const SLOT_ACTIVE = `${SLOT_BASE} bg-primary text-on-primary shadow-sm`;
 

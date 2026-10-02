@@ -41,7 +41,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
   const liveLabel = `Live area: ${city.name} / ${centreHood.name}`;
 
   const viewBtn = (active: boolean) =>
-    `px-space-sm sm:px-space-md py-1.5 rounded-full font-label-md text-label-md flex items-center gap-1.5 transition-all ${
+    `px-space-sm sm:px-space-md py-2 sm:py-1.5 rounded-full font-label-md text-label-md flex items-center gap-1.5 transition-all ${
       active ? "bg-surface-container-lowest text-primary shadow-xs" : "text-on-surface-variant hover:text-on-surface"
     }`;
 
@@ -79,8 +79,8 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
           key={`${filters.service}-${filters.hood}-${filters.sizes.join()}-${extras.from}-${extras.to}`}
         />
         {/* Main Workspace: Split Content Grid */}
-        <div className="w-full max-w-[1440px] mx-auto px-margin-mobile md:px-margin py-space-xl">
-          <div className="flex flex-col lg:flex-row gap-space-xl items-start">
+        <div className="w-full max-w-[1440px] mx-auto px-margin-mobile md:px-margin py-space-md md:py-space-xl">
+          <div className="flex flex-col lg:flex-row gap-space-md md:gap-space-xl items-start">
             <FilterSidebar
               extras={extras}
               filters={filters}
@@ -89,9 +89,9 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
               serviceCounts={result.serviceCounts}
             />
             {/* Main Results + Dynamic Map Split Area */}
-            <section className="flex-1 flex flex-col gap-space-lg min-w-0 w-full">
+            <section className="flex-1 flex flex-col gap-space-md md:gap-space-lg min-w-0 w-full">
               {/* Results Header Controls */}
-              <div className="bg-surface-container-lowest p-space-md rounded-3xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-md">
+              <div className="bg-surface-container-lowest p-space-md rounded-3xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-sm md:gap-space-md">
                 <div className="flex items-center gap-space-sm">
                   <div className="w-3 h-3 rounded-full bg-primary animate-pulse shrink-0" />
                   <h1 className="font-headline-sm text-headline-sm text-on-surface font-bold">

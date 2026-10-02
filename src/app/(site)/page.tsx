@@ -134,18 +134,20 @@ export default async function Home() {
         <section className="relative w-full -mt-20 pt-28 pb-16 bg-gradient-to-b from-surface-container via-surface to-background overflow-hidden">
           <div className="absolute -top-16 -left-16 w-96 h-96 rounded-full bg-primary-fixed/30 blur-3xl pointer-events-none" />
           <div className="absolute top-48 -right-20 w-[480px] h-[480px] rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none" />
-          <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center mb-space-xl">
+          {/* Mobile: copy → search → photo (the grid uses `contents` so the search can sit between them);
+              lg: the original copy/photo grid with the search underneath. */}
+          <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin relative z-10 flex flex-col gap-space-xl lg:block">
+            <div className="contents lg:grid lg:grid-cols-12 lg:gap-space-xl lg:items-center lg:mb-space-xl">
               {/* Left Hero Copy */}
               <div className="lg:col-span-7 flex flex-col gap-space-md">
                 <div className="inline-flex items-center gap-2 px-space-md py-1.5 rounded-full bg-surface-container-lowest text-primary shadow-sm w-fit">
                   <span className="material-symbols-outlined text-lg text-secondary" style={FILLED}>
                     pets
                   </span>
-                  <span className="font-label-lg text-label-lg tracking-wide uppercase">{city.name}&apos;s Most Loved Pet Care Platform</span>
+                  <span className="font-label-md text-label-md sm:font-label-lg sm:text-label-lg tracking-wide sm:tracking-wide uppercase">{city.name}&apos;s Most Loved Pet Care Platform</span>
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 </div>
-                <h1 className="font-display-lg text-display-lg text-on-surface leading-tight tracking-tight">
+                <h1 className="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface leading-tight md:leading-tight tracking-tight md:tracking-tight">
                   For Your Furry Best Friend
                   <br />
                   <span className="text-secondary relative inline-block">
@@ -181,7 +183,7 @@ export default async function Home() {
                 </div>
               </div>
               {/* Right Hero Visual Collage */}
-              <div className="lg:col-span-5 relative">
+              <div className="max-lg:order-3 lg:col-span-5 relative">
                 <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-xl bg-surface-container-high">
                   <img alt="A happy Golden Retriever playing catch with a dog walker in a sunny park" className="w-full h-full object-cover" src="/images/img-06.jpg" />
                   <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 via-transparent to-transparent" />
@@ -216,14 +218,16 @@ export default async function Home() {
               </div>
             </div>
             {/* SEARCH */}
-            <HomeSearch
-              defaultCity={city.slug}
-              defaultEnd={isoDay(addDays(now, 20))}
-              defaultHood={defaultHood}
-              defaultStart={isoDay(addDays(now, 16))}
-              hoods={cities.flatMap((c) => c.neighbourhoods.map((n) => ({ slug: n.slug, name: n.name, city: c.slug, cityLabel: `${c.name}, ${c.provinceCode}` })))}
-              today={isoDay(now)}
-            />
+            <div className="max-lg:order-2">
+              <HomeSearch
+                defaultCity={city.slug}
+                defaultEnd={isoDay(addDays(now, 20))}
+                defaultHood={defaultHood}
+                defaultStart={isoDay(addDays(now, 16))}
+                hoods={cities.flatMap((c) => c.neighbourhoods.map((n) => ({ slug: n.slug, name: n.name, city: c.slug, cityLabel: `${c.name}, ${c.provinceCode}` })))}
+                today={isoDay(now)}
+              />
+            </div>
           </div>
         </section>
 

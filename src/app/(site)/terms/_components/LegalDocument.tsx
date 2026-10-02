@@ -25,12 +25,13 @@ export function LegalDocument({
 }) {
   return (
     <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]" id="top">
-      <article className="max-w-3xl mx-auto px-margin-mobile md:px-margin pt-space-xl flex flex-col gap-space-lg">
-        <nav aria-label="Legal documents" className="flex flex-wrap gap-space-xs">
+      <article className="max-w-3xl mx-auto px-margin-mobile md:px-margin pt-space-lg md:pt-space-xl flex flex-col gap-space-lg">
+        {/* One swipeable row on mobile instead of wrapping onto two lines */}
+        <nav aria-label="Legal documents" className="flex gap-space-xs overflow-x-auto -mx-margin-mobile px-margin-mobile sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible [scrollbar-width:none]">
           {DOCS.map((d) => (
             <Link
               aria-current={d.href === current ? "page" : undefined}
-              className={`h-9 px-space-md rounded-full inline-flex items-center font-label-md text-label-md transition-colors ${
+              className={`h-10 sm:h-9 shrink-0 whitespace-nowrap px-space-md rounded-full inline-flex items-center font-label-md text-label-md transition-colors ${
                 d.href === current ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
               }`}
               href={d.href}

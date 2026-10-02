@@ -95,11 +95,11 @@ export function DecisionPanel({
     <div className="flex flex-col gap-space-md">
       {mode === "idle" && (
         <div className="flex flex-col sm:flex-row gap-space-sm">
-          <button className={`${BTN.sage} flex-1`} onClick={() => setMode("approve")} type="button">
+          <button className={`${BTN.sage} sm:flex-1`} onClick={() => setMode("approve")} type="button">
             <span className="material-symbols-outlined text-lg">verified</span>
             Approve
           </button>
-          <button className={`${BTN.danger} flex-1`} onClick={() => setMode("reject")} type="button">
+          <button className={`${BTN.danger} sm:flex-1`} onClick={() => setMode("reject")} type="button">
             <span className="material-symbols-outlined text-lg">block</span>
             Reject
           </button>
@@ -115,7 +115,7 @@ export function DecisionPanel({
           </p>
           <Feedback state={approveState} />
           <div className="flex flex-col sm:flex-row gap-space-sm">
-            <button className={`${BTN.sage} flex-1`} disabled={approving} type="submit">
+            <button className={`${BTN.sage} sm:flex-1`} disabled={approving} type="submit">
               {approving ? "Publishing…" : "Yes, approve & publish"}
             </button>
             <button className={BTN.ghost} disabled={approving} onClick={() => setMode("idle")} type="button">
@@ -133,7 +133,7 @@ export function DecisionPanel({
           </Field>
           {rejectState?.error && <Feedback state={rejectState} />}
           <div className="flex flex-col sm:flex-row gap-space-sm">
-            <button className={`${BTN.danger} flex-1`} disabled={rejecting} type="submit">
+            <button className={`${BTN.danger} sm:flex-1`} disabled={rejecting} type="submit">
               {rejecting ? "Rejecting…" : "Confirm rejection"}
             </button>
             <button className={BTN.ghost} disabled={rejecting} onClick={() => setMode("idle")} type="button">
@@ -149,11 +149,11 @@ export function DecisionPanel({
 export function ViewProfileLinks({ sitterId, slug }: { sitterId: string; slug: string }) {
   return (
     <div className="flex flex-col sm:flex-row gap-space-sm">
-      <Link className={`${BTN.sage} flex-1`} href={`/admin/sitters/${sitterId}`}>
+      <Link className={`${BTN.sage} sm:flex-1`} href={`/admin/sitters/${sitterId}`}>
         <span className="material-symbols-outlined text-lg">manage_accounts</span>
         Manage sitter
       </Link>
-      <Link className={`${BTN.secondary} flex-1`} href={`/sitters/${slug}`} target="_blank">
+      <Link className={`${BTN.secondary} sm:flex-1`} href={`/sitters/${slug}`} target="_blank">
         <span className="material-symbols-outlined text-lg">open_in_new</span>
         Public profile
       </Link>

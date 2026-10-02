@@ -58,7 +58,7 @@ async function loadApplication(rawCode?: string) {
 
 type StepState = "current" | "action" | "done" | "next" | "pending";
 
-const CARD = "relative flex gap-space-md p-space-lg rounded-2xl transition-all";
+const CARD = "relative flex gap-space-sm sm:gap-space-md p-space-md sm:p-space-lg rounded-2xl transition-all";
 const CARD_PLAIN = `${CARD} bg-surface-container-lowest shadow-[0_4px_16px_-2px_rgba(83,72,62,0.05)]`;
 const CARD_RAISED = `${CARD} bg-surface-container-low shadow-[0_8px_20px_rgba(83,72,62,0.06)]`;
 const CARD_MUTED = `${CARD} bg-surface-container-lowest shadow-[0_4px_16px_-2px_rgba(83,72,62,0.03)]`;
@@ -178,10 +178,10 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
           </section>
 
           {/* Celebratory Hero Banner */}
-          <section className="relative overflow-hidden rounded-3xl bg-surface-container-low shadow-[0_4px_24px_rgba(83,72,62,0.06)] p-space-lg sm:p-space-xl lg:p-12">
+          <section className="relative overflow-hidden rounded-3xl bg-surface-container-low shadow-[0_4px_24px_rgba(83,72,62,0.06)] p-space-md sm:p-space-xl lg:p-12">
             <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none" />
             <div className="absolute -left-20 -bottom-20 w-96 h-96 rounded-full bg-primary-fixed/30 blur-3xl pointer-events-none" />
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-lg sm:gap-space-xl items-center">
               <div className="lg:col-span-8 flex flex-col gap-space-md">
                 <div className="inline-flex items-center gap-space-xs px-space-md py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm w-fit shadow-xs">
                   <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -189,7 +189,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                   </span>
                   <span>{approved ? "You're approved!" : rejected ? "Application update" : "We've got your application!"}</span>
                 </div>
-                <h1 className="font-headline-lg text-headline-lg md:font-display-lg md:text-display-lg text-on-surface tracking-tight leading-tight">
+                <h1 className="font-headline-lg-mobile text-headline-lg-mobile sm:font-headline-lg sm:text-headline-lg md:font-display-lg md:text-display-lg text-on-surface tracking-tight leading-tight">
                   {approved ? (
                     <>
                       Welcome to the pack! You&apos;re now an <span className="text-secondary">official WagStays sitter</span> 🐾🎉
@@ -203,7 +203,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                     </>
                   )}
                 </h1>
-                <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl leading-relaxed">
+                <p className="font-body-md text-body-md sm:font-body-lg sm:text-body-lg text-on-surface-variant max-w-2xl leading-relaxed sm:leading-relaxed">
                   {approved
                     ? `Your profile is live for pet parents in ${hoodName}. Set up your services, photos and availability to start receiving requests.`
                     : rejected
@@ -222,7 +222,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                     </Link>
                   </div>
                 )}
-                <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-space-sm pt-space-xs">
                   <CopyCode code={app.trackingCode} />
                   {!approved && !rejected && (
                   <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-2 rounded-xl shadow-xs">
@@ -233,7 +233,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                     </div>
                   </div>
                   )}
-                  <div className="flex items-center gap-space-xs bg-primary-fixed/50 px-space-md py-2 rounded-xl shadow-xs">
+                  <div className="col-span-2 flex items-center gap-space-xs bg-primary-fixed/50 px-space-md py-2 rounded-xl shadow-xs">
                     <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
                       verified
                     </span>
@@ -244,7 +244,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                 </div>
               </div>
               <div className="lg:col-span-4 flex justify-center lg:justify-end">
-                <div className="relative w-64 h-64 sm:w-72 sm:h-72">
+                <div className="relative w-48 h-48 sm:w-72 sm:h-72">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-secondary-fixed to-primary-fixed-dim rotate-6 scale-105" />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -582,16 +582,16 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
           </section>
 
           {/* Bottom action dock */}
-          <div className="flex items-center justify-between flex-wrap gap-space-md pt-space-xs pb-space-sm">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between sm:flex-wrap gap-space-sm sm:gap-space-md pt-space-xs pb-space-sm">
             <Link
-              className="px-space-lg py-3 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-lg text-label-lg transition-all flex items-center gap-2"
+              className="px-space-lg py-3 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-lg text-label-lg transition-all flex items-center justify-center gap-2"
               href="/"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
               <span>Back to Home</span>
             </Link>
             {!approved && !rejected && (
-              <div className="flex items-center gap-space-md">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-space-md">
                 <span className="hidden sm:inline font-body-sm text-body-sm text-on-surface-variant">
                   {booked && bookedLabel ? `Meet & Greet: ${bookedLabel}` : "Next up: pick your 15-min Meet & Greet"}
                 </span>

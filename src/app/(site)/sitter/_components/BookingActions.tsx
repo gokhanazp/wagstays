@@ -38,12 +38,13 @@ export function BookingActions({
   const canCancel = allowed.includes("CANCELLED");
   if (!canAccept && !canDecline && !canComplete && !canCancel) return <Feedback state={state} />;
 
-  // Compact variant (overview list) uses the small pill size with the same colours.
+  // Compact variant (overview list) uses the small pill size with the same colours (a touch taller on phones).
+  const small = `${BTN.small} max-sm:h-10`;
   const SMALL: Record<string, string> = {
-    [BTN.sage]: `${BTN.small} bg-primary text-on-primary hover:bg-primary-container`,
-    [BTN.primary]: `${BTN.small} bg-secondary text-on-secondary hover:brightness-95`,
-    [BTN.danger]: `${BTN.small} bg-error-container text-on-error-container hover:brightness-95`,
-    [BTN.ghost]: `${BTN.small} text-on-surface hover:bg-surface-container-low`,
+    [BTN.sage]: `${small} bg-primary text-on-primary hover:bg-primary-container`,
+    [BTN.primary]: `${small} bg-secondary text-on-secondary hover:brightness-95`,
+    [BTN.danger]: `${small} bg-error-container text-on-error-container hover:brightness-95`,
+    [BTN.ghost]: `${small} text-on-surface hover:bg-surface-container-low`,
   };
   const btn = (base: string) => (compact ? SMALL[base] : base);
 

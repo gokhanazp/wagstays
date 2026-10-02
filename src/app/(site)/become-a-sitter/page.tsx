@@ -147,7 +147,7 @@ export default async function BecomeASitterPage() {
             {/* Breadcrumb */}
             <nav
               aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-space-xs text-on-surface-variant font-label-md text-label-md mb-space-md"
+              className="hidden md:flex flex-wrap items-center gap-space-xs text-on-surface-variant font-label-md text-label-md mb-space-md"
             >
               <Link className="hover:text-primary transition-colors flex items-center gap-1" href="/">
                 <span className="material-symbols-outlined text-sm">home</span>
@@ -163,7 +163,7 @@ export default async function BecomeASitterPage() {
               </span>
             </nav>
             {/* Page Header Hero Banner */}
-            <header className="bg-surface-container-low rounded-3xl p-space-lg md:p-space-xl shadow-sm relative overflow-hidden mb-space-xl">
+            <header className="bg-surface-container-low rounded-3xl p-space-md sm:p-space-lg md:p-space-xl shadow-sm relative overflow-hidden mb-space-lg md:mb-space-xl">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg relative z-10">
                 <div className="max-w-2xl flex flex-col gap-space-sm">
                   <div className="inline-flex items-center gap-2 px-space-md py-1 rounded-full bg-surface-container-highest text-secondary font-label-md text-label-md self-start shadow-xs">
@@ -172,23 +172,23 @@ export default async function BecomeASitterPage() {
                     </span>
                     <span>WagStays Verified Sitter Network</span>
                   </div>
-                  <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                  <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface tracking-tight md:tracking-tight">
                     Earn <span className="text-secondary">up to $3,500 a month</span> doing what you love 🐾
                   </h1>
-                  <p className="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                  <p className="font-body-md text-body-md sm:font-body-lg sm:text-body-lg text-on-surface-variant leading-relaxed sm:leading-relaxed">
                     Join {city.name}&apos;s most trusted pet care community. Choose your own hours, the pets you
                     welcome and your rates — all on your terms.
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-space-xs">
                     {trustChips.map((c) => (
                       <div
-                        className="flex items-center gap-2 bg-surface-container-lowest/80 px-3 py-2 rounded-2xl shadow-xs"
+                        className="flex items-center gap-1.5 sm:gap-2 bg-surface-container-lowest/80 px-2.5 sm:px-3 py-2 rounded-2xl shadow-xs"
                         key={c.label}
                       >
                         <span className={`material-symbols-outlined text-xl ${c.color}`} style={FILL}>
                           {c.icon}
                         </span>
-                        <span className="font-label-md text-label-md text-on-surface whitespace-nowrap">{c.label}</span>
+                        <span className="font-label-md text-label-md text-on-surface sm:whitespace-nowrap">{c.label}</span>
                       </div>
                     ))}
                   </div>

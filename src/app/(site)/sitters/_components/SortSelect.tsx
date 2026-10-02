@@ -17,8 +17,8 @@ export function SortSelect({ filters: urlFilters, extras }: { filters: SearchFil
   const { filters, update } = useSearchNav(urlFilters, extras);
   const current = SORTS.find((s) => s.value === filters.sort) ?? SORTS[0];
   return (
-    <div className="relative flex items-center gap-space-xs bg-surface-container px-space-sm sm:px-space-md py-2 rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">
-      <span className="font-label-sm text-label-sm text-outline">Sort:</span>
+    <div className="relative flex items-center gap-space-xs bg-surface-container px-space-sm sm:px-space-md py-2.5 sm:py-2 rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">
+      <span className="hidden sm:inline font-label-sm text-label-sm text-outline">Sort:</span>
       <span className="font-label-lg text-label-lg text-on-surface font-bold whitespace-nowrap">{current.label}</span>
       <span className="material-symbols-outlined text-base">expand_more</span>
       <Select

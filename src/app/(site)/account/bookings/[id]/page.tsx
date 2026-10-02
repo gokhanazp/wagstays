@@ -118,10 +118,12 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
         </p>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-space-lg items-start">
-        <div className="flex flex-col gap-space-lg min-w-0">
+      {/* Below xl both columns use `contents` so the actions card can sit right under the summary
+          (summary → actions → care/review → price/timeline); xl: the original two-column grid. */}
+      <div className="flex flex-col gap-space-lg xl:grid xl:grid-cols-[1fr_340px] items-start">
+        <div className="contents xl:flex xl:flex-col xl:gap-space-lg min-w-0 max-xl:[&>*]:order-3 max-xl:[&>*]:w-full">
           {/* Summary */}
-          <Card className="p-space-lg flex flex-col gap-space-md">
+          <Card className="max-xl:!order-1 p-space-lg flex flex-col gap-space-md">
             <div className="flex items-center gap-space-md bg-surface-container-low rounded-xl p-space-md">
               <Link className="shrink-0" href={`/sitters/${booking.sitter.slug}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -237,9 +239,9 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           )}
         </div>
 
-        <div className="flex flex-col gap-space-lg min-w-0">
+        <div className="contents xl:flex xl:flex-col xl:gap-space-lg min-w-0 max-xl:[&>*]:order-4 max-xl:[&>*]:w-full">
           {/* Actions */}
-          <Card className="p-space-lg flex flex-col gap-space-sm">
+          <Card className="max-xl:!order-2 p-space-lg flex flex-col gap-space-sm">
             {nextStep && (
               <p className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface mb-space-xs">
                 <span className="material-symbols-outlined text-primary text-xl">schedule</span>

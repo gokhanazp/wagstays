@@ -77,11 +77,11 @@ export function FilterSidebar({
   const maxLabel = max >= priceRange.max ? `$${priceRange.max}+` : `$${max}`;
 
   return (
-    <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-space-lg lg:sticky top-28 bg-surface-container-lowest p-space-lg rounded-3xl shadow-sm">
-      <div className="flex items-center justify-between pb-space-xs">
+    <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-space-lg lg:sticky top-28 bg-surface-container-lowest px-space-md py-space-sm lg:p-space-lg rounded-3xl shadow-sm">
+      <div className="flex items-center justify-between lg:pb-space-xs">
         <button
           aria-expanded={open}
-          className="flex items-center gap-space-xs lg:pointer-events-none"
+          className="flex-1 lg:flex-none min-h-11 lg:min-h-0 flex items-center gap-space-xs lg:pointer-events-none"
           onClick={() => setOpen((o) => !o)}
           type="button"
         >
@@ -93,7 +93,7 @@ export function FilterSidebar({
           <span className="lg:!hidden material-symbols-outlined text-base text-outline">{open ? "expand_less" : "expand_more"}</span>
         </button>
         <Link
-          className="font-label-sm text-label-sm text-secondary hover:underline cursor-pointer"
+          className="px-space-xs py-3 -my-3 lg:p-0 lg:my-0 font-label-sm text-label-sm text-secondary hover:underline cursor-pointer"
           href={buildSearchHref({ view: filters.view, hood: filters.hood }, extras)}
           replace
           scroll={false}
@@ -102,7 +102,7 @@ export function FilterSidebar({
         </Link>
       </div>
 
-      <div className={`${open ? "flex" : "hidden"} lg:flex flex-col gap-space-lg`}>
+      <div className={`${open ? "flex" : "hidden"} lg:flex flex-col gap-space-lg pb-space-sm lg:pb-0`}>
         {/* Price Range Slider */}
         <div className="flex flex-col gap-space-sm">
           <div className="flex items-center justify-between">

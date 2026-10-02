@@ -4,7 +4,7 @@ import Image from "next/image";
 export function AuthShell({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
-      <section className="relative w-full -mt-20 pt-28 pb-16 bg-gradient-to-b from-surface-container via-surface to-background overflow-hidden">
+      <section className="relative w-full -mt-20 pt-space-lg md:pt-28 pb-space-xl md:pb-16 bg-gradient-to-b from-surface-container via-surface to-background overflow-hidden">
         <div className="absolute -top-16 -left-16 w-96 h-96 rounded-full bg-primary-fixed/30 blur-3xl pointer-events-none" />
         <div className="absolute top-48 -right-20 w-[480px] h-[480px] rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none" />
         <div className="max-w-[1100px] mx-auto px-margin-mobile md:px-margin relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-space-xl items-center">

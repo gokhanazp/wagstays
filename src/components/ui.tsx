@@ -56,15 +56,15 @@ export function Card({ className = "", children }: { className?: string; childre
 export function CardHeader({ icon, title, action }: { icon?: string; title: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-space-md px-space-lg pt-space-lg">
-      <div className="flex items-center gap-space-sm">
+      <div className="flex items-center gap-space-sm min-w-0">
         {icon && (
-          <span className="w-9 h-9 rounded-xl bg-surface-container-low text-primary flex items-center justify-center">
+          <span className="w-9 h-9 rounded-xl bg-surface-container-low text-primary flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-xl">{icon}</span>
           </span>
         )}
         <h2 className="font-title-md text-title-md text-on-surface">{title}</h2>
       </div>
-      {action}
+      {action && <div className="flex shrink-0 whitespace-nowrap">{action}</div>}
     </div>
   );
 }
@@ -76,10 +76,10 @@ export function StatCard({ icon, label, value, hint, tone = "primary" }: { icon:
     tertiary: "bg-tertiary-fixed text-tertiary",
   }[tone];
   return (
-    <Card className="p-space-lg flex flex-col gap-space-sm">
-      <div className="flex items-center justify-between">
+    <Card className="p-space-md sm:p-space-lg flex flex-col gap-space-sm">
+      <div className="flex items-center justify-between max-sm:gap-space-xs">
         <span className="font-label-lg text-label-lg text-on-surface-variant">{label}</span>
-        <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconTone}`}>
+        <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconTone}`}>
           <span className="material-symbols-outlined text-xl">{icon}</span>
         </span>
       </div>

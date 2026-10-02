@@ -43,15 +43,18 @@ const SUGGESTIONS: Trait[] = [
   { label: "Needs Medication", tone: "warning" },
 ];
 
+// Mobile: an even grid (3 across, or 2×2 for four options) instead of a ragged wrap; sm+: the wrapping row.
+const CHOICE_GRID: Record<number, string> = { 2: "grid grid-cols-2", 3: "grid grid-cols-3", 4: "grid grid-cols-2" };
+
 function ChoiceGroup({ name, legend, options, defaultValue, error }: { name: string; legend: string; options: { value: string; label: string; hint?: string; icon?: string }[]; defaultValue?: string | null; error?: string[] }) {
   return (
     <fieldset className="flex flex-col gap-space-xs">
       <legend className={`${LABEL} mb-space-xs`}>{legend}</legend>
-      <div className="flex flex-wrap gap-space-xs">
+      <div className={`${CHOICE_GRID[options.length] ?? "flex flex-wrap"} sm:flex sm:flex-wrap gap-space-xs`}>
         {options.map((o) => (
           <label className="cursor-pointer" key={o.value}>
             <input className="peer sr-only" defaultChecked={defaultValue === o.value} name={name} type="radio" value={o.value} />
-            <span className="flex items-center gap-1.5 min-h-11 px-space-md py-space-xs rounded-xl border-[1.5px] border-[#EFE7DE] bg-surface-container-lowest font-label-lg text-label-lg text-on-surface-variant transition-all hover:bg-surface-container-low peer-checked:border-primary-container peer-checked:bg-[#EBF3EF] peer-checked:text-primary peer-focus-visible:ring-[3px] peer-focus-visible:ring-primary-container/25">
+            <span className="h-full flex items-center gap-1.5 min-h-11 px-space-md py-space-xs rounded-xl border-[1.5px] border-[#EFE7DE] bg-surface-container-lowest font-label-lg text-label-lg text-on-surface-variant transition-all hover:bg-surface-container-low peer-checked:border-primary-container peer-checked:bg-[#EBF3EF] peer-checked:text-primary peer-focus-visible:ring-[3px] peer-focus-visible:ring-primary-container/25">
               {o.icon && <span className="material-symbols-outlined text-lg">{o.icon}</span>}
               <span className="flex flex-col leading-tight">
                 {o.label}
@@ -208,7 +211,7 @@ export function PetForm({ pet, next, cancelHref }: { pet?: PetFormValues; next?:
             <span className="font-label-sm text-label-sm text-on-surface-variant">Suggestions:</span>
             {SUGGESTIONS.filter((s) => !traits.some((t) => t.label.toLowerCase() === s.label.toLowerCase())).map((s) => (
               <button
-                className={`inline-flex items-center gap-1 h-7 px-space-sm rounded-full border border-dashed font-label-sm text-label-sm transition-colors ${
+                className={`inline-flex items-center gap-1 h-9 sm:h-7 px-space-sm rounded-full border border-dashed font-label-sm text-label-sm transition-colors ${
                   s.tone === "warning" ? "border-error/40 text-error hover:bg-error-container/50" : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
                 }`}
                 key={s.label}

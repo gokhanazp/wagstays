@@ -11,7 +11,10 @@ import { useSearchNav } from "./useSearchNav";
 type Hood = { slug: string; name: string };
 type CityOption = { slug: string; name: string; hoods: Hood[] };
 
-const tile = "relative bg-surface-container-lowest p-space-sm px-space-md rounded-2xl flex items-center gap-space-sm shadow-sm cursor-pointer group";
+// Mobile: 2×2 compact tiles without the icon circles; sm+: the full tiles.
+const tile = "relative bg-surface-container-lowest p-space-sm px-space-sm sm:px-space-md rounded-2xl flex items-center gap-space-sm shadow-sm cursor-pointer group min-w-0";
+const iconCircle = "hidden sm:flex w-10 h-10 rounded-full bg-surface-container items-center justify-center shrink-0 transition-all";
+const value = "font-label-lg text-label-lg sm:font-title-md sm:text-title-md sm:tracking-normal text-on-surface truncate";
 
 export function SearchTopBar({
   filters,
@@ -66,17 +69,17 @@ export function SearchTopBar({
   };
 
   return (
-    <section className="w-full bg-surface-container-low px-margin-mobile md:px-margin py-space-md shadow-sm">
-      <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm flex-1">
+    <section className="w-full bg-surface-container-low px-margin-mobile md:px-margin py-space-sm sm:py-space-md shadow-sm">
+      <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-sm sm:gap-space-md">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-space-sm flex-1">
           {/* Service Selector */}
           <div className={tile}>
-            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all">
+            <div className={`${iconCircle} text-primary group-hover:bg-primary group-hover:text-on-primary`}>
               <span className="material-symbols-outlined text-xl">{service ? SERVICE_ICONS[service] : "pets"}</span>
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Service</span>
-              <span className="font-title-md text-title-md text-on-surface truncate">{service ? SERVICE_LABELS[service] : "Any Service"}</span>
+              <span className={value}>{service ? SERVICE_LABELS[service] : "Any Service"}</span>
             </div>
             <Select
               aria-label="Service"
@@ -91,13 +94,14 @@ export function SearchTopBar({
           </div>
           {/* Location Selector */}
           <div className={tile}>
-            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-all">
+            <div className={`${iconCircle} text-secondary group-hover:bg-secondary group-hover:text-on-secondary`}>
               <span className="material-symbols-outlined text-xl">location_on</span>
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Location</span>
-              <span className="font-title-md text-title-md text-on-surface truncate">
-                {cityName} / {hoodName}
+              <span className={value}>
+                <span className="hidden sm:inline">{cityName} / </span>
+                {hoodName}
               </span>
             </div>
             <Select
@@ -126,12 +130,12 @@ export function SearchTopBar({
               onClick={() => setDatesOpen((o) => !o)}
               type="button"
             >
-              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-tertiary group-hover:bg-tertiary-container group-hover:text-on-tertiary-container transition-all">
+              <div className={`${iconCircle} text-tertiary group-hover:bg-tertiary-container group-hover:text-on-tertiary-container`}>
                 <span className="material-symbols-outlined text-xl">calendar_month</span>
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Date Range</span>
-                <span className="font-title-md text-title-md text-on-surface truncate">{formatDateRange(from || undefined, to || undefined)}</span>
+                <span className={value}>{formatDateRange(from || undefined, to || undefined)}</span>
               </div>
             </button>
             <RangePanel
@@ -150,12 +154,12 @@ export function SearchTopBar({
           </div>
           {/* Pet Profile Spec */}
           <div className={tile}>
-            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all">
+            <div className={`${iconCircle} text-primary group-hover:bg-primary group-hover:text-on-primary`}>
               <span className="material-symbols-outlined text-xl">pets</span>
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pet</span>
-              <span className="font-title-md text-title-md text-on-surface truncate">{petLabel(sizes, PET_SIZE_LABELS)}</span>
+              <span className={value}>{petLabel(sizes, PET_SIZE_LABELS)}</span>
             </div>
             <Select
               aria-label="Dog size"
@@ -172,7 +176,7 @@ export function SearchTopBar({
         </div>
         <div className="flex items-center gap-space-sm">
           <button
-            className="w-full xl:w-auto h-14 px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
+            className="w-full xl:w-auto h-12 sm:h-14 px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
             disabled={pending}
             onClick={apply}
             type="button"
