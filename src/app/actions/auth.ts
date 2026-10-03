@@ -8,7 +8,7 @@ import { signOut } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthState =
-  | { error?: string; fieldErrors?: Record<string, string[] | undefined>; checkEmail?: string; ok?: boolean }
+  | { error?: string; fieldErrors?: Record<string, string[] | undefined>; checkEmail?: string; ok?: boolean; unconfirmedEmail?: string }
   | undefined;
 
 const safeNext = (v: FormDataEntryValue | null) => {
@@ -67,7 +67,9 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    if (error.code === "email_not_confirmed") return { error: "Please confirm your email first — check your inbox for the link." };
+    if (error.code === "email_not_confirmed") {
+      return { error: "Please confirm your email first — check your inbox for the link.", unconfirmedEmail: parsed.data.email };
+    }
     if (error.code === "user_banned") return { error: "This account is suspended. Please contact support@wagstays.ca." };
     return { error: "That email and password don't match our records." };
   }
@@ -89,5 +91,19 @@ export async function requestPasswordReset(_: AuthState, formData: FormData): Pr
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${await getOrigin()}/auth/callback?next=/set-password`,
   });
+  return { checkEmail: parsed.data.email };
+}
+
+/** Re-sends the sign-up confirmation email (e.g. when the first link expired or pointed at the wrong site). */
+export async function resendConfirmation(_: AuthState, formData: FormData): Promise<AuthState> {
+  const parsed = ForgotSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: parsed.data.email,
+    options: { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/` },
+  });
+  if (error?.code === "over_email_send_rate_limit") return { error: "Too many emails sent — please wait a few minutes and try again." };
   return { checkEmail: parsed.data.email };
 }
