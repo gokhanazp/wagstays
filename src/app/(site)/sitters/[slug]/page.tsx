@@ -1,3 +1,4 @@
+import { AvailabilityCalendar } from "./_components/AvailabilityCalendar";
 import { MobileBookBar } from "./_components/MobileBookBar";
 import type { Metadata } from "next";
 import { getFees } from "@/lib/settings";
@@ -492,6 +493,14 @@ export default async function SitterProfilePage({ params }: Props) {
                   )}
                 </div>
               )}
+
+              {/* Availability calendar */}
+              <AvailabilityCalendar
+                firstName={first}
+                nowMs={now.getTime()}
+                services={services.map((sv) => ({ type: sv.type, durationMins: sv.durationMins }))}
+                snapshot={publicSnapshot(availability ?? { timeZone: sitter.city.timeZone, noticeHours: 12, capacity: 1, hours: [], timeOff: [], bookings: [] })}
+              />
 
               {/* Home & environment */}
               <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-md">

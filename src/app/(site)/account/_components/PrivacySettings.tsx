@@ -94,6 +94,7 @@ export function CloseAccountCard({ blockers, hasSitterProfile }: { blockers: Blo
             ["rate_review", "Keep the star rating and text of reviews you wrote, shown as “Former member” — sitters rely on honest review history."],
             ...(hasSitterProfile ? [["badge", "Pause and anonymise your sitter profile and delete its photos and your application documents."]] : []),
             ["receipt_long", "Keep past bookings and payments, without your name, as a financial record. Unused WagPoints are forfeited."],
+            ["auto_delete", "Keep support tickets, chats and points history for 6 months in case of a safety or payment dispute, then delete them permanently."],
           ].map(([icon, text]) => (
             <li className="flex gap-space-sm" key={icon}>
               <span className="material-symbols-outlined text-lg text-on-surface-variant shrink-0">{icon}</span>

@@ -472,3 +472,45 @@ export async function anonymiseAccount(userId: string) {
   }
   return counts;
 }
+
+/** How long records of a closed account (support tickets, chats, ratings, points history) are kept before purge. */
+export const CLOSED_ACCOUNT_RETENTION_DAYS = 180;
+
+/**
+ * Permanently deletes the remaining records of accounts closed more than CLOSED_ACCOUNT_RETENTION_DAYS ago:
+ * support tickets they opened and their ticket messages, conversations and messages, private ratings about them,
+ * and their WagPoints history. Bookings/payments stay (anonymised) as financial records. Idempotent.
+ * Runs nightly from /api/cron/purge-closed-accounts.
+ */
+export async function purgeClosedAccounts(now = new Date()) {
+  const cutoff = new Date(now.getTime() - CLOSED_ACCOUNT_RETENTION_DAYS * 86_400_000);
+  const users = await db.user.findMany({
+    where: { deletedAt: { lt: cutoff } },
+    select: { id: true, sitter: { select: { id: true } } },
+  });
+  const totals = { accounts: 0, tickets: 0, ticketMessages: 0, conversations: 0, messages: 0, ownerReviews: 0, pointsEntries: 0 };
+  for (const u of users) {
+    const sitterId = u.sitter?.id;
+    const r = await db.$transaction([
+      db.supportTicketMessage.deleteMany({ where: { authorId: u.id } }),
+      db.supportTicket.deleteMany({ where: { openedById: u.id } }),
+      db.message.deleteMany({ where: { senderId: u.id } }),
+      db.conversation.deleteMany({ where: { OR: [{ ownerId: u.id }, ...(sitterId ? [{ sitterId }] : [])] } }),
+      db.ownerReview.deleteMany({ where: { ownerId: u.id } }),
+      db.wagPointsEntry.deleteMany({ where: { userId: u.id } }),
+    ]);
+    const [ticketMessages, tickets, messages, conversations, ownerReviews, pointsEntries] = r.map((x) => x.count);
+    if (ticketMessages + tickets + messages + conversations + ownerReviews + pointsEntries === 0) continue;
+    totals.accounts++;
+    totals.ticketMessages += ticketMessages;
+    totals.tickets += tickets;
+    totals.messages += messages;
+    totals.conversations += conversations;
+    totals.ownerReviews += ownerReviews;
+    totals.pointsEntries += pointsEntries;
+    await db.auditLog.create({
+      data: { actorId: u.id, action: "user.purge_closed", entityType: "User", entityId: u.id, details: JSON.stringify({ ticketMessages, tickets, messages, conversations, ownerReviews, pointsEntries }) },
+    });
+  }
+  return totals;
+}

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 export async function toggleFavorite(sitterId: string): Promise<{ isFavorite?: boolean; needsLogin?: boolean }> {
   const user = await getCurrentUser();
   if (!user) return { needsLogin: true };
+  if (user.suspended) return {};
   const key = { userId_sitterId: { userId: user.id, sitterId } };
   const existing = await db.favorite.findUnique({ where: key });
   if (existing) await db.favorite.delete({ where: key });

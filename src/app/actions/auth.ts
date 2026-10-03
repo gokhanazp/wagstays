@@ -82,7 +82,8 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
     if (error.code === "user_banned") return { error: "This account is suspended. Please contact support@wagstays.ca." };
     return { error: "That email and password don't match our records." };
   }
-  redirect(safeNext(formData.get("next")));
+  const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
+  redirect(account?.suspended ? "/suspended" : safeNext(formData.get("next")));
 }
 
 export async function logout() {

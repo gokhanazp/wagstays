@@ -298,11 +298,9 @@ export async function setUserSuspended(userId: string, suspended: boolean): Prom
   if (user.suspended === parsed.data.suspended) return { ok: true };
   if (user.id === admin.id) return { error: "You can't suspend your own account." };
   if (parsed.data.suspended && user.role === "ADMIN" && (await activeAdminCount()) <= 1) return { error: "This is the last active admin and can't be suspended." };
-  // Ban in Supabase Auth too, so existing sessions stop refreshing and the user can't sign in.
-  const { error: banError } = await createSupabaseAdminClient().auth.admin.updateUserById(user.id, {
-    ban_duration: parsed.data.suspended ? "876000h" : "none",
-  });
-  if (banError) return { error: `Couldn't update the login: ${banError.message}` };
+  // Suspension is enforced by the app (requireUser → /suspended), not by a Supabase ban, so a suspended person can
+  // still sign in to reach /suspended and close their account. Lift any ban left from earlier versions.
+  if (!parsed.data.suspended) await createSupabaseAdminClient().auth.admin.updateUserById(user.id, { ban_duration: "none" });
   await db.user.update({ where: { id: user.id }, data: { suspended: parsed.data.suspended } });
   await audit(admin.id, parsed.data.suspended ? "user.suspend" : "user.unsuspend", "User", user.id, {
     email: user.email,

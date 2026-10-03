@@ -114,6 +114,7 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
   void _t;
   void _a;
   const user = await getCurrentUser();
+  if (user?.suspended) return { error: "Your account is suspended, so you can't apply right now. Please contact support." };
 
   let trackingCode = "";
   for (let attempt = 0; attempt < 8; attempt++) {
