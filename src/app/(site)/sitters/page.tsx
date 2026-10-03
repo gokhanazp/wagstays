@@ -15,6 +15,7 @@ import { withExtras, type SearchExtras } from "./_components/search-url";
 export const metadata: Metadata = {
   title: "Find a Trusted Pet Sitter",
   description: "Search verified dog walkers, boarding hosts and drop-in sitters near you. Filter by price, dog size, home and qualifications.",
+  alternates: { canonical: "/sitters" },
 };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -124,7 +125,11 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                       <div className="bg-surface-container-lowest rounded-3xl p-space-xl shadow-sm flex flex-col items-center text-center gap-space-sm">
                         <span className="material-symbols-outlined text-4xl text-primary">search_off</span>
                         <h2 className="font-title-md text-title-md text-on-surface font-bold">No sitters match these filters</h2>
-                        <p className="font-body-md text-body-md text-on-surface-variant">Try widening your price range or removing a filter or two.</p>
+                        <p className="font-body-md text-body-md text-on-surface-variant">
+                          {extras.from
+                            ? "No sitters are free for those dates with these filters — try other dates or remove a filter or two."
+                            : "Try widening your price range or removing a filter or two."}
+                        </p>
                         <Link
                           className="mt-space-xs px-space-md py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md"
                           href={withExtras(toSearchQuery({ hood: filters.hood }), extras)}

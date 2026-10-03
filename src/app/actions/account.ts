@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { allowedTransitions, refreshSitterRating, transitionBooking } from "@/lib/booking-lifecycle";
 import { saveUpload } from "@/lib/uploads";
+import { emit } from "@/lib/events";
 import { PET_SIZES } from "@/lib/constants";
 import { CANCEL_REASONS } from "@/app/(site)/account/_lib";
 
@@ -109,8 +110,9 @@ export async function createReview(bookingId: string, _: FormState, formData: Fo
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const pet = booking.pet;
+  let reviewId: string;
   try {
-    await db.$transaction([
+    const [created] = await db.$transaction([
       db.review.create({
         data: {
           sitterId: booking.sitterId,
@@ -125,10 +127,12 @@ export async function createReview(bookingId: string, _: FormState, formData: Fo
         },
       }),
     ]);
+    reviewId = created.id;
   } catch {
     return { error: "You've already reviewed this booking." }; // unique bookingId race
   }
   await refreshSitterRating(booking.sitterId);
+  emit({ type: "review.created", reviewId, bookingId: booking.id });
 
   revalidateBookingPages(booking.id, booking.sitter.slug);
   revalidatePath("/sitters");

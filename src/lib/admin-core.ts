@@ -12,7 +12,7 @@ export const CANADIAN_TIME_ZONES = [
   { value: "America/Whitehorse", label: "Yukon (Whitehorse)" },
 ] as const;
 
-export const AUDIT_ENTITY_TYPES = ["City", "Neighbourhood", "SitterApplication", "SitterProfile", "Booking", "User", "Review", "PlatformSettings"] as const;
+export const AUDIT_ENTITY_TYPES = ["City", "Neighbourhood", "SitterApplication", "SitterProfile", "Booking", "User", "Review", "OwnerReview", "SupportTicket", "PlatformSettings"] as const;
 
 /** Admin URL for an audited entity, when one exists. */
 export function auditEntityHref(entityType: string, entityId: string, details?: unknown): string | null {
@@ -33,8 +33,12 @@ export function auditEntityHref(entityType: string, entityId: string, details?: 
       return `/admin/bookings/${entityId}`;
     case "Review":
       return `/admin/reviews`;
+    case "OwnerReview":
+      return `/admin/reviews?tab=owners`;
     case "PlatformSettings":
       return `/admin/settings`;
+    case "SupportTicket":
+      return `/admin/support/${entityId}`;
     default:
       return null;
   }

@@ -7,19 +7,34 @@ import { formatMoney } from "@/lib/format";
 import { allowedTransitions } from "@/lib/booking-lifecycle";
 import { bookingWhen, hasStarted, ownerShortName, petSizeLabel, SERVICE_ICONS, serviceLabel } from "../_lib";
 import { BookingActions } from "./BookingActions";
+import { OwnerReputation } from "./OwnerReputation";
 import { PetPhoto } from "./PetPhoto";
+import { isStayService, quantityLabel } from "@/lib/availability-core";
+import { RateOwnerForm } from "./RateOwnerForm";
 
 export const bookingCardInclude = {
   owner: { select: { id: true, firstName: true, lastName: true } },
   pet: { include: { traits: true } },
   service: { select: { type: true, durationMins: true } },
+  ownerReview: { select: { id: true } },
 } satisfies Prisma.BookingInclude;
 
 export type BookingCardData = Prisma.BookingGetPayload<{ include: typeof bookingCardInclude }>;
 
 const STATUS_LABEL_SITTER: Partial<Record<BookingStatus, string>> = { PENDING: "Needs your response" };
 
-export function BookingCard({ booking: b, tz, withActions = false }: { booking: BookingCardData; tz: string; withActions?: boolean }) {
+export function BookingCard({
+  booking: b,
+  tz,
+  withActions = false,
+  series,
+}: {
+  booking: BookingCardData;
+  tz: string;
+  withActions?: boolean;
+  /** position in a weekly series ("Week 2 of 6"), from seriesPositions() */
+  series?: { index: number; total: number };
+}) {
   const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
   const size = petSizeLabel(b.pet.size);
   return (
@@ -36,6 +51,7 @@ export function BookingCard({ booking: b, tz, withActions = false }: { booking: 
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Pet parent: <span className="text-on-surface font-semibold">{ownerShortName(b.owner)}</span>
           </p>
+          <OwnerReputation ownerId={b.owner.id} />
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className="font-title-md text-title-md text-primary">{formatMoney(b.subtotalCents)}</span>
@@ -54,7 +70,14 @@ export function BookingCard({ booking: b, tz, withActions = false }: { booking: 
             Meet &amp; Greet first
           </StatusChip>
         )}
-        {b.recurringWeekly && <StatusChip icon="repeat">Weekly</StatusChip>}
+        {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity)}</StatusChip>}
+        {series ? (
+          <StatusChip icon="repeat" tone="primary">
+            Week {series.index} of {series.total}
+          </StatusChip>
+        ) : (
+          b.recurringWeekly && <StatusChip icon="repeat">Weekly</StatusChip>
+        )}
       </div>
 
       <p className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
@@ -84,6 +107,8 @@ export function BookingCard({ booking: b, tz, withActions = false }: { booking: 
           {b.cancelReason}
         </p>
       )}
+
+      {b.status === "COMPLETED" && !b.ownerReview && <RateOwnerForm bookingId={b.id} ownerFirstName={b.owner.firstName} prompt />}
 
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-space-sm">
         {withActions ? (

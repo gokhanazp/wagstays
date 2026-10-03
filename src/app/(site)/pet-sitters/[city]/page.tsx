@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getFees } from "@/lib/settings";
+import { buildLanding, getLandingCity, landingMetadata } from "@/lib/seo/landing";
+import { LandingView } from "../_components/LandingView";
+import { cityParams } from "../_components/params";
+
+export const revalidate = 3600;
+export const generateStaticParams = cityParams;
+
+async function load(params: PageProps<"/pet-sitters/[city]">["params"]) {
+  const { city } = await params;
+  const data = await getLandingCity(city);
+  return data ? buildLanding(data, null) : null;
+}
+
+export async function generateMetadata({ params }: PageProps<"/pet-sitters/[city]">): Promise<Metadata> {
+  return landingMetadata(await load(params));
+}
+
+export default async function CityLandingPage({ params }: PageProps<"/pet-sitters/[city]">) {
+  const l = await load(params);
+  if (!l) notFound();
+  const { vetCoverageCents } = await getFees();
+  return <LandingView landing={l} vetCoverageCents={vetCoverageCents} />;
+}

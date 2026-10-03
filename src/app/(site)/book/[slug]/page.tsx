@@ -1,15 +1,40 @@
 import type { Metadata } from "next";
 import { petKindLabel } from "@/lib/pets";
-import { getFees } from "@/lib/settings";
+import { getFees, getPlatformSettings } from "@/lib/settings";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getOwnerPets, getSitterBySlug } from "@/lib/queries";
-import { TIME_SLOTS } from "@/lib/booking-slots";
-import { formatClock, formatLongDate, formatShortDate, isIsoDate, nextSaturdayIso, slotRange, todayIso } from "@/lib/booking-time";
+import { loadSnapshot } from "@/lib/availability";
+import {
+  DEFAULT_WEEKS,
+  MAX_WEEKS,
+  MIN_WEEKS,
+  WEEKDAY_LABELS,
+  addDays,
+  canRecur,
+  checkSeries,
+  daysBetween,
+  dropOffSlots,
+  formatDay,
+  formatDayLong,
+  formatMinute,
+  formatMinuteRange,
+  isIsoDay,
+  isStayService,
+  minuteToHHMM,
+  nextBookableDay,
+  parseSlot,
+  quantityLabel,
+  todayIn,
+  visitMinutes,
+  visitSlots,
+  weekdayOf,
+} from "@/lib/availability-core";
+import { formatLongDate } from "@/lib/booking-time";
 import { CheckoutForm } from "./_components/CheckoutForm";
 import { durationLabel, serviceLine } from "./_lib";
 
-export const metadata: Metadata = { title: "Booking & Care Instructions | WagStays" };
+export const metadata: Metadata = { title: "Booking & Care Instructions" };
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const flag = (v: string | string[] | undefined) => ["1", "true", "on", "yes"].includes(one(v) ?? "");
@@ -33,10 +58,37 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
 
   const service = sitter.services.find((s) => s.id === one(sp.service)) ?? sitter.services.find((s) => s.type === "DOG_WALKING") ?? sitter.services[0];
   const petId = pets.find((p) => p.id === one(sp.pet))?.id ?? pets[0]?.id ?? "";
+  // Schedule from the profile widget (?date, ?end, ?slot=HH:MM, ?recurring=1&weeks=N). Missing or stale
+  // values fall back to the sitter's next bookable day; the availability check below reports conflicts.
+  const tz = sitter.city.timeZone;
+  const nowMs = new Date().getTime();
+  const today = todayIn(tz, nowMs);
+  const stay = isStayService(service.type);
+  const horizon = await loadSnapshot(sitter.id, today, addDays(today, 180));
+  const snap = horizon!;
   const rawDate = one(sp.date);
-  const date = isIsoDate(rawDate) && rawDate >= todayIso() ? rawDate : nextSaturdayIso();
-  const slot = TIME_SLOTS.find((s) => s.key === one(sp.slot)) ?? TIME_SLOTS[0];
+  const date =
+    isIsoDay(rawDate) && rawDate >= today ? rawDate : (nextBookableDay(snap, addDays(today, 1), service.type, service.durationMins, nowMs, 120) ?? addDays(today, 1));
+  const rawEnd = one(sp.end);
+  const endDate = stay ? (isIsoDay(rawEnd) && rawEnd >= date ? rawEnd : service.type === "BOARDING" ? addDays(date, 1) : date) : null;
+  const slots = stay ? dropOffSlots(snap, date, nowMs) : visitSlots(snap, date, visitMinutes(service.type, service.durationMins), nowMs);
+  const minute = parseSlot(one(sp.slot)) ?? slots.find((s) => s.available)?.minute ?? 9 * 60;
+  const recurring = flag(sp.recurring) && canRecur(service.type);
+  const weeksRaw = Number(one(sp.weeks));
+  const weeks = recurring ? (Number.isInteger(weeksRaw) && weeksRaw >= MIN_WEEKS && weeksRaw <= MAX_WEEKS ? weeksRaw : DEFAULT_WEEKS) : 1;
+  const lastDate = addDays(endDate ?? date, 7 * (weeks - 1));
+  const planSnap = lastDate > addDays(today, 180) ? ((await loadSnapshot(sitter.id, today, lastDate)) ?? snap) : snap;
+  const rows = checkSeries(planSnap, { type: service.type, date, endDate, minute, durationMins: service.durationMins }, weeks, nowMs);
+  const first = rows[0].check;
+  const quantity = first.ok ? first.quantity : stay ? Math.max(1, daysBetween(date, endDate!) + (service.type === "DAY_CARE" ? 1 : 0)) : 1;
   const duration = durationLabel(service.durationMins);
+  const visitLen = visitMinutes(service.type, service.durationMins);
+  const timeLabel = stay
+    ? service.type === "BOARDING"
+      ? `Drop-off ${formatMinute(minute)} · Pick-up ${formatMinute(minute)}`
+      : `Drop-off ${formatMinute(minute)} · ${quantityLabel(service.type, quantity)}`
+    : `${formatMinuteRange(minute, minute + visitLen)}${duration ? ` (${duration})` : ""}`;
+  const dateLabel = stay ? `${formatDayLong(date)} → ${formatDayLong(endDate!)}` : formatLongDate(date);
 
   // "Add a new pet" returns here (the pet form appends pet=<newId>).
   const backQs = new URLSearchParams();
@@ -112,12 +164,20 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
           initialPetId={petId}
           schedule={{
             date,
-            slot: slot.key,
-            dateLabel: formatLongDate(date),
-            timeLabel: `${slotRange(slot)}${duration ? ` (${duration})` : ""}`,
-            cancelLabel: `${formatShortDate(date)}, ${formatClock(slot.start)}`,
-            recurring: flag(sp.recurring),
+            endDate,
+            slot: minuteToHHMM(minute),
+            dateLabel,
+            timeLabel,
+            cancelLabel: `${formatDay(date)}, ${formatMinute(minute)}`,
+            recurring,
+            weeks,
+            seriesLabel: recurring ? `Every ${WEEKDAY_LABELS[weekdayOf(date)]} · ${weeks} weeks (until ${formatDay(rows[rows.length - 1].req.date)})` : null,
+            quantity,
+            quantityLabel: quantityLabel(service.type, quantity),
             meet: flag(sp.meet),
+            changeHref: `/sitters/${sitter.slug}#book`,
+            conflicts: rows.filter((r) => !r.check.ok).map((r) => ({ date: formatDayLong(r.req.date), error: r.check.ok ? "" : r.check.error })),
+            occurrenceCount: rows.length,
           }}
           owner={{
             fullName: `${user.firstName} ${user.lastName}`.toUpperCase(),
@@ -125,6 +185,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
           }}
           taxRateBps={sitter.city.taxRateBps}
           fees={fees}
+          earnRateBps={(await getPlatformSettings()).pointsEarnRateBps}
           addPetHref={addPetHref}
         />
       </div>

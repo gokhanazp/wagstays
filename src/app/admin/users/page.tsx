@@ -43,6 +43,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
         email: true,
         role: true,
         suspended: true,
+        deletedAt: true,
         wagPointsCents: true,
         createdAt: true,
         avatarUrl: true,
@@ -153,7 +154,11 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
                     <StatusChip tone={ROLE_TONE[u.role as keyof typeof ROLE_TONE] ?? "neutral"}>{ROLE_LABEL[u.role] ?? u.role}</StatusChip>
                   </td>
                   <td className={TD}>
-                    {u.suspended ? (
+                    {u.deletedAt ? (
+                      <StatusChip icon="person_off" tone="neutral">
+                        Deleted
+                      </StatusChip>
+                    ) : u.suspended ? (
                       <StatusChip icon="block" tone="danger">
                         Suspended
                       </StatusChip>

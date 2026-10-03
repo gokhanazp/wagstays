@@ -51,3 +51,8 @@ prisma/*.db-journal
 
 # rotated demo passwords (scripts/rotate-demo-passwords.ts)
 .demo-credentials
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/

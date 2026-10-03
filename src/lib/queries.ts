@@ -4,6 +4,8 @@ import { db } from "./db";
 import { distanceKm } from "./format";
 import { PET_SIZES, SERVICE_SLUGS, serviceFromSlug, type PetSize, type ServiceType } from "./constants";
 import { getCurrentUser } from "./session";
+import { freeSittersForRange } from "./availability";
+import { formatDayRange, isIsoDay, todayIn } from "./availability-core";
 
 export const DEFAULT_CITY_SLUG = "toronto";
 
@@ -95,6 +97,9 @@ export type SearchFilters = {
   sort: "recommended" | "price-asc" | "price-desc" | "rating" | "distance";
   page: number;
   view: "list" | "map";
+  /** availability filter: only sitters free from → to (YYYY-MM-DD; `to` = check-out for boarding) */
+  from?: string;
+  to?: string;
 };
 
 export const SEARCH_PAGE_SIZE = 4;
@@ -132,6 +137,8 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
     sort: (["price-asc", "price-desc", "rating", "distance"].includes(sort ?? "") ? sort : "recommended") as SearchFilters["sort"],
     page: Math.max(1, Math.floor(num("page") ?? 1)),
     view: one("view") === "map" ? "map" : "list",
+    from: isIsoDay(one("from")) ? one("from") : undefined,
+    to: isIsoDay(one("to")) ? one("to") : undefined,
   };
 }
 
@@ -150,6 +157,8 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
   if (f.sort && f.sort !== "recommended") q.set("sort", f.sort);
   if (f.page && f.page > 1) q.set("page", String(f.page));
   if (f.view === "map") q.set("view", "map");
+  if (f.from) q.set("from", f.from);
+  if (f.to) q.set("to", f.to);
   const s = q.toString();
   return s ? `?${s}` : "";
 }
@@ -180,7 +189,8 @@ export async function searchSitters(f: SearchFilters) {
   const sizeOk = (s: (typeof withPrice)[number]) =>
     f.sizes.every((z) => ({ SMALL: s.acceptsSmall, MEDIUM: s.acceptsMedium, LARGE: s.acceptsLarge, GIANT: s.acceptsGiant })[z]);
 
-  let results = withPrice.filter(
+  // availableLabel: "Available Oct 18–22" when a date range is searched
+  let results: ((typeof withPrice)[number] & { availableLabel?: string })[] = withPrice.filter(
     (s) =>
       s.price &&
       (!f.service || s.services.some((x) => x.type === f.service)) &&
@@ -196,6 +206,21 @@ export async function searchSitters(f: SearchFilters) {
       (!f.trainer || s.professionalTrainer) &&
       (!f.idVerified || s.idVerified),
   );
+
+  // Dates: only sitters free for the whole range (for the chosen service, or any service they offer).
+  // Past or reversed ranges are ignored so old shared links still show results.
+  const from = f.from ?? (f.to ? f.to : undefined);
+  if (from && from >= todayIn(city.timeZone, Date.now())) {
+    const to = f.to && f.to >= from ? f.to : undefined;
+    const free = await freeSittersForRange(
+      results.map((s) => s.id),
+      from,
+      to,
+      f.service,
+    );
+    const label = `Available ${formatDayRange(from, to)}`;
+    results = results.filter((s) => free.has(s.id)).map((s) => ({ ...s, availableLabel: label }));
+  }
 
   const score = (s: (typeof results)[number]) =>
     s.rating * 20 + Math.log10(1 + s.reviewCount) * 8 + (s.isSuperSitter ? 6 : 0) - s.distanceKm * 2;

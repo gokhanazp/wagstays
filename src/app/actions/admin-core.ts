@@ -217,6 +217,13 @@ const SettingsSchema = z.object({
   serviceFee: dollars("the service fee", 100),
   wagPointsDiscount: dollars("the WagPoints discount", 100),
   vetCoverage: dollars("vet coverage", 100_000),
+  pointsEarnRate: z
+    .string()
+    .trim()
+    .regex(/^\d+(\.\d{1,2})?$/, "Enter the earn rate as a percentage (e.g. 5).")
+    .transform((v) => Math.round(Number(v) * 100))
+    .refine((bps) => bps <= 5000, "The earn rate can't exceed 50%."),
+  referralReward: dollars("the referral reward", 500),
   supportEmail: z.string().trim().toLowerCase().pipe(z.email("Enter a valid support email.")),
   supportPhone: z
     .string()
@@ -235,6 +242,8 @@ export async function saveSettings(_: FormState, formData: FormData): Promise<Fo
     serviceFeeCents: d.serviceFee,
     wagPointsDiscountCents: d.wagPointsDiscount,
     vetCoverageCents: d.vetCoverage,
+    pointsEarnRateBps: d.pointsEarnRate,
+    referralRewardCents: d.referralReward,
     supportEmail: d.supportEmail,
     supportPhone: d.supportPhone,
   };

@@ -1,0 +1,9 @@
+/** Renders schema.org structured data. `<` is escaped so user-written text can't close the script tag. */
+export function JsonLd({ data }: { data: Record<string, unknown> | Record<string, unknown>[] }) {
+  return (
+    <script
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+      type="application/ld+json"
+    />
+  );
+}

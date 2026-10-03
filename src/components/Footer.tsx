@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoMark, Wordmark } from "./Logo";
 import { NewsletterForm } from "./NewsletterForm";
+import { popularNeighbourhoods } from "@/lib/seo/landing";
 
 const SOCIAL = [
   { label: "Website", icon: "public" },
@@ -16,14 +17,15 @@ const SERVICES = [
   { label: "Pet Taxi", href: "/sitters" },
 ];
 
-const TRUST = [
+const TRUST: { icon: string; label: string; href?: string }[] = [
   { icon: "health_and_safety", label: "$5,000 Vet Care Coverage" },
   { icon: "verified_user", label: "Verified Sitters" },
-  { icon: "support_agent", label: "24/7 Live Support" },
+  { icon: "support_agent", label: "24/7 Live Support", href: "/account/support/new" },
   { icon: "lock", label: "Secure Payments" },
 ];
 
-export function Footer() {
+export async function Footer() {
+  const hoods = await popularNeighbourhoods();
   return (
     <footer className="w-full bg-surface-container-low mt-space-xl pt-space-xl pb-space-lg">
       <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin">
@@ -62,12 +64,24 @@ export function Footer() {
           <div className="flex flex-col gap-space-sm">
             <h3 className="font-title-md text-title-md text-on-surface">Safety &amp; Standards</h3>
             <div className="flex flex-col gap-space-sm">
-              {TRUST.map((t) => (
-                <div key={t.icon} className="flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container">
-                  <span className="material-symbols-outlined text-primary text-xl">{t.icon}</span>
-                  <span className="font-label-md text-label-md text-on-surface">{t.label}</span>
-                </div>
-              ))}
+              {TRUST.map((t) => {
+                const inner = (
+                  <>
+                    <span className="material-symbols-outlined text-primary text-xl">{t.icon}</span>
+                    <span className="font-label-md text-label-md text-on-surface">{t.label}</span>
+                  </>
+                );
+                const cls = "flex items-center gap-space-sm p-space-sm rounded-xl bg-surface-container";
+                return t.href ? (
+                  <Link key={t.icon} className={`${cls} hover:bg-surface-container-high transition-colors`} href={t.href}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={t.icon} className={cls}>
+                    {inner}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="flex flex-col gap-space-md">
@@ -83,6 +97,25 @@ export function Footer() {
             </div>
           </div>
         </div>
+        {hoods.length > 0 && (
+          <nav aria-label="Popular neighbourhoods" className="pb-space-lg flex flex-col gap-space-sm">
+            <h3 className="font-title-md text-title-md text-on-surface">Popular neighbourhoods</h3>
+            <ul className="flex flex-wrap gap-x-space-md gap-y-space-xs font-body-sm text-body-sm text-on-surface-variant">
+              <li>
+                <Link className="hover:text-primary transition-colors" href={hoods[0].cityHref}>
+                  Pet sitters in {hoods[0].cityName}
+                </Link>
+              </li>
+              {hoods.map((h) => (
+                <li key={h.href}>
+                  <Link className="hover:text-primary transition-colors" href={h.href}>
+                    {h.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
         <div className="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md">
           <div className="flex flex-col sm:flex-row items-center gap-space-md">
             <div className="flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">

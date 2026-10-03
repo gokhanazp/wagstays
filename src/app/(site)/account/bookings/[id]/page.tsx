@@ -10,6 +10,9 @@ import { BTN, Card, CardHeader, StatusChip, formatDateTime } from "@/components/
 import { FREE_CANCEL_HOURS, SERVICE_ICONS, bookingRef, bookingWhen, hoursUntil, serviceLabel } from "../../_lib";
 import { CancelBookingForm } from "../../_components/CancelBookingForm";
 import { ReviewForm } from "../../_components/ReviewForm";
+import { SeriesCancelForm } from "../_components/SeriesCancelForm";
+import { seriesMembers } from "@/lib/booking-series";
+import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/availability-core";
 
 export const metadata: Metadata = { title: "Booking Details | WagStays" };
 
@@ -41,6 +44,12 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   const hoursToStart = hoursUntil(booking.startAt);
   const firstName = booking.sitter.displayName.split(" ")[0];
   const serviceActive = booking.service.active && booking.sitter.status === "ACTIVE";
+  const members = booking.seriesId ? await seriesMembers(booking.seriesId) : [];
+  const position = members.findIndex((m) => m.id === booking.id) + 1;
+  const laterCancellable = members.filter(
+    (m) => m.startAt >= booking.startAt && allowedTransitions(m.status, "OWNER").includes("CANCELLED"),
+  ).length;
+  const showQuantity = isStayService(booking.service.type) || booking.quantity > 1;
 
   const timeline: { icon: string; label: string; at: Date | null; tone: "done" | "bad" }[] = [
     { icon: "send", label: "Booking requested", at: booking.createdAt, tone: "done" },
@@ -84,7 +93,12 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   ].filter((r) => r.value);
 
   const price = [
-    { label: `${serviceLabel(booking.service.type)} subtotal`, cents: booking.subtotalCents },
+    {
+      label: showQuantity
+        ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(Math.round(booking.subtotalCents / Math.max(booking.quantity, 1)), { exact: true })}`
+        : `${serviceLabel(booking.service.type)} subtotal`,
+      cents: booking.subtotalCents,
+    },
     { label: "WagShield Vet Protection", cents: booking.protectionFeeCents },
     { label: "Platform Service Fee", cents: booking.serviceFeeCents },
     ...(booking.discountCents > 0 ? [{ label: "WagPoints Discount", cents: -booking.discountCents }] : []),
@@ -153,7 +167,13 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                   icon: "calendar_month",
                   label: "Date & time",
                   value: bookingWhen(booking.startAt, booking.endAt, tz),
-                  extra: [booking.recurringWeekly && "Repeats weekly", booking.meetAndGreet && "Meet & Greet requested"].filter(Boolean).join(" · "),
+                  extra: [
+                    showQuantity && quantityLabel(booking.service.type, booking.quantity),
+                    members.length > 1 ? `Week ${position} of ${members.length}` : booking.recurringWeekly && "Repeats weekly",
+                    booking.meetAndGreet && "Meet & Greet requested",
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
                 },
                 {
                   icon: "credit_card",
@@ -261,7 +281,53 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             {canCancel && (
               <CancelBookingForm bookingId={booking.id} freeHours={FREE_CANCEL_HOURS} withinFreeWindow={hoursToStart >= FREE_CANCEL_HOURS} />
             )}
+            {canCancel && laterCancellable > 1 && <SeriesCancelForm bookingId={booking.id} count={laterCancellable} />}
+            <Link className={`${BTN.ghost} w-full text-on-surface-variant`} href={`/account/support/new?booking=${booking.id}`}>
+              <span className="material-symbols-outlined text-xl">flag</span>
+              Report a problem
+            </Link>
           </Card>
+
+          {/* Weekly series */}
+          {members.length > 1 && (
+            <Card className="p-space-lg flex flex-col gap-space-sm">
+              <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-space-xs">
+                <span className="material-symbols-outlined text-xl text-primary">event_repeat</span>
+                Weekly series · {members.length} weeks
+              </h2>
+              <ul className="flex flex-col gap-space-xs">
+                {members.map((m, i) => {
+                  const st = BOOKING_STATUS_LABELS[m.status as BookingStatus] ?? { label: m.status, tone: "neutral" as const };
+                  const current = m.id === booking.id;
+                  return (
+                    <li key={m.id}>
+                      <Link
+                        aria-current={current ? "page" : undefined}
+                        className={`flex items-center justify-between gap-space-sm rounded-xl px-space-md py-space-xs font-body-sm text-body-sm ${
+                          current ? "bg-[#EBF3EF] text-primary" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
+                        }`}
+                        href={`/account/bookings/${m.id}`}
+                      >
+                        <span>
+                          <span className="font-semibold">Week {i + 1}</span> · {formatDayLong(zonedParts(m.startAt.getTime(), tz).iso)}
+                        </span>
+                        <span className="font-label-sm text-label-sm">{st.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="flex justify-between font-body-sm text-body-sm text-on-surface-variant pt-space-xs">
+                <span>Series total (active weeks)</span>
+                <span className="font-semibold text-on-surface">
+                  {formatMoney(
+                    members.filter((m) => m.status !== "CANCELLED" && m.status !== "DECLINED").reduce((n, m) => n + m.totalCents, 0),
+                    { exact: true },
+                  )}
+                </span>
+              </div>
+            </Card>
+          )}
 
           {/* Price */}
           <Card className="p-space-lg flex flex-col gap-space-sm">

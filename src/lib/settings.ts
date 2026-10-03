@@ -14,7 +14,9 @@ const DEFAULTS = {
 
 /** Platform settings row (created on first read). Edited from /admin/settings. */
 export const getPlatformSettings = cache(async () => {
-  return db.platformSettings.upsert({ where: { id: "default" }, create: DEFAULTS, update: {} });
+  // read first: this runs on many requests, so avoid a write unless the row is missing
+  const existing = await db.platformSettings.findUnique({ where: { id: "default" } });
+  return existing ?? db.platformSettings.upsert({ where: { id: "default" }, create: DEFAULTS, update: {} });
 });
 
 /** Fee subset passed to priceBooking() — safe to send to client components. */

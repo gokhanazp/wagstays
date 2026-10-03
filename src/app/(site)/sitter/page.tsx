@@ -7,6 +7,8 @@ import { formatMoney, formatRating, timeAgo } from "@/lib/format";
 import { AvailabilityToggle } from "./_components/AvailabilityToggle";
 import { BookingCard, bookingCardInclude } from "./_components/BookingCard";
 import { PetPhoto } from "./_components/PetPhoto";
+import { ReviewReply } from "./_components/ReviewReply";
+import { canEditReply } from "@/lib/review-rules";
 import { bookingWhen, ownerShortName, SERVICE_ICONS, serviceLabel, startOfMonthInZone } from "./_lib";
 
 export const metadata: Metadata = { title: "Sitter Dashboard | WagStays" };
@@ -187,7 +189,15 @@ export default async function SitterOverviewPage() {
           </Card>
 
           <Card className="pb-space-lg">
-            <CardHeader icon="reviews" title="Latest reviews" />
+            <CardHeader
+              action={
+                <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/sitter/reviews">
+                  All reviews
+                </Link>
+              }
+              icon="reviews"
+              title="Latest reviews"
+            />
             <div className="px-space-lg pt-space-md flex flex-col gap-space-md">
               {reviews.length ? (
                 reviews.map((r) => (
@@ -205,6 +215,16 @@ export default async function SitterOverviewPage() {
                     <span className="font-label-sm text-label-sm text-outline" title={formatDate(r.createdAt, tz)}>
                       {timeAgo(r.createdAt)}
                     </span>
+                    <div className="pt-space-xs">
+                      <ReviewReply
+                        canEdit={canEditReply(r.sitterRepliedAt)}
+                        compact
+                        hidden={r.hidden}
+                        repliedAgo={r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt) : null}
+                        reply={r.sitterReply}
+                        reviewId={r.id}
+                      />
+                    </div>
                   </div>
                 ))
               ) : (

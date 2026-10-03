@@ -29,7 +29,8 @@ export const getAuthUserId = cache(async () => {
 export const getCurrentUser = cache(async () => {
   const auth = await getAuthUserId();
   if (!auth) return null;
-  const user = await db.user.findUnique({ where: { id: auth.id }, select: userSelect });
+  // Closed accounts (deletedAt set) are treated as signed out.
+  const user = await db.user.findUnique({ where: { id: auth.id, deletedAt: null }, select: userSelect });
   // Keep the profile email in sync after a confirmed email change in Supabase Auth.
   if (user && auth.email && auth.email !== user.email) {
     return db.user.update({ where: { id: user.id }, data: { email: auth.email }, select: userSelect });

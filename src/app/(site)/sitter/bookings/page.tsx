@@ -5,6 +5,7 @@ import { Card, EmptyState, PageHeader, Pager } from "@/components/ui";
 import { requireSitter } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { BookingCard, bookingCardInclude } from "../_components/BookingCard";
+import { seriesPositions } from "@/lib/booking-series";
 
 export const metadata: Metadata = { title: "Requests & Bookings | WagStays" };
 
@@ -52,6 +53,7 @@ export default async function SitterBookingsPage({ searchParams }: PageProps<"/s
     cancelled: count("CANCELLED", "DECLINED"),
   };
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const series = await seriesPositions(bookings);
 
   return (
     <>
@@ -84,7 +86,7 @@ export default async function SitterBookingsPage({ searchParams }: PageProps<"/s
         </nav>
         <div className="flex flex-col gap-space-md p-space-lg">
           {bookings.length ? (
-            bookings.map((b) => <BookingCard booking={b} key={b.id} tz={profile.city.timeZone} withActions={tab === "requests"} />)
+            bookings.map((b) => <BookingCard booking={b} key={b.id} series={series.get(b.id)} tz={profile.city.timeZone} withActions={tab === "requests"} />)
           ) : (
             <EmptyState icon={t.icon} text={t.empty} title={`No ${t.label.toLowerCase()} bookings`} />
           )}

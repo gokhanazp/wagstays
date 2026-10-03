@@ -6,6 +6,7 @@ import { LegalDocument, type LegalSection } from "../terms/_components/LegalDocu
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How WagStays collects, uses, shares and protects personal information.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default async function PrivacyPage() {
@@ -92,7 +93,7 @@ export default async function PrivacyPage() {
         <p>
           We keep personal information only as long as needed for the purposes above or as required by law (for example tax records). Sitter
           verification documents are deleted or archived once they are no longer required. When you close your account, we delete or
-          anonymise your information within a reasonable period, except where we must keep it.
+          anonymise your information straight away, except where we must keep it (such as booking and payment records).
         </p>
       ),
     },
@@ -112,9 +113,16 @@ export default async function PrivacyPage() {
       title: "Your choices and rights",
       body: (
         <ul>
-          <li>Access and correct your information from your account settings, or ask us for a copy.</li>
+          <li>
+            Access and correct your information from your <Link href="/account/settings">account settings</Link>. You can{" "}
+            <a href="/account/data-export">download a copy of your data</a> (a JSON file) at any time, or ask us for one.
+          </li>
           <li>Withdraw consent to marketing at any time; some processing is needed to provide the service.</li>
-          <li>Ask us to close your account and delete your information.</li>
+          <li>
+            Close your account yourself from <Link href="/account/settings">account settings</Link>. We delete your login, photos and contact
+            details and anonymise the rest; past bookings and payments are kept without your name as a financial record, and reviews you
+            wrote stay up as &quot;Former member&quot;.
+          </li>
           <li>Complain to the Office of the Privacy Commissioner of Canada if you&apos;re not satisfied with our response.</li>
         </ul>
       ),

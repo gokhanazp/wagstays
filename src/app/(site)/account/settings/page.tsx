@@ -1,26 +1,41 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { SERVICE_LABELS, type ServiceType } from "@/lib/constants";
+import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
+import { deletionBlockers } from "@/lib/privacy";
 import { getPlatformSettings } from "@/lib/settings";
-import { BTN, Card, PageHeader } from "@/components/ui";
+import { BTN, Card, PageHeader, formatDateTime } from "@/components/ui";
+import { CloseAccountCard, DataExportCard } from "../_components/PrivacySettings";
 import { EmailForm, PasswordForm, ProfileForm } from "../_components/SettingsForms";
+import { NotificationsSection } from "@/components/pwa/NotificationsSection";
 
 export const metadata: Metadata = { title: "Account Settings | WagStays" };
 
 export default async function AccountSettingsPage() {
   const user = await requireUser();
-  const settings = await getPlatformSettings();
+  const [settings, blockers, sitter] = await Promise.all([
+    getPlatformSettings(),
+    deletionBlockers(user.id),
+    db.sitterProfile.findUnique({ where: { userId: user.id }, select: { id: true } }),
+  ]);
 
   return (
     <>
-      <PageHeader description="Update your details, login email and password." eyebrow="Pet Parent" title="Account Settings" />
+      <PageHeader description="Update your details, login email and password, download your data or close your account." eyebrow="Pet Parent" title="Account Settings" />
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-space-lg items-start">
         <div className="flex flex-col gap-space-lg min-w-0">
           <ProfileForm user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl }} />
           <EmailForm email={user.email} />
           <PasswordForm />
+          <NotificationsSection />
+          <DataExportCard />
+          <CloseAccountCard
+            blockers={blockers.map(({ startAt, ...b }) => ({ ...b, when: formatDateTime(startAt), service: SERVICE_LABELS[b.service as ServiceType] ?? b.service }))}
+            hasSitterProfile={!!sitter}
+          />
         </div>
 
         <div className="flex flex-col gap-space-lg min-w-0">
@@ -40,11 +55,15 @@ export default async function AccountSettingsPage() {
             </Link>
           </Card>
           <p className="font-body-sm text-body-sm text-on-surface-variant px-space-sm">
-            Contact support to close your account:
-            <br />
+            Privacy questions? Read our{" "}
+            <Link className="text-primary font-semibold hover:underline" href="/privacy">
+              Privacy Policy
+            </Link>{" "}
+            or email{" "}
             <a className="text-primary font-semibold hover:underline break-words" href={`mailto:${settings.supportEmail}`}>
               {settings.supportEmail}
             </a>
+            .
           </p>
         </div>
       </div>

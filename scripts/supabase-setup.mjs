@@ -48,7 +48,7 @@ if (token) {
     const host = p.db_host;
     const user = p.db_user ?? `postgres.${REF}`;
     const pw = encodeURIComponent(password);
-    databaseUrl = `postgresql://${user}:${pw}@${host}:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20`;
+    databaseUrl = `postgresql://${user}:${pw}@${host}:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20&connect_timeout=10&socket_timeout=30`;
     directUrl = `postgresql://${user}:${pw}@${host}:5432/postgres`;
   }
   console.log("• Configuring Auth site URL and redirect allow-list…");

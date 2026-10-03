@@ -6,6 +6,8 @@ import { BTN, Card, EmptyState, INPUT, LABEL, PageHeader, Pager, StatusChip, for
 import { Select } from "@/components/forms/Select";
 import { MAX_FEATURED_REVIEWS } from "./_constants";
 import { ReviewActions } from "./_components/ReviewActions";
+import { OwnerReviewsPanel, ReviewTabs } from "./_components/OwnerReviewsPanel";
+import { ReplyModeration } from "./_components/ReplyModeration";
 
 export const metadata: Metadata = { title: "Reviews" };
 
@@ -37,7 +39,22 @@ function href(f: Filters, page?: number) {
 }
 
 export default async function AdminReviewsPage({ searchParams }: PageProps<"/admin/reviews">) {
-  const f = parse(await searchParams);
+  const sp = await searchParams;
+  const [ownerCount, hiddenOwnerCount] = await Promise.all([db.ownerReview.count(), db.ownerReview.count({ where: { hidden: true } })]);
+  if (one(sp.tab) === "owners") {
+    return (
+      <>
+        <PageHeader
+          description="Private ratings sitters leave for pet parents after a completed stay. Hide unfair or retaliatory ratings so they stop counting."
+          eyebrow="Trust & safety"
+          title="Reviews"
+        />
+        <ReviewTabs active="owners" hiddenOwnerCount={hiddenOwnerCount} ownerCount={ownerCount} />
+        <OwnerReviewsPanel searchParams={sp} />
+      </>
+    );
+  }
+  const f = parse(sp);
   const and: Prisma.ReviewWhereInput[] = [];
   if (f.sitter) and.push({ sitterId: f.sitter });
   if (f.rating) and.push({ rating: f.rating });
@@ -86,6 +103,7 @@ export default async function AdminReviewsPage({ searchParams }: PageProps<"/adm
         eyebrow="Trust & safety"
         title="Reviews"
       />
+      <ReviewTabs active="sitters" hiddenOwnerCount={hiddenOwnerCount} ownerCount={ownerCount} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
         <Link className="flex items-center gap-space-md p-space-md rounded-2xl bg-surface-container-lowest border border-[#EFE7DE] hover:border-primary-container transition-colors" href="/admin/reviews?featured=yes">
@@ -239,6 +257,12 @@ export default async function AdminReviewsPage({ searchParams }: PageProps<"/adm
                       )}
                     </span>
                     <p className={`font-body-md text-body-md ${r.hidden ? "text-on-surface-variant" : "text-on-surface"}`}>{r.body}</p>
+                    <ReplyModeration
+                      repliedOn={r.sitterRepliedAt ? formatDate(r.sitterRepliedAt) : null}
+                      reply={r.sitterReply}
+                      reviewId={r.id}
+                      sitterName={r.sitter.displayName}
+                    />
                     {r.hidden && hideReason.get(r.id) && (
                       <p className="font-body-sm text-body-sm text-on-surface-variant">
                         <span className="font-label-md text-label-md">Moderation note:</span> {hideReason.get(r.id)}

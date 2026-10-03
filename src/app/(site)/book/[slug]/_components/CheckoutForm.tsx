@@ -8,6 +8,7 @@ import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { formatMoney, formatRating } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { SERVICE_ICONS, plainTrait } from "../_lib";
+import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 
 type Pet = {
   id: string;
@@ -38,16 +39,32 @@ type Props = {
   initialPetId: string;
   schedule: {
     date: string;
+    /** check-out / last day for stays */
+    endDate: string | null;
+    /** "HH:MM" start or drop-off time */
     slot: string;
     dateLabel: string;
     timeLabel: string;
     cancelLabel: string;
     recurring: boolean;
+    /** occurrences in the weekly series (1 for a one-off booking) */
+    weeks: number;
+    seriesLabel: string | null;
+    /** nights / days / visits in one booking */
+    quantity: number;
+    quantityLabel: string;
     meet: boolean;
+    /** back to the profile widget to change the dates */
+    changeHref: string;
+    /** dates that aren't available (the server re-checks on submit) */
+    conflicts: { date: string; error: string }[];
+    occurrenceCount: number;
   };
   owner: { fullName: string; wagPointsCents: number };
   taxRateBps: number;
   fees: Fees;
+  /** WagPoints earn rate (basis points) for the "You'll earn ~$X" hint. */
+  earnRateBps?: number;
   /** Link to the add-pet form that returns to this checkout afterwards. */
   addPetHref: string;
 };
@@ -121,7 +138,7 @@ function defaultFeeding(p: Pet | undefined, hasAllergy: boolean) {
 const inlineInput =
   "w-full bg-transparent rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-outline";
 
-export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, owner, taxRateBps, fees, addPetHref }: Props) {
+export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, owner, taxRateBps, fees, addPetHref, earnRateBps }: Props) {
   const [state, formAction, pending] = useActionState(createBooking.bind(null, sitter.slug), undefined);
   const [petId, setPetId] = useState(initialPetId);
   const [petMenuOpen, setPetMenuOpen] = useState(false);
@@ -138,19 +155,29 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
   const brand = detectBrand(cardDigits);
   const maxLen = brand === "Amex" ? 15 : 16;
 
+  // One booking row per weekly occurrence, each with its own amounts; WagPoints apply to the first only.
   const price = useMemo(
     () =>
       priceBooking({
         unitPriceCents: service.unitPriceCents,
+        quantity: schedule.quantity,
         taxRateBps,
         fees,
         applyWagPoints: applyPoints && canUsePoints,
         wagPointsBalanceCents: owner.wagPointsCents,
       }),
-    [service.unitPriceCents, taxRateBps, fees, applyPoints, canUsePoints, owner.wagPointsCents],
+    [service.unitPriceCents, schedule.quantity, taxRateBps, fees, applyPoints, canUsePoints, owner.wagPointsCents],
   );
+  const perVisit = useMemo(
+    () => priceBooking({ unitPriceCents: service.unitPriceCents, quantity: schedule.quantity, taxRateBps, fees }),
+    [service.unitPriceCents, schedule.quantity, taxRateBps, fees],
+  );
+  const series = schedule.weeks > 1;
+  const totalCents = price.totalCents + perVisit.totalCents * (schedule.weeks - 1);
   const pointsOff = Math.min(fees.wagPointsDiscountCents, owner.wagPointsCents);
-  const total = formatMoney(price.totalCents, { exact: true });
+  const total = formatMoney(totalCents, { exact: true });
+  const unavailable = schedule.conflicts.length > 0;
+  const stay = service.type === "BOARDING" || service.type === "DAY_CARE";
 
   useEffect(() => {
     if (!petMenuOpen) return;
@@ -180,8 +207,10 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
       <input type="hidden" name="serviceId" value={service.id} />
       <input type="hidden" name="petId" value={petId} />
       <input type="hidden" name="date" value={schedule.date} />
+      {schedule.endDate && <input type="hidden" name="endDate" value={schedule.endDate} />}
       <input type="hidden" name="slot" value={schedule.slot} />
       {schedule.recurring && <input type="hidden" name="recurring" value="1" />}
+      {schedule.recurring && <input type="hidden" name="weeks" value={schedule.weeks} />}
       {schedule.meet && <input type="hidden" name="meet" value="1" />}
       {brand && <input type="hidden" name="cardBrand" value={brand} />}
       <input type="hidden" name="cardLast4" value={cardDigits.slice(-4)} />
@@ -675,10 +704,35 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   <span className="font-semibold text-on-surface block">Date &amp; Time</span>
                   <span>{schedule.dateLabel}</span>
                   <span className="block text-primary font-medium">{schedule.timeLabel}</span>
-                  {schedule.recurring && <span className="block">Repeats weekly</span>}
+                  {schedule.seriesLabel && (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">repeat</span>
+                      {schedule.seriesLabel}
+                    </span>
+                  )}
                   {schedule.meet && <span className="block">Free Meet &amp; Greet requested</span>}
+                  <Link className="inline-flex items-center gap-0.5 text-primary font-semibold hover:underline mt-0.5" href={schedule.changeHref}>
+                    <span className="material-symbols-outlined text-sm">edit_calendar</span>
+                    Change dates
+                  </Link>
                 </div>
               </div>
+              {unavailable && (
+                <div className="flex items-start gap-space-xs p-space-sm rounded-xl bg-error-container/70 text-on-error-container" role="alert">
+                  <span className="material-symbols-outlined text-lg">event_busy</span>
+                  <div className="min-w-0 flex flex-col gap-0.5">
+                    <span className="font-semibold">
+                      {schedule.occurrenceCount > 1
+                        ? `${schedule.conflicts.length} of ${schedule.occurrenceCount} weekly dates aren't available`
+                        : "This time isn't available"}
+                    </span>
+                    {schedule.conflicts.slice(0, 6).map((c) => (
+                      <span key={c.date}>{schedule.occurrenceCount > 1 ? `${c.date}: ${c.error}` : c.error}</span>
+                    ))}
+                    {schedule.conflicts.length > 6 && <span>and {schedule.conflicts.length - 6} more</span>}
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-space-sm text-on-surface-variant">
                 <span className="material-symbols-outlined text-primary text-lg mt-0.5">location_on</span>
                 <div className="flex-1 min-w-0">
@@ -700,8 +754,13 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
             <div className="w-full h-px bg-surface-container-high my-space-xs" />
 
             <div className="flex flex-col gap-space-xs">
+              {series && (
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
+                  Per {stay ? "booking" : "visit"} · {schedule.weeks} weekly occurrences
+                </span>
+              )}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
-                <span>1x {service.line}</span>
+                <span>{stay ? `${schedule.quantityLabel} × ${formatMoney(service.unitPriceCents, { exact: true })}` : `1x ${service.line}`}</span>
                 <span className="font-semibold text-on-surface">{formatMoney(price.subtotalCents, { exact: true })}</span>
               </div>
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
@@ -724,7 +783,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                 <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-secondary font-medium">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">local_offer</span>
-                    WagPoints Discount
+                    WagPoints Discount{series ? " (first visit)" : ""}
                   </span>
                   <span>-{formatMoney(price.discountCents, { exact: true })}</span>
                 </div>
@@ -733,19 +792,36 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                 <span>HST ({taxRateBps / 100}%)</span>
                 <span className="font-semibold text-on-surface">{formatMoney(price.taxCents, { exact: true })}</span>
               </div>
+              {series && (
+                <>
+                  <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface border-t border-surface-container-high pt-space-xs">
+                    <span>First {stay ? "booking" : "visit"}</span>
+                    <span className="font-semibold">{formatMoney(price.totalCents, { exact: true })}</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface">
+                    <span>
+                      {schedule.weeks - 1} more × {formatMoney(perVisit.totalCents, { exact: true })}
+                    </span>
+                    <span className="font-semibold">{formatMoney(perVisit.totalCents * (schedule.weeks - 1), { exact: true })}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline gap-space-sm mt-space-xs">
               <div>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold block">Total Due</span>
-                <span className="font-label-sm text-label-sm text-primary font-medium">Incl. HST &amp; WagShield</span>
+                <span className="font-label-sm text-label-sm text-primary font-medium">
+                  {series ? `${schedule.weeks} weekly ${stay ? "bookings" : "visits"} · incl. HST` : "Incl. HST & WagShield"}
+                </span>
               </div>
               <div className="font-headline-lg text-headline-lg text-primary font-extrabold tracking-tight">{total}</div>
             </div>
+            <EarnPointsNote className="justify-center -mt-space-xs" earnRateBps={earnRateBps} subtotalCents={price.subtotalCents} />
 
             <button
               className="w-full py-4 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-space-sm group disabled:opacity-70 disabled:pointer-events-none"
-              disabled={pending || !pet}
+              disabled={pending || !pet || unavailable}
               id="pay-button"
               type="submit"
             >
@@ -755,10 +831,13 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
               <span>{pending ? "Processing…" : `Confirm & Pay (${total}) 🐾`}</span>
             </button>
             {error && (
-              <p className="font-body-sm text-body-sm text-error text-center flex items-center justify-center gap-1" role="alert">
-                <span className="material-symbols-outlined text-base">error</span>
-                {error}
-              </p>
+              <div className="font-body-sm text-body-sm text-error text-center flex flex-col items-center gap-0.5" role="alert">
+                <p className="flex items-center justify-center gap-1">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  {error}
+                </p>
+                {!clientError && state?.conflicts?.map((c) => <span key={c}>{c}</span>)}
+              </div>
             )}
             <p className="font-label-sm text-label-sm text-center text-on-surface-variant/80">
               By clicking &lsquo;Confirm &amp; Pay&rsquo;, you agree to our{" "}

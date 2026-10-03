@@ -9,7 +9,7 @@ Copy the values from your local `.env` (never commit them):
 
 | Name | Value |
 |---|---|
-| `DATABASE_URL` | transaction pooler URL, port **6543**, ending `?pgbouncer=true&connection_limit=5&pool_timeout=20` |
+| `DATABASE_URL` | transaction pooler URL, port **6543**, ending `?pgbouncer=true&connection_limit=5&pool_timeout=20&connect_timeout=10&socket_timeout=30` |
 | `DIRECT_URL` | session pooler URL, port **5432** (only used by `prisma migrate`, but keep it set) |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://yvateuufdvxmaowgcjch.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key |

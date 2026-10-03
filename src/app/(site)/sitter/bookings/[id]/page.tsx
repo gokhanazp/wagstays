@@ -9,6 +9,11 @@ import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { BookingActions } from "../../_components/BookingActions";
+import { SeriesActions } from "../../_components/SeriesActions";
+import { seriesMembers } from "@/lib/booking-series";
+import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/availability-core";
+import { OwnerRatingCard } from "../../_components/OwnerRatingCard";
+import { OwnerReputation } from "../../_components/OwnerReputation";
 import { PetPhoto } from "../../_components/PetPhoto";
 import { bookingWhen, hasStarted, ownerShortName, petSizeLabel, SERVICE_ICONS, serviceLabel } from "../../_lib";
 
@@ -48,6 +53,11 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
   const size = petSizeLabel(pet.size);
   const allowed = allowedTransitions(b.status, "SITTER");
   const started = hasStarted(b.startAt);
+  const now = new Date();
+  const members = b.seriesId ? await seriesMembers(b.seriesId) : [];
+  const position = members.findIndex((m) => m.id === b.id) + 1;
+  const later = members.filter((m) => m.startAt >= b.startAt && (m.status === "PENDING" || m.status === "CONFIRMED"));
+  const pendingInSeries = members.filter((m) => m.status === "PENDING" && m.startAt > now);
 
   return (
     <>
@@ -72,6 +82,7 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
             <p className="font-body-sm text-body-sm text-on-surface-variant">
               Requested by <span className="font-semibold text-on-surface">{ownerShortName(b.owner)}</span> on {formatDateTime(b.createdAt, tz)}
             </p>
+            <OwnerReputation ownerId={b.owner.id} />
             <div className="flex flex-wrap gap-space-xs pt-space-xs">
               <StatusChip icon={SERVICE_ICONS[b.service.type]}>
                 {serviceLabel(b.service.type)}
@@ -82,7 +93,14 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
                   Meet &amp; Greet requested first
                 </StatusChip>
               )}
-              {b.recurringWeekly && <StatusChip icon="repeat">Repeats weekly</StatusChip>}
+              {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity)}</StatusChip>}
+              {members.length > 1 ? (
+                <StatusChip icon="repeat" tone="primary">
+                  Week {position} of {members.length}
+                </StatusChip>
+              ) : (
+                b.recurringWeekly && <StatusChip icon="repeat">Repeats weekly</StatusChip>
+              )}
               {b.gpsUpdates && <StatusChip icon="my_location">GPS updates on</StatusChip>}
             </div>
           </div>
@@ -96,11 +114,45 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
           <Link className={BTN.secondary} href={`/messages/new?owner=${b.owner.id}`}>
             <span className="material-symbols-outlined text-lg">chat_bubble</span>Message {b.owner.firstName}
           </Link>
+          <Link className={`${BTN.ghost} text-on-surface-variant`} href={`/account/support/new?booking=${b.id}`}>
+            <span className="material-symbols-outlined text-lg">flag</span>Report a problem
+          </Link>
         </div>
 
         <div className={allowed.length ? "border-t border-[#EFE7DE] pt-space-lg" : ""}>
           <BookingActions allowed={allowed} bookingId={b.id} ownerFirstName={b.owner.firstName} started={started} />
         </div>
+
+        {members.length > 1 && (
+          <div className="flex flex-col gap-space-sm border-t border-[#EFE7DE] pt-space-lg">
+            <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-space-xs">
+              <span className="material-symbols-outlined text-xl text-secondary">event_repeat</span>
+              Weekly series · {members.length} weeks
+            </h2>
+            <ul className="flex flex-wrap gap-space-xs">
+              {members.map((m, i) => {
+                const st = BOOKING_STATUS_LABELS[m.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
+                return (
+                  <li key={m.id}>
+                    <Link
+                      aria-current={m.id === b.id ? "page" : undefined}
+                      className={`inline-flex flex-col px-space-sm py-1 rounded-xl border font-label-sm text-label-sm ${
+                        m.id === b.id ? "border-primary bg-[#EBF3EF] text-primary" : "border-[#EFE7DE] text-on-surface-variant hover:bg-surface-container-low"
+                      }`}
+                      href={`/sitter/bookings/${m.id}`}
+                    >
+                      <span className="font-semibold">
+                        Week {i + 1} · {formatDayLong(zonedParts(m.startAt.getTime(), tz).iso)}
+                      </span>
+                      <span>{st.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <SeriesActions bookingId={b.id} laterCount={later.length} pendingCount={pendingInSeries.length} />
+          </div>
+        )}
 
         {b.sitterNote && b.status !== "DECLINED" && (
           <p className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-low rounded-xl p-space-md">
@@ -180,6 +232,8 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
             )}
           </div>
         </Card>
+
+        <OwnerRatingCard booking={b} sitterId={profile.id} />
 
         {b.review && (
           <Card className="p-space-lg lg:col-span-2 flex flex-col gap-space-xs">

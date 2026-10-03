@@ -10,6 +10,7 @@ import { EarningsEstimator, FaqAccordion } from "./_components/SidebarWidgets";
 export const metadata: Metadata = {
   title: "Become a Sitter",
   description: "Join WagStays' verified sitter network. Set your own hours, pets and rates — and earn up to $3,500 a month.",
+  alternates: { canonical: "/become-a-sitter" },
 };
 
 const FILL = { fontVariationSettings: "'FILL' 1" };

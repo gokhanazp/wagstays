@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { InstallAppButton } from "./pwa/InstallAppButton";
 
 const NAV = [
   { href: "/sitters", label: "Find a Sitter", key: "find" },
@@ -87,6 +88,9 @@ export function MobileMenu({ signedIn }: { signedIn: boolean }) {
               {item.label}
             </Link>
           ))}
+          <div className="contents" onClick={() => setOpen(false)}>
+            <InstallAppButton />
+          </div>
           {!signedIn && (
             <Link
               className="px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-primary hover:bg-surface-container-low"

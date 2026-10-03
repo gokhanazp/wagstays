@@ -8,9 +8,13 @@ import { formatDistance, formatMoney, formatRating, timeAgo } from "@/lib/format
 import { getOwnerPets, getSitterBySlug, type SitterDetail } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 import { BookingWidget } from "./_components/BookingWidget";
+import { loadSnapshot, publicSnapshot } from "@/lib/availability";
+import { addDays, todayIn } from "@/lib/availability-core";
 import { PhotoGallery } from "./_components/PhotoGallery";
 import { ProfileActions } from "./_components/ProfileActions";
 import { ReviewList } from "./_components/ReviewList";
+import { JsonLd } from "@/components/JsonLd";
+import { breadcrumbSchema, sitterSchema } from "@/lib/seo/schema";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -18,10 +22,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const sitter = await getSitterBySlug(slug);
   if (!sitter) return { title: "Sitter not found" };
+  const title = `${sitter.displayName} — ${sitter.headline} in ${sitter.neighbourhood.name}`;
+  const rated = sitter.reviewCount > 0 ? ` rated ${formatRating(sitter.rating)} from ${sitter.reviewCount} reviews` : "";
+  const full = `${sitter.displayName} is a ${sitter.city.name} pet sitter in ${sitter.neighbourhood.name}${rated}. ${sitter.bio}`;
+  const description = full.length > 160 ? `${full.slice(0, 157).replace(/\s+\S*$/, "")}…` : full;
+  const url = `/sitters/${sitter.slug}`;
+  const photo = sitter.cardPhotoUrl ?? sitter.avatarUrl;
   return {
-    title: `${sitter.displayName} — ${sitter.headline} in ${sitter.neighbourhood.name}`,
-    description: `${sitter.displayName} is a ${sitter.city.name} pet sitter in ${sitter.neighbourhood.name} rated ${formatRating(sitter.rating)} from ${sitter.reviewCount} reviews. ${sitter.bio}`,
-    openGraph: { images: [sitter.cardPhotoUrl ?? sitter.avatarUrl] },
+    title,
+    description,
+    alternates: { canonical: url },
+    // Paused profiles stay reachable for existing clients but aren't indexed (they're also left out of the sitemap).
+    ...(sitter.status !== "ACTIVE" ? { robots: { index: false } } : {}),
+    openGraph: {
+      type: "profile",
+      siteName: "WagStays",
+      locale: "en_CA",
+      url,
+      title: `${sitter.displayName} · ${sitter.headline}`,
+      description,
+      images: [{ url: photo, alt: `${sitter.displayName}, ${sitter.headline}` }],
+    },
+    twitter: { card: "summary_large_image", title: `${sitter.displayName} · ${sitter.headline}`, description, images: [photo] },
   };
 }
 
@@ -131,6 +153,8 @@ export default async function SitterProfilePage({ params }: Props) {
       : [];
 
   const now = new Date();
+  const today = todayIn(sitter.city.timeZone, now.getTime());
+  const availability = await loadSnapshot(sitter.id, today, addDays(today, 180));
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
 
@@ -175,10 +199,24 @@ export default async function SitterProfilePage({ params }: Props) {
     walkSummary: r.walkSummary,
     walkPhotoUrl: r.walkPhotoUrl,
     timeAgo: timeAgo(r.createdAt, now),
+    reply: r.sitterReply
+      ? { by: sitter.displayName.split(" ")[0], body: r.sitterReply, timeAgo: r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt, now) : null }
+      : null,
   }));
 
   return (
     <main className="w-full pt-20 pb-24 lg:pb-0 bg-background min-h-[calc(100vh-320px)]">
+      <JsonLd
+        data={[
+          sitterSchema(sitter),
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: `${sitter.city.name} Pet Sitters`, path: `/pet-sitters/${sitter.city.slug}` },
+            { name: `${sitter.neighbourhood.name} Pet Sitters`, path: `/pet-sitters/${sitter.city.slug}/${sitter.neighbourhood.slug}` },
+            { name: sitter.displayName, path: `/sitters/${sitter.slug}` },
+          ]),
+        ]}
+      />
       <div className="flex flex-col w-full">
         <div className="max-w-[1440px] w-full mx-auto px-margin-mobile md:px-margin py-space-lg">
           {/* Breadcrumb & quick actions */}
@@ -193,11 +231,11 @@ export default async function SitterProfilePage({ params }: Props) {
                 Home
               </Link>
               <span>/</span>
-              <Link className="hover:text-primary transition-colors" href="/sitters">
+              <Link className="hover:text-primary transition-colors" href={`/pet-sitters/${sitter.city.slug}`}>
                 {sitter.city.name} Sitters
               </Link>
               <span>/</span>
-              <Link className="hover:text-primary transition-colors" href={`/sitters?hood=${sitter.neighbourhood.slug}`}>
+              <Link className="hover:text-primary transition-colors" href={`/pet-sitters/${sitter.city.slug}/${sitter.neighbourhood.slug}`}>
                 {sitter.neighbourhood.name}
               </Link>
               <span>/</span>
@@ -503,6 +541,8 @@ export default async function SitterProfilePage({ params }: Props) {
             {/* RIGHT COLUMN: booking widget */}
             <div className="max-lg:order-2 w-full lg:col-span-4 lg:sticky top-24 min-w-0 scroll-mt-24" id="book">
               <BookingWidget
+                availability={publicSnapshot(availability ?? { timeZone: sitter.city.timeZone, noticeHours: 12, capacity: 1, hours: [], timeOff: [], bookings: [] })}
+                nowMs={now.getTime()}
                 askHref={`/messages/new?sitter=${sitter.id}`}
                 defaultDate={ymd(tomorrow)}
                 firstName={first}

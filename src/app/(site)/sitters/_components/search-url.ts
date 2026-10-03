@@ -1,12 +1,16 @@
 import { SERVICE_SLUGS, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
 
-/** Extra, display-only params kept in the URL so links stay shareable (not used for filtering yet). */
+/**
+ * The date range (`from` / `to`, YYYY-MM-DD). It filters results by sitter availability on the server
+ * (SearchFilters.from/to) and is carried separately here so the top bar can set or clear it.
+ */
 export type SearchExtras = { from?: string; to?: string };
 
 /**
  * Client-safe mirror of `toSearchQuery` from `@/lib/queries` (that module is server-only).
- * Keep the two in sync — same param names and defaults — plus the date-range extras.
+ * Keep the two in sync — same param names and defaults. Dates come from `extras` when it has the
+ * key (so the top bar can clear them), otherwise from the filters.
  */
 export function buildSearchHref(f: Partial<SearchFilters>, extras: SearchExtras = {}) {
   const q = new URLSearchParams();
@@ -22,8 +26,10 @@ export function buildSearchHref(f: Partial<SearchFilters>, extras: SearchExtras 
   if (f.sort && f.sort !== "recommended") q.set("sort", f.sort);
   if (f.page && f.page > 1) q.set("page", String(f.page));
   if (f.view === "map") q.set("view", "map");
-  if (extras.from) q.set("from", extras.from);
-  if (extras.to) q.set("to", extras.to);
+  const from = "from" in extras ? extras.from : f.from;
+  const to = "to" in extras ? extras.to : f.to;
+  if (from) q.set("from", from);
+  if (to) q.set("to", to);
   const s = q.toString();
   return `/sitters${s ? `?${s}` : ""}`;
 }

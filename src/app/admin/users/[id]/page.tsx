@@ -13,7 +13,10 @@ import { auditInclude, toAuditRows } from "../../_components/audit-rows";
 import { setUserSuspended } from "@/app/actions/admin-core";
 import { PasswordLink } from "../_components/PasswordLink";
 import { RoleForm, WagPointsForm } from "../_components/UserControls";
+import { WagPointsLedger } from "../_components/WagPointsLedger";
 import { ROLE_LABEL, ROLE_TONE } from "../_components/roles";
+import { OwnerReviewRow, ownerReviewInclude, ownerReviewModerationNotes } from "../../reviews/_components/OwnerReviewRow";
+import { getOwnerReputation } from "@/lib/owner-reputation";
 
 export const metadata: Metadata = { title: "User" };
 
@@ -35,10 +38,13 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
     },
   });
   if (!user) notFound();
-  const [activeAdmins, logs] = await Promise.all([
+  const [activeAdmins, logs, ownerRep, ownerReviews] = await Promise.all([
     db.user.count({ where: { role: "ADMIN", suspended: false } }),
     db.auditLog.findMany({ where: { entityType: "User", entityId: user.id }, orderBy: { createdAt: "desc" }, take: 10, include: auditInclude }),
+    getOwnerReputation(user.id),
+    db.ownerReview.findMany({ where: { ownerId: user.id }, include: ownerReviewInclude, orderBy: { createdAt: "desc" }, take: 20 }),
   ]);
+  const ownerReviewNotes = await ownerReviewModerationNotes(ownerReviews.map((r) => r.id));
 
   const isSelf = user.id === admin.id;
   const lastAdmin = user.role === "ADMIN" && !user.suspended && activeAdmins <= 1;
@@ -86,7 +92,11 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
         description={
           <span className="inline-flex flex-wrap items-center gap-space-sm">
             <StatusChip tone={ROLE_TONE[user.role as keyof typeof ROLE_TONE] ?? "neutral"}>{ROLE_LABEL[user.role] ?? user.role}</StatusChip>
-            {user.suspended ? (
+            {user.deletedAt ? (
+              <StatusChip icon="person_off" tone="neutral">
+                Deleted {formatDate(user.deletedAt)}
+              </StatusChip>
+            ) : user.suspended ? (
               <StatusChip icon="block" tone="danger">
                 Suspended
               </StatusChip>
@@ -155,6 +165,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
           <div className="px-space-lg">
             <WagPointsForm userId={user.id} />
           </div>
+          <WagPointsLedger userId={user.id} />
         </Card>
       </div>
 
@@ -181,6 +192,34 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
                   </span>
                 </span>
               </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="flex flex-col gap-space-md pb-space-sm">
+        <CardHeader
+          action={
+            <Link className="font-label-md text-label-md text-primary hover:underline" href={`/admin/reviews?tab=owners&q=${encodeURIComponent(user.email)}`}>
+              Moderate
+            </Link>
+          }
+          icon="person_check"
+          title="Rating from sitters (as pet parent)"
+        />
+        <div className="px-space-lg flex flex-wrap items-baseline gap-x-space-sm gap-y-1">
+          <span className="font-headline-md text-headline-md text-on-surface">{ownerRep.rating != null ? `★ ${ownerRep.rating.toFixed(1)}` : "—"}</span>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            {ownerRep.ratingCount} counted rating{ownerRep.ratingCount === 1 ? "" : "s"} · {ownerRep.completedStays} completed stay{ownerRep.completedStays === 1 ? "" : "s"}
+            {ownerReviews.some((r) => r.hidden) ? ` · ${ownerReviews.filter((r) => r.hidden).length} hidden` : ""}
+          </span>
+        </div>
+        {ownerReviews.length === 0 ? (
+          <EmptyState icon="person_check" title="No sitter ratings yet" />
+        ) : (
+          <ul className="flex flex-col">
+            {ownerReviews.map((r) => (
+              <OwnerReviewRow key={r.id} note={ownerReviewNotes.get(r.id)} r={r} showOwner={false} />
             ))}
           </ul>
         )}

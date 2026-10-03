@@ -13,6 +13,8 @@ export type ReviewItem = {
   walkSummary: string | null;
   walkPhotoUrl: string | null;
   timeAgo: string;
+  /** Public reply from the sitter, if any. */
+  reply?: { by: string; body: string; timeAgo: string | null } | null;
 };
 
 const INITIAL = 3;
@@ -90,6 +92,16 @@ export function ReviewList({ reviews, reviewCount }: { reviews: ReviewItem[]; re
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+            {r.reply && (
+              <div className="flex flex-col gap-1 ml-space-sm sm:ml-space-lg pl-space-md border-l-2 border-primary-fixed-dim">
+                <span className="flex items-center gap-1 font-label-md text-label-md text-on-surface">
+                  <span className="material-symbols-outlined text-base text-primary">reply</span>
+                  Response from {r.reply.by}
+                  {r.reply.timeAgo && <span className="font-normal text-on-surface-variant">· {r.reply.timeAgo}</span>}
+                </span>
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed whitespace-pre-line break-words">{r.reply.body}</p>
               </div>
             )}
           </div>

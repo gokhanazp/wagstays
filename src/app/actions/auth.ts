@@ -1,11 +1,14 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getOrigin } from "@/lib/origin";
 import { signOut } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { emit } from "@/lib/events";
+import { REF_COOKIE, findReferrer, generateReferralCode } from "@/lib/referrals";
 
 export type AuthState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined>; checkEmail?: string; ok?: boolean; unconfirmedEmail?: string }
@@ -49,7 +52,13 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
   }
 
   // Role is assigned here (server-side), never from user-editable auth metadata.
-  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role } });
+  // Referral: own share code + who invited them (ws_ref cookie from /r/<code>; unknown/self codes are ignored).
+  const jar = await cookies();
+  const referrer = await findReferrer(jar.get(REF_COOKIE)?.value);
+  const referredById = referrer && referrer.id !== data.user.id ? referrer.id : null;
+  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role, referralCode: await generateReferralCode(), referredById } });
+  if (jar.has(REF_COOKIE)) jar.delete(REF_COOKIE);
+  emit({ type: "user.signedUp", userId: data.user.id });
 
   if (!data.session) return { checkEmail: email };
   redirect(next);

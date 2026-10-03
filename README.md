@@ -59,3 +59,18 @@ Only Toronto is active (`City.isActive`). Other cities are seeded inactive and a
 - **Emails:** sign-up confirmation and password reset use Supabase's built-in mailer (rate-limited — configure custom SMTP in the dashboard before launch). Admins can also generate one-time password links from `/admin/users/<id>`.
 - The old SQLite migrations are archived in `prisma/sqlite-archive/`.
 - Messaging still polls every 10 s; Supabase Realtime can replace the polling later.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request to `main`:
+
+1. **Typecheck, lint & build** — Node 22, `npm ci`, `npx prisma generate`, `npx next typegen` (route types aren't committed), `npm run typecheck`, `npm run lint`, `npx next build`. It uses dummy `DATABASE_URL` / `DIRECT_URL` / public Supabase values, so no secrets are needed — **the build must never require a database**. Pages that read data are rendered on demand; `generateStaticParams` and `sitemap.ts` fall back to an empty / static list when the DB isn't reachable.
+2. **E2E smoke (optional)** — only runs when the repository secret `E2E_BASE_URL` is set (e.g. `https://wagstays.vercel.app`). Installs Playwright Chromium and runs `tests/e2e/smoke.spec.ts` against that URL: anonymous pages only (home, `/sitters`, a sitter profile, `/become-a-sitter`, `/login`, `/terms`, `/pet-sitters/<city>`, `sitemap.xml`, `robots.txt`) — status 200, no console errors, valid JSON-LD. No credentials live in the repo and the tests never write data.
+
+Locally: `npm run typecheck`, `npm run lint`, `npm run test:e2e` (defaults to production; `E2E_BASE_URL=http://localhost:3100 npm run test:e2e` for the dev server; first run `npx playwright install chromium`).
+
+## SEO
+
+- `src/app/sitemap.ts` / `src/app/robots.ts` — origin from `NEXT_PUBLIC_SITE_URL` (see `src/lib/seo/site.ts`). The sitemap lists static pages, every active sitter in an active city and all neighbourhood landing pages; robots blocks the private areas (which also carry `noindex`).
+- Landing pages: `/pet-sitters/<city>`, `/pet-sitters/<city>/<hood>`, `/dog-walkers/<city>/<hood>` (active cities only, 404 otherwise). Copy, prices, FAQ and structured data are generated from live data in `src/lib/seo/landing.ts`; park names per neighbourhood live in its `PARKS` map — extend it when a new city goes live.
+- JSON-LD builders in `src/lib/seo/schema.ts` (Organization + WebSite on every public page, LocalBusiness + offers + BreadcrumbList on sitter profiles, ItemList + FAQPage on landing pages).

@@ -3,8 +3,13 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { AuthShell } from "../AuthShell";
 import { SignupForm } from "./SignupForm";
+import { ReferralBanner } from "@/components/points/ReferralBanner";
 
-export const metadata: Metadata = { title: "Sign up" };
+export const metadata: Metadata = {
+  title: "Sign up",
+  description: "Create a free WagStays account to book trusted pet sitters and dog walkers near you.",
+  alternates: { canonical: "/signup" },
+};
 
 export default async function SignupPage({ searchParams }: PageProps<"/signup">) {
   const { next } = await searchParams;
@@ -12,6 +17,7 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
   if (await getCurrentUser()) redirect(nextPath);
   return (
     <AuthShell eyebrow="Join WagStays" subtitle="Toronto's community of verified, loving sitters and happy pet parents." title="Create your free account">
+      <ReferralBanner />
       <SignupForm next={nextPath} />
     </AuthShell>
   );

@@ -6,6 +6,7 @@ import { LegalDocument, type LegalSection } from "../terms/_components/LegalDocu
 export const metadata: Metadata = {
   title: "PIPEDA Privacy Notice",
   description: "How WagStays applies the ten fair information principles of Canada's PIPEDA.",
+  alternates: { canonical: "/pipeda" },
 };
 
 export default async function PipedaPage() {
@@ -82,10 +83,18 @@ export default async function PipedaPage() {
       id: "access",
       title: "Individual access",
       body: (
-        <p>
-          On written request, we&apos;ll tell you whether we hold personal information about you, how it has been used and to whom it has been
-          disclosed, and give you access to it — normally within 30 days and at no cost. You can challenge its accuracy and ask for corrections.
-        </p>
+        <>
+          <p>
+            Signed-in members can <a href="/account/data-export">download a copy of their data</a> and close their account at any time from{" "}
+            <Link href="/account/settings">account settings</Link>. Closing an account deletes your login, photos and contact details and
+            anonymises the rest; booking and payment records are kept without your name, as the law requires.
+          </p>
+          <p>
+            You can also make a written request: we&apos;ll tell you whether we hold personal information about you, how it has been used and to
+            whom it has been disclosed, and give you access to it — normally within 30 days and at no cost. You can challenge its accuracy and
+            ask for corrections.
+          </p>
+        </>
       ),
     },
     {

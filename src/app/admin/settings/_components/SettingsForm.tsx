@@ -13,6 +13,8 @@ type Settings = {
   serviceFeeCents: number;
   wagPointsDiscountCents: number;
   vetCoverageCents: number;
+  pointsEarnRateBps: number;
+  referralRewardCents: number;
   supportEmail: string;
   supportPhone: string;
 };
@@ -79,6 +81,18 @@ export function SettingsForm({ settings, taxRateBps }: { settings: Settings; tax
             </Field>
             <Field error={fe.vetCoverage} hint="Shown to pet parents as WagShield vet coverage." label="Vet coverage">
               <MoneyInput name="vetCoverage" onChange={set("vetCoverage")} value={v.vetCoverage} />
+            </Field>
+            <Field error={fe.pointsEarnRate} hint="WagPoints a pet parent earns on each completed booking, as % of the subtotal." label="WagPoints earn rate">
+              <span className="relative">
+                <input className={`${INPUT} pr-9`} defaultValue={String(settings.pointsEarnRateBps / 100)} inputMode="decimal" name="pointsEarnRate" pattern="\d+(\.\d{1,2})?" required type="text" />
+                <span className="absolute right-space-md top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant">%</span>
+              </span>
+            </Field>
+            <Field error={fe.referralReward} hint="Given to both people after the invited friend's first completed booking." label="Referral reward">
+              <span className="relative">
+                <span className="absolute left-space-md top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant">$</span>
+                <input className={`${INPUT} pl-8`} defaultValue={toDollars(settings.referralRewardCents)} inputMode="decimal" name="referralReward" pattern="\d+(\.\d{1,2})?" required type="text" />
+              </span>
             </Field>
           </div>
         </Card>

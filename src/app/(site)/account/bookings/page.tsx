@@ -7,6 +7,8 @@ import { formatMoney } from "@/lib/format";
 import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
 import { BTN, Card, EmptyState, PageHeader, Pager, StatusChip } from "@/components/ui";
 import { SERVICE_ICONS, bookingRef, bookingWhen, serviceLabel } from "../_lib";
+import { seriesPositions } from "@/lib/booking-series";
+import { isStayService, quantityLabel } from "@/lib/availability-core";
 
 export const metadata: Metadata = { title: "My Bookings | WagStays" };
 
@@ -52,6 +54,7 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/accou
     },
   });
 
+  const series = await seriesPositions(bookings);
   const hrefFor = (p: number) => `/account/bookings?tab=${tab}${p > 1 ? `&page=${p}` : ""}`;
 
   return (
@@ -136,7 +139,14 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/accou
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-base text-primary">{SERVICE_ICONS[b.service.type] ?? "pets"}</span>
                         {serviceLabel(b.service.type)}
+                        {(isStayService(b.service.type) || b.quantity > 1) && ` · ${quantityLabel(b.service.type, b.quantity)}`}
                       </span>
+                      {series.get(b.id) && (
+                        <span className="flex items-center gap-1 text-primary font-semibold">
+                          <span className="material-symbols-outlined text-base">repeat</span>
+                          Week {series.get(b.id)!.index} of {series.get(b.id)!.total}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-base text-primary">pets</span>
                         {b.pet.name}

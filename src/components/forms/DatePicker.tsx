@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Popover } from "./Popover";
 import { Select } from "./Select";
 import { SELECT_FIELD } from "./styles";
@@ -45,6 +45,8 @@ export function Calendar({
   months = 1,
   onSelect,
   onRangeChange,
+  isDateDisabled,
+  dayClassName,
 }: {
   mode?: "single" | "range";
   value?: string;
@@ -55,6 +57,10 @@ export function Calendar({
   months?: 1 | 2;
   onSelect?: (iso: string) => void;
   onRangeChange?: (start: string, end: string | undefined) => void;
+  /** Extra per-day rule (e.g. sitter availability); disabled days can't be picked. */
+  isDateDisabled?: (iso: string) => boolean;
+  /** Extra classes for a day button (e.g. availability colouring in a read-only preview). */
+  dayClassName?: (iso: string) => string | undefined;
 }) {
   const sel = fromIso(mode === "single" ? value : start);
   const selEnd = fromIso(end);
@@ -94,7 +100,8 @@ export function Calendar({
           ))}
           {days.map((d, i) => {
             if (!d) return <span key={`e${i}`} />;
-            const disabled = (minD && d < minD) || (maxD && d > maxD);
+            const disabled = (minD && d < minD) || (maxD && d > maxD) || isDateDisabled?.(toIso(d));
+            const extra = dayClassName?.(toIso(d));
             const isStart = sameDay(d, sel);
             const isEnd = sameDay(d, rangeEnd);
             const inRange = mode === "range" && sel && rangeEnd && d > sel && d < rangeEnd;
@@ -113,9 +120,9 @@ export function Calendar({
                     isStart || isEnd
                       ? "bg-primary text-on-primary shadow-sm"
                       : disabled
-                        ? "text-outline-variant cursor-not-allowed"
+                        ? `text-outline-variant cursor-not-allowed ${isDateDisabled ? "line-through decoration-outline-variant/60" : ""}`
                         : `text-on-surface hover:bg-surface-container ${isToday ? "ring-1 ring-secondary-container text-secondary" : ""}`
-                  }`}
+                  } ${extra ?? ""}`}
                   disabled={!!disabled}
                   onClick={() => pick(d)}
                   onMouseEnter={() => setHover(d)}
@@ -176,6 +183,7 @@ export function DatePicker({
   id,
   "aria-label": ariaLabel,
   format,
+  isDateDisabled,
 }: {
   name?: string;
   value?: string;
@@ -188,6 +196,7 @@ export function DatePicker({
   id?: string;
   "aria-label"?: string;
   format?: Intl.DateTimeFormatOptions;
+  isDateDisabled?: (iso: string) => boolean;
 }) {
   const [inner, setInner] = useState(defaultValue ?? "");
   const current = value ?? inner;
@@ -211,6 +220,7 @@ export function DatePicker({
       </button>
       <Popover anchor={anchor} label={ariaLabel ?? "Choose a date"} onClose={() => setOpen(false)} open={open}>
         <Calendar
+          isDateDisabled={isDateDisabled}
           max={max}
           min={min}
           onSelect={(iso) => {
@@ -251,6 +261,9 @@ export function DateRangePicker({
   className = SELECT_FIELD,
   "aria-label": ariaLabel,
   unitLabel = "night",
+  isDateDisabled,
+  id,
+  inclusive,
 }: {
   startName?: string;
   endName?: string;
@@ -264,6 +277,10 @@ export function DateRangePicker({
   className?: string;
   "aria-label"?: string;
   unitLabel?: string;
+  isDateDisabled?: (iso: string) => boolean;
+  id?: string;
+  /** count days inclusively (day care: Oct 18–20 = 3 days) instead of nights */
+  inclusive?: boolean;
 }) {
   const [inner, setInner] = useState({ start: defaultStart ?? "", end: defaultEnd ?? "" });
   const s = start ?? inner.start;
@@ -279,6 +296,7 @@ export function DateRangePicker({
         aria-haspopup="dialog"
         aria-label={ariaLabel}
         className={`relative ${className}`}
+        id={id}
         onClick={() => setOpen((o) => !o)}
         ref={anchor}
         type="button"
@@ -289,6 +307,8 @@ export function DateRangePicker({
       <RangePanel
         anchor={anchor}
         end={e}
+        inclusive={inclusive}
+        isDateDisabled={isDateDisabled}
         min={min}
         onChange={(ns, ne) => {
           if (start === undefined) setInner({ start: ns, end: ne ?? "" });
@@ -317,6 +337,8 @@ export function RangePanel({
   onChange,
   unitLabel = "night",
   title,
+  isDateDisabled,
+  inclusive = false,
 }: {
   anchor: React.RefObject<HTMLElement | null>;
   open: boolean;
@@ -327,16 +349,26 @@ export function RangePanel({
   onChange: (start: string, end: string | undefined) => void;
   unitLabel?: string;
   title?: string;
+  isDateDisabled?: (iso: string) => boolean;
+  inclusive?: boolean;
 }) {
+  // one month on phones so the footer ("Done") stays on screen; two side by side from md up
+  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const on = () => setWide(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const nights = useMemo(() => {
     const a = fromIso(start);
     const b = fromIso(end);
-    return a && b ? Math.round((b.getTime() - a.getTime()) / 86_400_000) : 0;
-  }, [start, end]);
+    return a && b ? Math.round((b.getTime() - a.getTime()) / 86_400_000) + (inclusive ? 1 : 0) : 0;
+  }, [start, end, inclusive]);
   return (
     <Popover anchor={anchor} label={title ?? "Choose dates"} onClose={onClose} open={open}>
       {title && <div className="px-space-lg pt-space-md font-label-md text-label-md uppercase tracking-wider text-outline">{title}</div>}
-      <Calendar end={end} min={min} mode="range" months={2} onRangeChange={onChange} start={start} />
+      <Calendar end={end} isDateDisabled={isDateDisabled} min={min} mode="range" months={wide ? 2 : 1} onRangeChange={onChange} start={start} />
       <div className="flex items-center justify-between gap-space-md px-space-lg pb-space-md pt-space-sm border-t border-[#EFE7DE]">
         <span className="font-body-sm text-body-sm text-on-surface-variant">
           {!start

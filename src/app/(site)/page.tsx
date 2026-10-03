@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- plain <img> keeps the design's object-cover layouts identical */
+import type { Metadata } from "next";
 import Link from "next/link";
 import { SERVICE_SLUGS, type ServiceType } from "@/lib/constants";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
@@ -6,6 +7,8 @@ import { defaultHoodOf, getActiveCities, getActiveCity, getFeaturedSitters, getH
 import { CarouselControls } from "./_home/CarouselControls";
 import { FeaturedHeart } from "./_home/FeaturedHeart";
 import { HomeSearch } from "./_home/HomeSearch";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const FILLED = { fontVariationSettings: "'FILL' 1" } as const;
 

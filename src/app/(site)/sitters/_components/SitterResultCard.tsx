@@ -83,6 +83,12 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
               <span className="font-label-sm text-label-sm text-outline">/ per {UNIT_LONG[price.unit] ?? "visit"}</span>
             </div>
           </div>
+          {sitter.availableLabel && (
+            <span className="self-start px-2.5 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-sm text-label-sm font-semibold flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs">event_available</span>
+              {sitter.availableLabel}
+            </span>
+          )}
           <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2 mt-1">{sitter.bio}</p>
           {/* Badges and Traits */}
           {sitter.tags.length > 0 && (

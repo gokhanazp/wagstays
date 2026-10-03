@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/seo/site";
+import { PwaClient } from "@/components/pwa/PwaClient";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -11,7 +13,7 @@ const jakarta = Plus_Jakarta_Sans({
 export const viewport: Viewport = { themeColor: "#226150" };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://wagstays.vercel.app"),
+  metadataBase: new URL(siteUrl()),
   applicationName: "WagStays",
   openGraph: { type: "website", siteName: "WagStays", locale: "en_CA" },
   twitter: { card: "summary_large_image" },
@@ -33,7 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         />
       </head>
-      <body className="bg-background font-body-md text-on-surface antialiased">{children}</body>
+      <body className="bg-background font-body-md text-on-surface antialiased">
+        {children}
+        <PwaClient vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null} />
+      </body>
     </html>
   );
 }

@@ -7,6 +7,7 @@ import { LegalDocument, type LegalSection } from "./_components/LegalDocument";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "The terms that apply when you use WagStays to find, book or work as a pet sitter in Canada.",
+  alternates: { canonical: "/terms" },
 };
 
 export default async function TermsPage() {

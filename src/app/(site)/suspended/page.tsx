@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getPlatformSettings } from "@/lib/settings";
 import { BTN, Card } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Account suspended | WagStays", robots: { index: false } };
+export const metadata: Metadata = { title: "Account suspended", robots: { index: false } };
 
 export default async function SuspendedPage() {
   const [user, settings] = await Promise.all([getCurrentUser(), getPlatformSettings()]);

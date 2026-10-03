@@ -5,7 +5,7 @@ import { getFavoriteSitters } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 import { SitterResultCard } from "../sitters/_components/SitterResultCard";
 
-export const metadata: Metadata = { title: "Favourites" };
+export const metadata: Metadata = { title: "Favourites", robots: { index: false } };
 
 export default async function FavouritesPage() {
   const user = await getCurrentUser();

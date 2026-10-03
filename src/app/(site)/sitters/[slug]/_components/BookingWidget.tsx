@@ -3,9 +3,27 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { DatePicker } from "@/components/forms/DatePicker";
+import { DatePicker, DateRangePicker } from "@/components/forms/DatePicker";
 import { Select } from "@/components/forms/Select";
-import { TIME_SLOTS, type TimeSlotKey } from "@/lib/booking-slots";
+import {
+  DEFAULT_WEEKS,
+  MAX_WEEKS,
+  MIN_WEEKS,
+  addDays,
+  canRecur,
+  checkSeries,
+  dropOffSlots,
+  formatDayLong,
+  isDayBookable,
+  isStayService,
+  minuteToHHMM,
+  nextBookableDay,
+  quantityLabel,
+  todayIn,
+  visitMinutes,
+  visitSlots,
+  type AvailabilitySnapshot,
+} from "@/lib/availability-core";
 import { SERVICE_LABELS, UNIT_LABELS, type ServiceType } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
@@ -28,21 +46,23 @@ const TIME_LABEL: Record<string, string> = {
   DROP_IN: "Visit Time",
 };
 
-function lineTitle(s: WidgetService) {
+function lineTitle(s: WidgetService, quantity: number) {
   const mins = s.durationMins;
   switch (s.type) {
     case "DOG_WALKING":
       return mins && mins % 60 === 0 ? `${mins / 60}-Hour Dog Walk` : `${mins ?? 60}-Min Dog Walk`;
     case "BOARDING":
-      return "1 Night of Overnight Boarding";
     case "DAY_CARE":
-      return "1 Full Day of Doggy Day Care";
+      return `${quantityLabel(s.type, quantity)} × ${formatMoney(s.priceCents)}`;
     case "DROP_IN":
       return `${mins ?? 30}-Min Drop-In Visit`;
     default:
       return SERVICE_LABELS[s.type as ServiceType] ?? s.type;
   }
 }
+
+const FIELD =
+  "w-full h-11 pl-3 pr-9 rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus:bg-surface-container focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer";
 
 function petLabel(p: WidgetPet) {
   const breed = p.breed ? (p.breed.length > 10 ? p.breed.split(" ")[0] : p.breed) : null;
@@ -59,9 +79,10 @@ export function BookingWidget({
   taxRateBps,
   fees,
   taxLabel,
-  defaultDate,
   minDate,
   askHref,
+  availability,
+  nowMs,
 }: {
   slug: string;
   firstName: string;
@@ -71,34 +92,89 @@ export function BookingWidget({
   taxRateBps: number;
   fees: Fees;
   taxLabel: string;
-  defaultDate: string;
+  /** @deprecated the first bookable day is picked from `availability` */
+  defaultDate?: string;
   minDate: string;
+  /** sitter's hours, time off and busy times (src/lib/availability.ts → publicSnapshot) */
+  availability: AvailabilitySnapshot;
+  /** server render time, so the first render matches on the client */
+  nowMs: number;
   /** "Ask <name> a question" target (messaging); falls back to the Meet & Greet flow. */
   askHref?: string;
 }) {
   const router = useRouter();
+  const snap = availability;
+  const now = nowMs;
+  const today = todayIn(snap.timeZone, now);
+  const firstDay = (s: WidgetService | undefined) =>
+    (s && nextBookableDay(snap, minDate > today ? minDate : today, s.type, s.durationMins, now, 120)) ?? addDays(today, 1);
+
   const [serviceId, setServiceId] = useState(() => (services.find((s) => s.type === "DOG_WALKING") ?? services[0])?.id ?? "");
   const [petId, setPetId] = useState(pets?.[0]?.id ?? "");
-  const [date, setDate] = useState(defaultDate);
-  const [slot, setSlot] = useState<TimeSlotKey>("midday");
+  const [date, setDate] = useState(() => firstDay(services.find((s) => s.id === serviceId)));
+  // stays start with a full default range (1 night / 1 day) so the next calendar click starts a new range
+  const defaultEnd = (s: WidgetService | undefined, start: string) => (!s || !isStayService(s.type) ? "" : s.type === "BOARDING" ? addDays(start, 1) : start);
+  const [endDate, setEndDate] = useState<string>(() => defaultEnd(services.find((s) => s.id === serviceId), date));
+  const [minute, setMinute] = useState<number | null>(null);
   const [recurring, setRecurring] = useState(false);
+  const [weeks, setWeeks] = useState(DEFAULT_WEEKS);
   const [pending, setPending] = useState<"book" | "meet" | null>(null);
 
   const service = services.find((s) => s.id === serviceId) ?? services[0];
+  const type = service?.type ?? "DOG_WALKING";
+  const stay = isStayService(type);
+  const duration = visitMinutes(type, service?.durationMins);
+  const repeat = recurring && canRecur(type);
+
+  const slots = useMemo(
+    () => (!date ? [] : stay ? dropOffSlots(snap, date, now) : visitSlots(snap, date, duration, now)),
+    [snap, date, now, stay, duration],
+  );
+  // keep the chosen time if it's still free, otherwise the first free one
+  const chosen = slots.find((s) => s.minute === minute && s.available) ?? slots.find((s) => s.available);
+  const nextFree = useMemo(
+    () => (!stay && date && !chosen ? nextBookableDay(snap, addDays(date, 1), type, service?.durationMins, now) : null),
+    [stay, date, chosen, snap, type, service?.durationMins, now],
+  );
+
+  const rows = useMemo(() => {
+    if (!date || !chosen || (stay && !endDate)) return null;
+    return checkSeries(snap, { type, date, endDate: stay ? endDate : null, minute: chosen.minute, durationMins: service?.durationMins }, repeat ? weeks : 1, now);
+  }, [snap, type, date, endDate, stay, chosen, service?.durationMins, repeat, weeks, now]);
+  const first = rows?.[0]?.check;
+  const quantity = first?.ok ? first.quantity : stay ? 0 : 1;
+  const conflicts = rows?.filter((r) => !r.check.ok) ?? [];
+  const valid = !!rows && conflicts.length === 0;
+  const occurrences = repeat ? weeks : 1;
+
   const price = useMemo(
-    () => (service ? priceBooking({ unitPriceCents: service.priceCents, taxRateBps, fees }) : null),
-    [service, taxRateBps, fees],
+    () => (service ? priceBooking({ unitPriceCents: service.priceCents, quantity: Math.max(quantity, 1), taxRateBps, fees }) : null),
+    [service, quantity, taxRateBps, fees],
   );
   const loggedIn = pets !== null;
   const profilePath = `/sitters/${slug}`;
+  const disabledDay = (iso: string) => !isDayBookable(snap, iso, type, service?.durationMins, now);
+
+  function changeService(id: string) {
+    const next = services.find((s) => s.id === id);
+    setServiceId(id);
+    setMinute(null);
+    const start = next && (!date || !isDayBookable(snap, date, next.type, next.durationMins, now)) ? firstDay(next) : date;
+    setDate(start);
+    setEndDate(defaultEnd(next, start));
+  }
 
   function go(meet: boolean) {
-    if (!service || !date) return;
+    if (!service || !date || !chosen || !valid) return;
     const q = new URLSearchParams({ service: service.id });
     if (petId) q.set("pet", petId);
-    if (date) q.set("date", date);
-    q.set("slot", slot);
-    if (recurring) q.set("recurring", "1");
+    q.set("date", date);
+    if (stay && endDate) q.set("end", endDate);
+    q.set("slot", minuteToHHMM(chosen.minute));
+    if (repeat) {
+      q.set("recurring", "1");
+      q.set("weeks", String(weeks));
+    }
     if (meet) q.set("meet", "1");
     const url = `/book/${slug}?${q.toString()}`;
     setPending(meet ? "meet" : "book");
@@ -143,7 +219,7 @@ export function BookingWidget({
             <Select
               className="w-full h-12 pl-4 pr-10 rounded-xl bg-surface-container-low font-body-md text-body-md text-on-surface text-left focus:outline-none focus:bg-surface-container focus-visible:ring-[3px] focus-visible:ring-primary-container/15 transition-all cursor-pointer"
               id="service-select"
-              onChange={setServiceId}
+              onChange={changeService}
               options={services.map((s) => ({
                 value: s.id,
                 label: `${SERVICE_LABELS[s.type as ServiceType] ?? s.type} (${OPTION_SUFFIX[s.type]?.(s.durationMins) ?? UNIT_LABELS[s.unit]}) - ${formatMoney(s.priceCents)}`,
@@ -200,52 +276,153 @@ export function BookingWidget({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-date">
-                Date
-              </label>
-              <DatePicker
-                className="w-full h-11 pl-3 pr-9 rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus:bg-surface-container focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer"
-                format={{ weekday: "short", month: "short", day: "numeric" }}
-                id="booking-date"
-                min={minDate}
-                onChange={setDate}
-                value={date}
-              />
+          {stay ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-range">
+                  {type === "BOARDING" ? "Check-in → Check-out" : "First day → Last day"}
+                </label>
+                <DateRangePicker
+                  className={FIELD}
+                  end={endDate}
+                  id="booking-range"
+                  inclusive={type === "DAY_CARE"}
+                  isDateDisabled={disabledDay}
+                  min={today}
+                  onChange={(s, e) => {
+                    setDate(s);
+                    setEndDate(e ?? "");
+                  }}
+                  placeholder={type === "BOARDING" ? "Add check-in & check-out" : "Add dates"}
+                  start={date}
+                  unitLabel={type === "BOARDING" ? "night" : "day"}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-slot">
+                  {TIME_LABEL[type] ?? "Time"}
+                </label>
+                <Select
+                  className={FIELD}
+                  disabled={!slots.length}
+                  id="booking-slot"
+                  onChange={(v) => setMinute(Number(v))}
+                  options={slots.map((t) => ({ value: String(t.minute), label: t.label, disabled: !t.available, hint: t.reason === "notice" ? "Too soon" : undefined }))}
+                  placeholder={date ? "Closed that day" : "Pick dates first"}
+                  value={chosen ? String(chosen.minute) : ""}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-slot">
-                {TIME_LABEL[service.type] ?? "Time"}
-              </label>
-              <Select
-                align="end"
-                className="w-full h-11 pl-3 pr-9 rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus:bg-surface-container focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer"
-                id="booking-slot"
-                onChange={(v) => setSlot(v as TimeSlotKey)}
-                options={TIME_SLOTS.map((t) => ({ value: t.key, label: t.label }))}
-                panelMinWidth={260}
-                value={slot}
-              />
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-date">
+                    Date
+                  </label>
+                  <DatePicker
+                    className={FIELD}
+                    format={{ weekday: "short", month: "short", day: "numeric" }}
+                    id="booking-date"
+                    isDateDisabled={disabledDay}
+                    min={today}
+                    onChange={setDate}
+                    value={date}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-slot">
+                    {TIME_LABEL[type] ?? "Time"}
+                  </label>
+                  <Select
+                    align="end"
+                    className={FIELD}
+                    disabled={!slots.some((t) => t.available)}
+                    id="booking-slot"
+                    onChange={(v) => setMinute(Number(v))}
+                    options={slots.map((t) => ({
+                      value: String(t.minute),
+                      label: t.label,
+                      disabled: !t.available,
+                      hint: t.reason === "booked" ? "Booked" : t.reason === "notice" ? "Too soon" : undefined,
+                    }))}
+                    panelMinWidth={220}
+                    placeholder="Fully booked"
+                    value={chosen ? String(chosen.minute) : ""}
+                  />
+                </div>
+              </div>
+              {date && !chosen && (
+                <p className="flex flex-wrap items-center gap-x-1 font-label-sm text-label-sm text-on-surface-variant" role="status">
+                  <span className="material-symbols-outlined text-base text-secondary">event_busy</span>
+                  {slots.length ? "Fully booked" : "Not available"} on {formatDayLong(date)}.
+                  {nextFree && (
+                    <button className="text-primary font-bold hover:underline" onClick={() => setDate(nextFree)} type="button">
+                      Next available: {formatDayLong(nextFree)}
+                    </button>
+                  )}
+                </p>
+              )}
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base text-primary">repeat</span>
-              <label className="font-label-sm text-label-sm text-on-surface cursor-pointer" htmlFor="booking-recurring">
-                Weekly Recurring Booking
-              </label>
+          {canRecur(type) && (
+            <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-surface-container-low">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base text-primary">repeat</span>
+                  <label className="font-label-sm text-label-sm text-on-surface cursor-pointer" htmlFor="booking-recurring">
+                    Weekly Recurring Booking
+                  </label>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input checked={recurring} className="sr-only peer" id="booking-recurring" onChange={(e) => setRecurring(e.target.checked)} type="checkbox" />
+                  <div className="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+                </label>
+              </div>
+              {recurring && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">Repeat for</span>
+                  <Select
+                    aria-label="Number of weeks"
+                    className="w-36 h-9 pl-3 pr-9 rounded-lg bg-surface-container-lowest font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer"
+                    onChange={(v) => setWeeks(Number(v))}
+                    options={Array.from({ length: MAX_WEEKS - MIN_WEEKS + 1 }, (_, i) => ({ value: String(i + MIN_WEEKS), label: `${i + MIN_WEEKS} weeks` }))}
+                    panelMinWidth={150}
+                    value={String(weeks)}
+                  />
+                </div>
+              )}
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input checked={recurring} className="sr-only peer" id="booking-recurring" onChange={(e) => setRecurring(e.target.checked)} type="checkbox" />
-              <div className="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
-            </label>
-          </div>
+          )}
+
+          {rows && conflicts.length > 0 && (
+            <div className="flex items-start gap-2 p-2.5 rounded-xl bg-error-container/60 text-on-error-container font-label-sm text-label-sm" role="alert">
+              <span className="material-symbols-outlined text-base">error</span>
+              {rows.length === 1 ? (
+                <span>{conflicts[0].check.ok ? "" : conflicts[0].check.error}</span>
+              ) : (
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="font-bold">
+                    {conflicts.length} of {rows.length} weekly dates aren&apos;t available:
+                  </span>
+                  {conflicts.slice(0, 4).map((c) => (
+                    <span key={c.req.date}>{formatDayLong(c.req.date)}</span>
+                  ))}
+                  {conflicts.length > 4 && <span>and {conflicts.length - 4} more</span>}
+                </div>
+              )}
+            </div>
+          )}
+          {stay && date && !endDate && (
+            <p className="font-label-sm text-label-sm text-on-surface-variant">
+              {type === "BOARDING" ? "Now pick a check-out date." : "Now pick the last day (the same day for a single day)."}
+            </p>
+          )}
 
           <div className="bg-surface-container p-space-md rounded-2xl flex flex-col gap-space-xs mt-1">
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-              <span>{lineTitle(service)}</span>
+              <span>{lineTitle(service, Math.max(quantity, 1))}</span>
               <span className="font-semibold text-on-surface">{formatMoney(price.subtotalCents)}</span>
             </div>
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
@@ -274,24 +451,32 @@ export function BookingWidget({
               <div>
                 <span className="font-title-md text-title-md text-on-surface font-bold">Total</span>
                 <span className="block text-[11px] text-on-surface-variant">
-                  {recurring ? `Per visit, repeats weekly · incl. ${taxLabel}` : `Includes ${taxLabel} & WagShield`}
+                  {repeat ? `Per ${stay ? "week" : "visit"} · incl. ${taxLabel}` : `Includes ${taxLabel} & WagShield`}
                 </span>
               </div>
               <span className="font-headline-md text-headline-md text-secondary font-extrabold">{formatMoney(price.totalCents, { exact: true })}</span>
             </div>
+            {repeat && (
+              <div className="flex items-baseline justify-between font-body-sm text-body-sm text-on-surface-variant">
+                <span>
+                  {occurrences} weekly {stay ? "bookings" : "visits"} × {formatMoney(price.totalCents, { exact: true })}
+                </span>
+                <span className="font-title-md text-title-md text-on-surface font-bold">{formatMoney(price.totalCents * occurrences, { exact: true })}</span>
+              </div>
+            )}
           </div>
 
           <button
-            className="w-full h-14 rounded-full bg-secondary hover:bg-secondary-container text-on-secondary hover:text-on-secondary-container font-label-lg text-label-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-80"
-            disabled={pending !== null}
+            className="w-full h-14 rounded-full bg-secondary hover:bg-secondary-container text-on-secondary hover:text-on-secondary-container font-label-lg text-label-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={pending !== null || !valid}
             type="submit"
           >
             <span className={`material-symbols-outlined text-xl ${pending === "book" ? "animate-spin" : ""}`}>{pending === "book" ? "autorenew" : "pets"}</span>
             <span>{pending === "book" ? "Opening Checkout..." : "Send Booking Request"}</span>
           </button>
           <button
-            className="w-full h-11 rounded-full bg-surface-container-high hover:bg-surface-dim text-primary font-label-md text-label-md transition-all flex items-center justify-center gap-2 disabled:opacity-80"
-            disabled={pending !== null}
+            className="w-full h-11 rounded-full bg-surface-container-high hover:bg-surface-dim text-primary font-label-md text-label-md transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={pending !== null || !valid}
             onClick={() => go(true)}
             type="button"
           >

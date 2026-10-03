@@ -6,9 +6,12 @@ import { getCurrentUser } from "@/lib/session";
 import { formatMoney, formatRating } from "@/lib/format";
 import { TIME_SLOTS } from "@/lib/booking-slots";
 import { formatClock, formatLongDate, slotRange, toZonedParts } from "@/lib/booking-time";
+import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/availability-core";
 import { SERVICE_ICONS, serviceLine } from "../_lib";
+import { getPlatformSettings } from "@/lib/settings";
+import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 
-export const metadata: Metadata = { title: "Booking Requested | WagStays" };
+export const metadata: Metadata = { title: "Booking Requested" };
 
 export default async function BookingConfirmedPage({ params, searchParams }: PageProps<"/book/[slug]/confirmed">) {
   const { slug } = await params;
@@ -21,14 +24,27 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
 
   const booking = await db.booking.findFirst({
     where: { id: bookingId, ownerId: user.id, sitter: { slug } },
-    include: { sitter: true, service: true, pet: true },
+    include: { sitter: { include: { city: { select: { timeZone: true } } } }, service: true, pet: true },
   });
   if (!booking) notFound();
+  const series = booking.seriesId
+    ? await db.booking.findMany({
+        where: { seriesId: booking.seriesId, ownerId: user.id },
+        orderBy: { startAt: "asc" },
+        select: { id: true, startAt: true, totalCents: true },
+      })
+    : [];
+  const stay = isStayService(booking.service.type);
 
   const start = toZonedParts(booking.startAt);
   const end = toZonedParts(booking.endAt);
   const slot = TIME_SLOTS.find((s) => s.start === start.hhmm);
-  const timeLabel = slot ? slotRange(slot) : `${formatClock(start.hhmm)} – ${formatClock(end.hhmm)}`;
+  const timeLabel = stay
+    ? `Drop-off ${formatClock(start.hhmm)} · ${quantityLabel(booking.service.type, booking.quantity)}`
+    : slot
+      ? slotRange(slot)
+      : `${formatClock(start.hhmm)} – ${formatClock(end.hhmm)}`;
+  const seriesTotal = series.reduce((n, b) => n + b.totalCents, 0);
   const ref = `#WS-${booking.id.slice(-6).toUpperCase()}`;
 
   const rows = [
@@ -37,8 +53,8 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
     {
       icon: "calendar_month",
       label: "Date & Time",
-      value: formatLongDate(start.iso),
-      extra: `${timeLabel}${booking.recurringWeekly ? " · Repeats weekly" : ""}`,
+      value: stay ? `${formatDayLong(start.iso)} → ${formatDayLong(end.iso)}` : formatLongDate(start.iso),
+      extra: `${timeLabel}${series.length > 1 ? ` · Weekly, ${series.length} weeks` : booking.recurringWeekly ? " · Repeats weekly" : ""}`,
     },
     { icon: "location_on", label: "Meeting Address", value: booking.meetingAddress ?? "—" },
     {
@@ -108,8 +124,15 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
           <div className="w-full h-px bg-surface-container-high" />
 
           <div className="flex flex-col gap-space-xs font-body-md text-body-md text-on-surface-variant">
+            {series.length > 1 && (
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">First of {series.length} weekly bookings</span>
+            )}
             <div className="flex justify-between">
-              <span>Subtotal</span>
+              <span>
+                {booking.quantity > 1 || stay
+                  ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(booking.service.priceCents, { exact: true })}`
+                  : "Subtotal"}
+              </span>
               <span className="font-semibold text-on-surface">{formatMoney(booking.subtotalCents, { exact: true })}</span>
             </div>
             <div className="flex justify-between">
@@ -132,9 +155,29 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
             </div>
           </div>
           <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Total</span>
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{series.length > 1 ? "First booking" : "Total"}</span>
             <span className="font-headline-md text-headline-md text-primary font-extrabold">{formatMoney(booking.totalCents, { exact: true })}</span>
           </div>
+          {series.length > 1 && (
+            <div className="flex flex-col gap-space-sm">
+              <h3 className="font-title-md text-title-md text-on-surface">Your weekly schedule</h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
+                {series.map((b, i) => (
+                  <li className="flex items-center justify-between gap-space-sm bg-surface-container-low rounded-xl px-space-md py-space-xs" key={b.id}>
+                    <span>
+                      <span className="font-semibold text-on-surface">Week {i + 1}</span> · {formatDayLong(zonedParts(b.startAt.getTime(), booking.sitter.city.timeZone).iso)}
+                    </span>
+                    <span className="font-semibold text-on-surface">{formatMoney(b.totalCents, { exact: true })}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline">
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">All {series.length} weeks</span>
+                <span className="font-headline-sm text-headline-sm text-primary font-extrabold">{formatMoney(seriesTotal, { exact: true })}</span>
+              </div>
+            </div>
+          )}
+          <EarnPointsNote className="justify-center" earnRateBps={(await getPlatformSettings()).pointsEarnRateBps} subtotalCents={booking.subtotalCents} />
         </section>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-space-sm">

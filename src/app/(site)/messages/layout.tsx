@@ -4,7 +4,7 @@ import { listConversations } from "@/lib/conversations";
 import { InboxShell, type InboxItem } from "./_components/InboxShell";
 import { shortRelative } from "./_components/time";
 
-export const metadata: Metadata = { title: "Messages" };
+export const metadata: Metadata = { title: "Messages", robots: { index: false } };
 
 export default async function MessagesLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();

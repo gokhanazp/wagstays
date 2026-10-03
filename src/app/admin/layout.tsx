@@ -10,9 +10,10 @@ export const metadata: Metadata = { title: { default: "Admin", template: "%s · 
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
-  const [applications, pendingBookings] = await Promise.all([
+  const [applications, pendingBookings, openTickets] = await Promise.all([
     db.sitterApplication.count({ where: { status: { in: ["IN_REVIEW", "MEET_GREET"] } } }),
     db.booking.count({ where: { status: "PENDING" } }),
+    db.supportTicket.count({ where: { status: { in: ["OPEN", "IN_PROGRESS"] } } }),
   ]);
 
   return (
@@ -36,6 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: "/admin/applications", label: "Applications", icon: "assignment_ind", badge: applications },
             { href: "/admin/sitters", label: "Sitters", icon: "volunteer_activism" },
             { href: "/admin/bookings", label: "Bookings", icon: "event_note", badge: pendingBookings },
+            { href: "/admin/support", label: "Support", icon: "support_agent", badge: openTickets },
             { href: "/admin/users", label: "Users", icon: "group" },
             { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
             { href: "/admin/cities", label: "Cities", icon: "location_city" },

@@ -92,7 +92,7 @@ export function Popover({
         pos ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
       } ${className}`}
       ref={panel}
-      style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: pos?.width, minWidth }}
+      style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: pos?.width, minWidth, maxHeight: "calc(100dvh - 24px)", overflowY: "auto" }}
     >
       {children}
     </div>,

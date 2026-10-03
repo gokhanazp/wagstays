@@ -21,6 +21,8 @@ export default async function SettingsPage() {
           serviceFeeCents: s.serviceFeeCents,
           wagPointsDiscountCents: s.wagPointsDiscountCents,
           vetCoverageCents: s.vetCoverageCents,
+          pointsEarnRateBps: s.pointsEarnRateBps,
+          referralRewardCents: s.referralRewardCents,
           supportEmail: s.supportEmail,
           supportPhone: s.supportPhone,
         }}
