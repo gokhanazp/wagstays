@@ -381,6 +381,7 @@ model SitterApplication {
   acceptsMedium   Boolean              @default(false)
   acceptsLarge    Boolean              @default(false)
   acceptsGiant    Boolean              @default(false)
+  acceptedKinds   String[]             @default([]) // PET_KINDS the applicant will care for (copied to SitterSpecies on approval)
   certFirstAid    Boolean              @default(false)
   certMedication  Boolean              @default(false)
   certPuppy       Boolean              @default(false)
