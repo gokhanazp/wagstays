@@ -71,6 +71,7 @@ model Pet {
   owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name          String
   species       String    // DOG | CAT | OTHER
+  speciesOther  String?   // what the pet is when species = OTHER (e.g. "Rabbit")
   breed         String?
   ageYears      Float?
   size          String?   // SMALL | MEDIUM | LARGE | GIANT

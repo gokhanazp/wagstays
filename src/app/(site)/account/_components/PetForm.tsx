@@ -6,6 +6,7 @@ import { savePet, type FormState } from "@/app/actions/account";
 import { BTN, Card, CardHeader, Field, INPUT, LABEL, Toggle } from "@/components/ui";
 import { Select } from "@/components/forms/Select";
 import { PET_SIZES, PET_SIZE_LABELS } from "@/lib/constants";
+import { OTHER_SPECIES_SUGGESTIONS } from "@/lib/pets";
 import { ImagePicker } from "./ImagePicker";
 
 type Trait = { label: string; tone: "neutral" | "warning" };
@@ -13,6 +14,7 @@ export type PetFormValues = {
   id: string;
   name: string;
   species: string;
+  speciesOther: string | null;
   breed: string | null;
   ageYears: number | null;
   size: string | null;
@@ -46,9 +48,12 @@ const SUGGESTIONS: Trait[] = [
 // Mobile: an even grid (3 across, or 2×2 for four options) instead of a ragged wrap; sm+: the wrapping row.
 const CHOICE_GRID: Record<number, string> = { 2: "grid grid-cols-2", 3: "grid grid-cols-3", 4: "grid grid-cols-2" };
 
-function ChoiceGroup({ name, legend, options, defaultValue, error }: { name: string; legend: string; options: { value: string; label: string; hint?: string; icon?: string }[]; defaultValue?: string | null; error?: string[] }) {
+function ChoiceGroup({ name, legend, options, defaultValue, error, onChange }: { name: string; legend: string; options: { value: string; label: string; hint?: string; icon?: string }[]; defaultValue?: string | null; error?: string[]; onChange?: (value: string) => void }) {
   return (
-    <fieldset className="flex flex-col gap-space-xs">
+    <fieldset className="flex flex-col gap-space-xs" onChange={(e) => {
+        const input = e.target as unknown as HTMLInputElement;
+        if (input.name === name) onChange?.(input.value);
+      }}>
       <legend className={`${LABEL} mb-space-xs`}>{legend}</legend>
       <div className={`${CHOICE_GRID[options.length] ?? "flex flex-wrap"} sm:flex sm:flex-wrap gap-space-xs`}>
         {options.map((o) => (
@@ -80,6 +85,14 @@ export function PetForm({ pet, next, cancelHref }: { pet?: PetFormValues; next?:
   const [draft, setDraft] = useState("");
   const [draftWarning, setDraftWarning] = useState(false);
   const fe = state?.fieldErrors ?? {};
+  const [species, setSpecies] = useState(pet?.species ?? "DOG");
+  const [otherKind, setOtherKind] = useState(pet?.speciesOther ?? "");
+  // hide the server's "what kind of pet?" error once the field has been edited again
+  const [kindErrorFor, setKindErrorFor] = useState<typeof state>(undefined);
+  const editKind = (v: string) => {
+    setOtherKind(v);
+    setKindErrorFor(state);
+  };
 
   function addTrait(t: Trait) {
     const label = t.label.trim().slice(0, 40);
@@ -111,7 +124,38 @@ export function PetForm({ pet, next, cancelHref }: { pet?: PetFormValues; next?:
               <input autoComplete="off" className={INPUT} defaultValue={pet?.breed ?? ""} maxLength={60} name="breed" placeholder="e.g. Golden Retriever" />
             </Field>
           </div>
-          <ChoiceGroup defaultValue={pet?.species ?? "DOG"} error={fe.species} legend="Species" name="species" options={SPECIES} />
+          <ChoiceGroup defaultValue={pet?.species ?? "DOG"} error={fe.species} legend="Species" name="species" onChange={setSpecies} options={SPECIES} />
+          {species === "OTHER" && (
+            <Field error={kindErrorFor === state ? undefined : fe.speciesOther} hint="Rabbits, birds, reptiles… tell your sitter what to expect." label="What kind of pet?">
+              <input
+                autoComplete="off"
+                autoFocus={!pet}
+                className={INPUT}
+                maxLength={40}
+                name="speciesOther"
+                onChange={(e) => editKind(e.target.value)}
+                placeholder="e.g. Rabbit"
+                required
+                value={otherKind}
+              />
+              <span className="flex flex-wrap gap-space-xs pt-space-xs">
+                {OTHER_SPECIES_SUGGESTIONS.map((k) => (
+                  <button
+                    className={`h-9 px-space-md rounded-full font-label-md text-label-md border transition-all ${
+                      otherKind === k
+                        ? "bg-[#EBF3EF] text-primary border-primary-container"
+                        : "bg-surface-container-low text-on-surface-variant border-transparent hover:bg-surface-container"
+                    }`}
+                    key={k}
+                    onClick={() => editKind(k)}
+                    type="button"
+                  >
+                    {k}
+                  </button>
+                ))}
+              </span>
+            </Field>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
             <Field error={fe.ageYears} hint="In years — decimals are fine (e.g. 0.5 for six months)." label="Age">
               <input className={INPUT} defaultValue={pet?.ageYears ?? ""} inputMode="decimal" max={40} min={0} name="ageYears" placeholder="e.g. 2.5" step={0.1} type="number" />

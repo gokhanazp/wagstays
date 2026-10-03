@@ -9,7 +9,6 @@ export const SERVICE_ICONS: Record<string, string> = {
 
 export const serviceLabel = (type: string) => SERVICE_LABELS[type as ServiceType] ?? type;
 
-export const SPECIES_LABELS: Record<string, string> = { DOG: "Dog", CAT: "Cat", OTHER: "Other" };
 export const SEX_LABELS: Record<string, string> = { MALE: "Male", FEMALE: "Female" };
 
 export function sizeLabel(size: string | null | undefined) {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { petKindLabel } from "@/lib/pets";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -16,7 +17,6 @@ import { ROLE_LABEL, ROLE_TONE } from "../_components/roles";
 
 export const metadata: Metadata = { title: "User" };
 
-const SPECIES: Record<string, string> = { DOG: "Dog", CAT: "Cat", OTHER: "Other" };
 
 export default async function UserDetailPage({ params }: PageProps<"/admin/users/[id]">) {
   const { id } = await params;
@@ -177,7 +177,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
                 <span className="flex flex-col min-w-0">
                   <span className="font-label-lg text-label-lg text-on-surface">{p.name}</span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
-                    {[SPECIES[p.species] ?? p.species, p.breed, p.ageYears != null ? `${p.ageYears} yrs` : null].filter(Boolean).join(" · ")}
+                    {[petKindLabel(p), p.breed, p.ageYears != null ? `${p.ageYears} yrs` : null].filter(Boolean).join(" · ")}
                   </span>
                 </span>
               </li>

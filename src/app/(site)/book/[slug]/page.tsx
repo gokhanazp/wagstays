@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { petKindLabel } from "@/lib/pets";
 import { getFees } from "@/lib/settings";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
@@ -98,7 +99,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             id: p.id,
             name: p.name,
             species: p.species,
-            breed: p.breed,
+            // other pets: lead with what they are ("Rabbit · Holland Lop")
+            breed: p.species === "OTHER" ? [petKindLabel(p), p.breed].filter(Boolean).join(" · ") : p.breed,
             ageYears: p.ageYears,
             sex: p.sex,
             neutered: p.neutered,

@@ -148,6 +148,7 @@ const TraitSchema = z.object({
 const PetSchema = z.object({
   name: z.string().trim().min(1, "Please enter your pet's name.").max(40, "Please keep the name under 40 characters."),
   species: z.enum(["DOG", "CAT", "OTHER"], "Please choose a species."),
+  speciesOther: optText(40),
   breed: optText(60),
   ageYears: z
     .string()
@@ -216,6 +217,10 @@ export async function savePet(petId: string | null, _: FormState, formData: Form
   const parsed = PetSchema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { traits, removePhoto, ...data } = parsed.data;
+  if (data.species === "OTHER" && !data.speciesOther) {
+    return { fieldErrors: { speciesOther: ["Please tell us what kind of pet this is (e.g. Rabbit)."] } };
+  }
+  if (data.species !== "OTHER") data.speciesOther = null;
 
   let photoUrl: string | null | undefined = removePhoto ? null : undefined;
   const photo = fileFrom(formData, "photo");

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { petKindLabel } from "@/lib/pets";
 import type { Prisma } from "@prisma/client";
 import { StatusChip } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
@@ -29,7 +30,7 @@ export function BookingCard({ booking: b, tz, withActions = false }: { booking: 
           <div className="flex flex-wrap items-center gap-space-xs">
             <h3 className="font-title-md text-title-md text-on-surface">{b.pet.name}</h3>
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              {[b.pet.breed, size].filter(Boolean).join(" · ")}
+              {[b.pet.species === "OTHER" && petKindLabel(b.pet), b.pet.breed, size].filter(Boolean).join(" · ")}
             </span>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant">

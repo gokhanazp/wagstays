@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { petKindLabel } from "@/lib/pets";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BTN, Card, CardHeader, StatusChip, formatDateTime } from "@/components/ui";
@@ -125,7 +126,7 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/si
             <Row
               icon="info"
               label="Pet"
-              value={[pet.species === "CAT" ? "Cat" : pet.species === "DOG" ? "Dog" : "Pet", pet.breed, size, pet.ageYears != null ? `${pet.ageYears} yrs` : null, pet.sex === "MALE" ? "Male" : pet.sex === "FEMALE" ? "Female" : null]
+              value={[petKindLabel(pet), pet.breed, size, pet.ageYears != null ? `${pet.ageYears} yrs` : null, pet.sex === "MALE" ? "Male" : pet.sex === "FEMALE" ? "Female" : null]
                 .filter(Boolean)
                 .join(" · ")}
             />

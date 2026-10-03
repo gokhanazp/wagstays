@@ -34,6 +34,7 @@ export default async function EditPetPage({ params }: PageProps<"/account/pets/[
           id: pet.id,
           name: pet.name,
           species: pet.species,
+          speciesOther: pet.speciesOther,
           breed: pet.breed,
           ageYears: pet.ageYears,
           size: pet.size,

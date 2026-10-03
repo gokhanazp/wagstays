@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { petKindLabel } from "@/lib/pets";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getOwnerPets } from "@/lib/queries";
 import { BTN, Card, EmptyState, PageHeader } from "@/components/ui";
-import { SPECIES_LABELS, ageLabel, sizeLabel } from "../_lib";
+import { ageLabel, sizeLabel } from "../_lib";
 
 export const metadata: Metadata = { title: "My Pets | WagStays" };
 
@@ -56,7 +57,7 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/account/p
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-space-lg">
           {pets.map((p) => {
-            const facts = [SPECIES_LABELS[p.species] ?? p.species, ageLabel(p.ageYears), sizeLabel(p.size)].filter(Boolean);
+            const facts = [petKindLabel(p), ageLabel(p.ageYears), sizeLabel(p.size)].filter(Boolean);
             return (
               <Card className="overflow-hidden flex flex-col" key={p.id}>
                 <div className="relative h-44 bg-primary-fixed flex items-center justify-center">

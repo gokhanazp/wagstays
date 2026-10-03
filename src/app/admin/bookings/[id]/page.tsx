@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { petKindLabel } from "@/lib/pets";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -16,7 +17,6 @@ export async function generateMetadata({ params }: PageProps<"/admin/bookings/[i
 }
 
 const TRAIT_TONES: Record<string, "neutral" | "primary" | "warning"> = { neutral: "neutral", primary: "primary", warning: "warning" };
-const SPECIES: Record<string, string> = { DOG: "Dog", CAT: "Cat", OTHER: "Pet" };
 const ACTOR: Record<string, string> = { OWNER: "the owner", SITTER: "the sitter", ADMIN: "WagStays (admin)" };
 
 export default async function AdminBookingDetailPage({ params }: PageProps<"/admin/bookings/[id]">) {
@@ -162,7 +162,7 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
                 <div className="flex flex-col">
                   <span className="font-title-md text-title-md text-on-surface">{b.pet.name}</span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    {[SPECIES[b.pet.species] ?? b.pet.species, b.pet.breed, b.pet.ageYears != null && `${b.pet.ageYears} yrs`, b.pet.size && b.pet.size.toLowerCase(), b.pet.sex && b.pet.sex.toLowerCase()]
+                    {[petKindLabel(b.pet), b.pet.breed, b.pet.ageYears != null && `${b.pet.ageYears} yrs`, b.pet.size && b.pet.size.toLowerCase(), b.pet.sex && b.pet.sex.toLowerCase()]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
