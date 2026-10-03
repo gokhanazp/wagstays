@@ -1,4 +1,6 @@
 import "server-only";
+import { changePoints } from "./wagpoints";
+import { emit } from "./events";
 import { db } from "./db";
 import type { BookingStatus } from "./constants";
 
@@ -40,8 +42,8 @@ export async function transitionBooking(opts: {
   }
   const now = new Date();
   const refund = (opts.to === "CANCELLED" || opts.to === "DECLINED") && booking.discountCents > 0;
-  await db.$transaction([
-    db.booking.update({
+  await db.$transaction(async (tx) => {
+    await tx.booking.update({
       where: { id: booking.id, status: booking.status }, // optimistic concurrency guard
       data: {
         status: opts.to,
@@ -51,11 +53,16 @@ export async function transitionBooking(opts: {
         ...(opts.to === "DECLINED" && { cancelReason: opts.reason ?? null }),
         ...(opts.sitterNote !== undefined && { sitterNote: opts.sitterNote }),
       },
-    }),
-    ...(refund ? [db.user.update({ where: { id: booking.ownerId }, data: { wagPointsCents: { increment: booking.discountCents } } })] : []),
+    });
+    if (refund) {
+      await changePoints(tx, { userId: booking.ownerId, amountCents: booking.discountCents, reason: "BOOKING_REFUND", bookingId: booking.id });
+    }
     // Sitter stats: completed bookings counter
-    ...(opts.to === "COMPLETED" ? [db.sitterProfile.update({ where: { id: booking.sitterId }, data: { completedBookings: { increment: 1 } } })] : []),
-  ]);
+    if (opts.to === "COMPLETED") {
+      await tx.sitterProfile.update({ where: { id: booking.sitterId }, data: { completedBookings: { increment: 1 } } });
+    }
+  });
+  emit({ type: `booking.${opts.to.toLowerCase()}` as "booking.confirmed", bookingId: booking.id, actor: opts.actor });
   return { ok: true };
 }
 

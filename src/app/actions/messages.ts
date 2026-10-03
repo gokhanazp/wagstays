@@ -1,5 +1,6 @@
 "use server";
 
+import { emit } from "@/lib/events";
 import { conversationChannel, inboxChannel, ping } from "@/lib/realtime";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -30,7 +31,7 @@ export async function sendMessage(conversationId: string, body: string): Promise
   if (!side) return { ok: false, error: "Conversation not found." };
 
   const now = new Date();
-  await db.$transaction([
+  const [message] = await db.$transaction([
     db.message.create({ data: { conversationId: parsed.data.conversationId, senderId: user.id, body: parsed.data.body, createdAt: now } }),
     db.conversation.update({
       where: { id: parsed.data.conversationId },
@@ -45,6 +46,7 @@ export async function sendMessage(conversationId: string, body: string): Promise
   if (conv) {
     const recipient = side === "owner" ? conv.sitter.userId : conv.ownerId;
     await ping(conversationChannel(parsed.data.conversationId), inboxChannel(recipient));
+    emit({ type: "message.sent", conversationId: parsed.data.conversationId, messageId: message.id, senderId: user.id, recipientId: recipient });
   }
   return { ok: true };
 }

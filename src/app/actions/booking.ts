@@ -1,5 +1,7 @@
 "use server";
 
+import { changePoints } from "@/lib/wagpoints";
+import { emit } from "@/lib/events";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -98,13 +100,6 @@ export async function createBooking(slug: string, _: BookingState, formData: For
   let bookingId: string;
   try {
     bookingId = await db.$transaction(async (tx) => {
-      if (price.discountCents > 0) {
-        const res = await tx.user.updateMany({
-          where: { id: user.id, wagPointsCents: { gte: price.discountCents } },
-          data: { wagPointsCents: { decrement: price.discountCents } },
-        });
-        if (res.count !== 1) throw new Error("WAGPOINTS");
-      }
       const booking = await tx.booking.create({
         data: {
           ownerId: user.id,
@@ -132,6 +127,10 @@ export async function createBooking(slug: string, _: BookingState, formData: For
         },
         select: { id: true },
       });
+      if (price.discountCents > 0) {
+        const ok = await changePoints(tx, { userId: user.id, amountCents: -price.discountCents, reason: "BOOKING_SPEND", bookingId: booking.id });
+        if (!ok) throw new Error("WAGPOINTS");
+      }
       return booking.id;
     });
   } catch (e) {
@@ -141,5 +140,6 @@ export async function createBooking(slug: string, _: BookingState, formData: For
     throw e;
   }
 
+  emit({ type: "booking.created", bookingId });
   redirect(`/book/${slug}/confirmed?id=${bookingId}`);
 }

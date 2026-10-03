@@ -53,6 +53,11 @@ model User {
   role         String              @default("OWNER") // OWNER | SITTER | ADMIN
   suspended    Boolean             @default(false)
   wagPointsCents Int               @default(0)
+  referralCode String?             @unique // share link code, e.g. "EMILY7K2"
+  referredById String?
+  referredBy   User?               @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals    User[]              @relation("Referrals")
+  deletedAt    DateTime?           // account closed (PIPEDA erasure): personal data anonymised
   createdAt    DateTime            @default(now())
   pets         Pet[]
   sitter       SitterProfile?
@@ -63,6 +68,11 @@ model User {
   conversationsAsOwner Conversation[] @relation("ConversationOwner")
   messages     Message[]
   auditLogs    AuditLog[]
+  pointsLedger WagPointsEntry[]
+  ticketsOpened SupportTicket[]    @relation("TicketOpener")
+  ticketMessages SupportTicketMessage[]
+  ownerReviewsReceived OwnerReview[] @relation("OwnerReviewSubject")
+  pushSubscriptions PushSubscription[]
 }
 
 model Pet {
@@ -155,6 +165,8 @@ model SitterProfile {
   highlightIcon     String?
   quote             String?       // short first-person blurb for home cards
   status            String        @default("ACTIVE") // ACTIVE | PAUSED
+  boardingCapacity  Int           @default(1)   // pets that can board / attend day care at the same time
+  noticeHours       Int           @default(12)  // minimum notice before a booking can start
   services          Service[]
   photos            SitterPhoto[]
   tags              SitterTag[]
@@ -164,7 +176,45 @@ model SitterProfile {
   favorites         Favorite[]
   conversations     Conversation[]
   application       SitterApplication?
+  availability      SitterAvailability[]
+  timeOff           SitterTimeOff[]
+  species           SitterSpecies[]
+  ownerReviews      OwnerReview[]
   createdAt         DateTime      @default(now())
+}
+
+// Weekly opening hours, in the city's local time. Several rows per weekday are allowed (e.g. 8–11 and 17–20).
+model SitterAvailability {
+  id          String        @id @default(cuid())
+  sitterId    String
+  sitter      SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  weekday     Int           // 0 = Sunday … 6 = Saturday
+  startMinute Int           // minutes after midnight, e.g. 480 = 8:00
+  endMinute   Int
+
+  @@index([sitterId, weekday])
+}
+
+// Days the sitter is away / fully booked outside the platform (inclusive local dates, YYYY-MM-DD).
+model SitterTimeOff {
+  id        String        @id @default(cuid())
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  startDate String
+  endDate   String
+  note      String?
+  createdAt DateTime      @default(now())
+
+  @@index([sitterId, startDate])
+}
+
+// Kinds of animals a sitter cares for (see PET_KINDS in src/lib/pets.ts).
+model SitterSpecies {
+  sitterId String
+  sitter   SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  kind     String        // DOG | CAT | RABBIT | GUINEA_PIG | HAMSTER | BIRD | FERRET | REPTILE | FISH | OTHER
+
+  @@id([sitterId, kind])
 }
 
 model SitterPhoto {
@@ -224,6 +274,8 @@ model Booking {
   startAt            DateTime
   endAt              DateTime
   recurringWeekly    Boolean       @default(false)
+  quantity           Int           @default(1)   // nights (boarding), days (day care) or visits/walks for this booking
+  seriesId           String?       // weekly recurring bookings share a series id (one row per occurrence)
   meetAndGreet       Boolean       @default(false) // owner asked for a free Meet & Greet first
   status             String        @default("DRAFT") // DRAFT | PENDING | CONFIRMED | DECLINED | COMPLETED | CANCELLED
   meetingAddress     String?
@@ -251,8 +303,14 @@ model Booking {
   cancelReason       String?
   sitterNote         String?       // message from the sitter when accepting / declining
   review             Review?
+  ownerReview        OwnerReview?
+  tickets            SupportTicket[]
+  pointsEntries      WagPointsEntry[]
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @default(now()) @updatedAt
+
+  @@index([sitterId, startAt])
+  @@index([seriesId])
 }
 
 model Review {
@@ -273,7 +331,26 @@ model Review {
   bookingId    String?       @unique
   booking      Booking?      @relation(fields: [bookingId], references: [id])
   hidden       Boolean       @default(false) // hidden by admin moderation
+  sitterReply  String?       // public reply from the sitter
+  sitterRepliedAt DateTime?
   createdAt    DateTime      @default(now())
+}
+
+// Sitter's private rating of a pet parent after a completed booking (visible to sitters & admins only).
+model OwnerReview {
+  id        String        @id @default(cuid())
+  bookingId String        @unique
+  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sitterId  String
+  sitter    SitterProfile @relation(fields: [sitterId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     User          @relation("OwnerReviewSubject", fields: [ownerId], references: [id], onDelete: Cascade)
+  rating    Int
+  body      String?
+  hidden    Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([ownerId])
 }
 
 model Favorite {
@@ -364,6 +441,8 @@ model PlatformSettings {
   vetCoverageCents       Int      @default(500000)
   supportEmail           String   @default("support@wagstays.ca")
   supportPhone           String   @default("+1 (416) 555-0142")
+  pointsEarnRateBps      Int      @default(500)  // WagPoints earned on completed bookings: 5% of the subtotal
+  referralRewardCents    Int      @default(1000) // $10 to both people after the friend's first completed booking
   updatedAt              DateTime @default(now()) @updatedAt
 }
 
@@ -406,4 +485,64 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
+}
+
+// Every change to a user's WagPoints balance (earn, spend, refund, referral, admin adjustment).
+model WagPointsEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int      // positive = earned, negative = spent
+  reason      String   // BOOKING_EARN | BOOKING_SPEND | BOOKING_REFUND | REFERRAL | ADMIN | WELCOME
+  note        String?
+  bookingId   String?
+  booking     Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model SupportTicket {
+  id          String                 @id @default(cuid())
+  reference   String                 @unique // e.g. "T-48213"
+  openedById  String
+  openedBy    User                   @relation("TicketOpener", fields: [openedById], references: [id], onDelete: Cascade)
+  bookingId   String?
+  booking     Booking?               @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  category    String                 // BOOKING_ISSUE | PAYMENT | SAFETY | ACCOUNT | OTHER
+  subject     String
+  status      String                 @default("OPEN") // OPEN | IN_PROGRESS | WAITING_ON_USER | RESOLVED | CLOSED
+  priority    String                 @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
+  resolution  String?
+  resolvedAt  DateTime?
+  messages    SupportTicketMessage[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @default(now()) @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model SupportTicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  internal  Boolean       @default(false) // admin-only note
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+// Web Push subscriptions (one per browser/device).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
 }

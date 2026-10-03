@@ -1,5 +1,6 @@
 "use server";
 
+import { changePoints } from "@/lib/wagpoints";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -327,7 +328,9 @@ export async function adjustWagPoints(_: FormState, formData: FormData): Promise
   const delta = direction === "add" ? amount : -amount;
   const next = user.wagPointsCents + delta;
   if (next < 0) return { error: "Please fix the highlighted fields.", fieldErrors: { amount: ["That would take the balance below $0."] } };
-  await db.user.update({ where: { id: userId }, data: { wagPointsCents: next } });
+  if (!(await changePoints(db, { userId, amountCents: delta, reason: "ADMIN", note: reason }))) {
+    return { error: "Please fix the highlighted fields.", fieldErrors: { amount: ["That would take the balance below $0."] } };
+  }
   await audit(admin.id, "user.wagpoints", "User", userId, {
     email: user.email,
     deltaCents: delta,

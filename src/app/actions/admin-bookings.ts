@@ -1,5 +1,6 @@
 "use server";
 
+import { changePoints } from "@/lib/wagpoints";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -93,11 +94,8 @@ export async function issueWagPointsCredit(_: AdminActionState, formData: FormDa
   const booking = await db.booking.findUnique({ where: { id: bookingId }, select: { ownerId: true } });
   if (!booking) return { error: "Booking not found." };
 
-  const user = await db.user.update({
-    where: { id: booking.ownerId },
-    data: { wagPointsCents: { increment: amount } },
-    select: { wagPointsCents: true, firstName: true },
-  });
+  await changePoints(db, { userId: booking.ownerId, amountCents: amount, reason: "ADMIN", note: reason, bookingId });
+  const user = await db.user.findUniqueOrThrow({ where: { id: booking.ownerId }, select: { wagPointsCents: true, firstName: true } });
   await audit(admin.id, "user.wagpoints_credit", "User", booking.ownerId, {
     bookingId,
     amountCents: amount,
