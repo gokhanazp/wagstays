@@ -1,3 +1,4 @@
+import { AccountMenu } from "./AccountMenu";
 import { InboxLive } from "./InboxLive";
 import Image from "next/image";
 import Link from "next/link";
@@ -53,51 +54,52 @@ export async function Header() {
             <MobileMenu signedIn={!!user} />
           </div>
           {user ? (
-            <details className="relative group/menu">
-              <summary className="flex items-center gap-space-sm pl-space-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                <div className="text-right hidden sm:block">
-                  <div className="font-label-lg text-label-lg text-on-surface leading-tight">
-                    {user.firstName} {user.lastName.charAt(0)}.
+            <AccountMenu
+              trigger={
+                <>
+                  <div className="text-right hidden sm:block">
+                    <div className="font-label-lg text-label-lg text-on-surface leading-tight">
+                      {user.firstName} {user.lastName.charAt(0)}.
+                    </div>
+                    <div className="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-surface-container-high px-2 py-0.5 rounded-full mt-0.5">
+                      <span className="text-xs">🐾</span>{" "}
+                      {user.role === "ADMIN" && !user._count.pets
+                        ? "Admin"
+                        : user.role === "SITTER" && !user._count.pets
+                          ? "Sitter"
+                          : `${user._count.pets} ${user._count.pets === 1 ? "Pet" : "Pets"}`}
+                    </div>
                   </div>
-                  <div className="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-surface-container-high px-2 py-0.5 rounded-full mt-0.5">
-                    <span className="text-xs">🐾</span>{" "}
-                    {user.role === "ADMIN" && !user._count.pets
-                      ? "Admin"
-                      : user.role === "SITTER" && !user._count.pets
-                        ? "Sitter"
-                        : `${user._count.pets} ${user._count.pets === 1 ? "Pet" : "Pets"}`}
-                  </div>
-                </div>
-                {user.avatarUrl ? (
-                  <Image
-                    alt={`${user.firstName}'s profile`}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-fixed"
-                    height={32}
-                    src={user.avatarUrl}
-                    width={32}
-                  />
-                ) : (
-                  <span className="w-8 h-8 rounded-full bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center ring-2 ring-primary-fixed">
-                    {user.firstName.charAt(0)}
-                  </span>
-                )}
-              </summary>
-              <div className="absolute right-0 top-12 w-64 p-space-sm rounded-2xl bg-surface-container-lowest shadow-[0_20px_36px_-6px_rgba(83,72,62,0.12)] border border-surface-container-high flex flex-col gap-space-xs z-50">
-                <div className="px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant truncate">{user.email}</div>
-                {menu.map((m) => (
-                  <Link key={m.href} className="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low" href={m.href}>
-                    <span className="material-symbols-outlined text-lg text-on-surface-variant">{m.icon}</span>
-                    {m.label}
-                  </Link>
-                ))}
-                <form action={logout}>
-                  <button className="w-full flex items-center gap-space-sm text-left px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-secondary hover:bg-surface-container-low" type="submit">
-                    <span className="material-symbols-outlined text-lg">logout</span>
-                    Log out
-                  </button>
-                </form>
-              </div>
-            </details>
+                  {user.avatarUrl ? (
+                    <Image
+                      alt={`${user.firstName}'s profile`}
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-fixed"
+                      height={32}
+                      src={user.avatarUrl}
+                      width={32}
+                    />
+                  ) : (
+                    <span className="w-8 h-8 rounded-full bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center ring-2 ring-primary-fixed">
+                      {user.firstName.charAt(0)}
+                    </span>
+                  )}
+                </>
+              }
+            >
+              <div className="px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant truncate">{user.email}</div>
+              {menu.map((m) => (
+                <Link key={m.href} className="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low" href={m.href}>
+                  <span className="material-symbols-outlined text-lg text-on-surface-variant">{m.icon}</span>
+                  {m.label}
+                </Link>
+              ))}
+              <form action={logout}>
+                <button className="w-full flex items-center gap-space-sm text-left px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-secondary hover:bg-surface-container-low" type="submit">
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                  Log out
+                </button>
+              </form>
+            </AccountMenu>
           ) : (
             <div className="hidden sm:flex items-center gap-space-sm pl-space-sm">
               <Link className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface hover:bg-surface-container transition-all" href="/login">
