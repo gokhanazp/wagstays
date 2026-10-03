@@ -147,7 +147,7 @@ export default async function Home() {
                   <span className="font-label-md text-label-md sm:font-label-lg sm:text-label-lg tracking-wide sm:tracking-wide uppercase">{city.name}&apos;s Most Loved Pet Care Platform</span>
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 </div>
-                <h1 className="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface leading-tight md:leading-tight tracking-tight md:tracking-tight">
+                <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-extrabold sm:font-display-lg-mobile sm:text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface leading-tight sm:leading-tight md:leading-tight tracking-tight sm:tracking-tight md:tracking-tight">
                   For Your Furry Best Friend
                   <br />
                   <span className="text-secondary relative inline-block">
