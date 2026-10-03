@@ -22,6 +22,9 @@ type Pet = {
   microchip: string | null;
   photoUrl: string | null;
   traits: { id: string; label: string; tone: string }[];
+  icon: string;
+  /** why this sitter / service can't take the pet, null when bookable */
+  blocked: string | null;
 };
 
 type Props = {
@@ -246,10 +249,12 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                       {pets.map((p) => (
                         <li key={p.id}>
                           <button
+                            aria-disabled={!!p.blocked}
                             aria-selected={p.id === petId}
                             className={`w-full flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-left font-label-md text-label-md transition-colors ${
-                              p.id === petId ? "bg-primary/10 text-primary" : "text-on-surface hover:bg-surface-container"
+                              p.blocked ? "text-outline cursor-not-allowed" : p.id === petId ? "bg-primary/10 text-primary" : "text-on-surface hover:bg-surface-container"
                             }`}
+                            disabled={!!p.blocked}
                             onClick={() => {
                               setPetId(p.id);
                               setPetMenuOpen(false);
@@ -257,10 +262,14 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                             role="option"
                             type="button"
                           >
-                            <span className="material-symbols-outlined text-base">{p.species === "CAT" ? "pets" : "sound_detection_dog_barking"}</span>
+                            <span className="material-symbols-outlined text-base">{p.blocked ? "block" : p.icon}</span>
                             <span className="flex-1">
                               {p.name}
-                              {p.breed && <span className="block font-body-sm text-body-sm text-on-surface-variant">{p.breed}</span>}
+                              {p.blocked ? (
+                                <span className="block font-body-sm text-body-sm text-on-surface-variant">{p.blocked}</span>
+                              ) : (
+                                p.breed && <span className="block font-body-sm text-body-sm text-on-surface-variant">{p.breed}</span>
+                              )}
                             </span>
                             {p.id === petId && <span className="material-symbols-outlined text-base">check</span>}
                           </button>
@@ -281,6 +290,12 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
               )}
             </div>
 
+            {pet?.blocked && (
+              <p className="flex items-start gap-space-xs p-space-sm px-space-md rounded-xl bg-error-container text-on-error-container font-body-sm text-body-sm" role="alert">
+                <span className="material-symbols-outlined text-base">block</span>
+                {pet.blocked} — choose another pet{pets.some((p) => !p.blocked) ? "" : " or sitter"}.
+              </p>
+            )}
             {pet ? (
               <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row items-center gap-space-md">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 shadow-sm relative bg-primary-fixed flex items-center justify-center">
@@ -821,7 +836,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
 
             <button
               className="w-full py-4 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-space-sm group disabled:opacity-70 disabled:pointer-events-none"
-              disabled={pending || !pet || unavailable}
+              disabled={pending || !pet || !!pet.blocked || unavailable}
               id="pay-button"
               type="submit"
             >

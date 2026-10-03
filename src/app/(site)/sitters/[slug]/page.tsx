@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { getFees } from "@/lib/settings";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { UNIT_LABELS } from "@/lib/constants";
+import { PET_SIZES, PET_SIZE_LABELS, UNIT_LABELS } from "@/lib/constants";
+import { PET_KIND_META, petBlockReason, petKindOf } from "@/lib/pets";
+import { PetKindChips } from "@/components/PetKinds";
 import { formatDistance, formatMoney, formatRating, timeAgo } from "@/lib/format";
 import { getOwnerPets, getSitterBySlug, type SitterDetail } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
@@ -145,6 +147,9 @@ export default async function SitterProfilePage({ params }: Props) {
   const services = [...sitter.services].sort((a, b) => SERVICE_ORDER.indexOf(a.type) - SERVICE_ORDER.indexOf(b.type));
   const headlineService = services.find((s) => s.type === "DOG_WALKING") ?? services[0];
   const location = `${sitter.neighbourhood.name}, ${sitter.city.name}`;
+  const kinds = sitter.species.map((s) => s.kind);
+  const acceptance = { ...sitter, firstName: first, kinds };
+  const dogSizes = PET_SIZES.filter((z) => ({ SMALL: sitter.acceptsSmall, MEDIUM: sitter.acceptsMedium, LARGE: sitter.acceptsLarge, GIANT: sitter.acceptsGiant })[z]);
 
   const photos = sitter.photos.length
     ? sitter.photos.map((p) => ({ id: p.id, url: p.url, caption: p.caption }))
@@ -466,6 +471,28 @@ export default async function SitterProfilePage({ params }: Props) {
                 </div>
               )}
 
+              {/* Pets I care for */}
+              {kinds.length > 0 && (
+                <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-md" id="pets">
+                  <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">pets</span>
+                    Pets I Care For
+                  </h2>
+                  <PetKindChips kinds={kinds} />
+                  {kinds.includes("DOG") && dogSizes.length > 0 && (
+                    <p className="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-1.5">
+                      <span className="material-symbols-outlined text-base text-primary">straighten</span>
+                      <span>
+                        Dog sizes:{" "}
+                        {dogSizes.length === PET_SIZES.length
+                          ? "all sizes welcome"
+                          : dogSizes.map((z) => `${PET_SIZE_LABELS[z].label} (${PET_SIZE_LABELS[z].range})`).join(", ")}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Home & environment */}
               <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-md">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
@@ -547,7 +574,17 @@ export default async function SitterProfilePage({ params }: Props) {
                 defaultDate={ymd(tomorrow)}
                 firstName={first}
                 minDate={ymd(now)}
-                pets={pets?.map((p) => ({ id: p.id, name: p.name, breed: p.breed, ageYears: p.ageYears })) ?? null}
+                pets={
+                  pets?.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    breed: p.breed,
+                    ageYears: p.ageYears,
+                    icon: PET_KIND_META[petKindOf(p)].icon,
+                    isDog: petKindOf(p) === "DOG",
+                    blocked: petBlockReason(acceptance, p),
+                  })) ?? null
+                }
                 services={services.map((s) => ({ id: s.id, type: s.type, priceCents: s.priceCents, unit: s.unit, durationMins: s.durationMins }))}
                 slug={sitter.slug}
                 taxLabel={HST_PROVINCES.has(sitter.city.provinceCode) ? "HST" : "Sales Tax"}

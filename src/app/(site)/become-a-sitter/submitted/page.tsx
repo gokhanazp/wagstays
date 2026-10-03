@@ -1,3 +1,4 @@
+import { PET_KIND_META, normalizeKinds } from "@/lib/pets";
 import type { Metadata } from "next";
 import { getFees } from "@/lib/settings";
 import Link from "next/link";
@@ -144,6 +145,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
     GIANT: app.acceptsGiant,
   };
   const sizes = PET_SIZES.filter((s) => sizeFlags[s]);
+  const kinds = app.acceptedKinds.length ? normalizeKinds(app.acceptedKinds) : (["DOG"] as const);
   const applicantName = `${app.firstName} ${app.lastName.charAt(0)}.`;
 
   return (
@@ -412,6 +414,18 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
                   </div>
                   <div className="w-full h-px bg-surface-container" />
                   <div className="flex justify-between items-center gap-space-sm py-2 px-1">
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">Pets</span>
+                    <div className="flex items-center justify-end flex-wrap gap-1">
+                      {kinds.map((k) => (
+                        <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container rounded-md font-label-sm text-label-sm text-on-surface whitespace-nowrap">
+                          <span aria-hidden className="material-symbols-outlined text-sm text-primary">{PET_KIND_META[k].icon}</span>
+                          {PET_KIND_META[k].label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={`w-full h-px bg-surface-container ${kinds.includes("DOG") ? "" : "hidden"}`} />
+                  <div className={`flex justify-between items-center gap-space-sm py-2 px-1 ${kinds.includes("DOG") ? "" : "hidden"}`}>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">Accepted sizes</span>
                     <div className="flex items-center justify-end flex-wrap gap-1">
                       {sizes.map((s) => (

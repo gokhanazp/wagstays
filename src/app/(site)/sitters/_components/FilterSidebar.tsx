@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { PET_SIZES, PET_SIZE_LABELS, SERVICE_LABELS, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
+import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
 import { RATE_LABEL, buildSearchHref, type SearchExtras } from "./search-url";
 import { useSearchNav } from "./useSearchNav";
 
@@ -36,12 +37,14 @@ export function FilterSidebar({
   priceRange,
   serviceCounts,
   medicalCount,
+  kindCounts,
 }: {
   filters: SearchFilters;
   extras: SearchExtras;
   priceRange: { min: number; max: number };
   serviceCounts: Record<ServiceType, number>;
   medicalCount: number;
+  kindCounts: Record<PetKind, number>;
 }) {
   const { filters, update } = useSearchNav(urlFilters, extras);
   const [open, setOpen] = useState(false); // mobile only; always expanded on lg+
@@ -68,8 +71,13 @@ export function FilterSidebar({
   const toggleSize = (s: PetSize) =>
     update({ sizes: filters.sizes.includes(s) ? filters.sizes.filter((x) => x !== s) : PET_SIZES.filter((x) => x === s || filters.sizes.includes(x)) });
 
+  const togglePet = (k: PetKind) =>
+    update({ pets: filters.pets.includes(k) ? filters.pets.filter((x) => x !== k) : PET_KINDS.filter((x) => x === k || filters.pets.includes(x)) });
+  const showSizes = !filters.pets.length || filters.pets.includes("DOG");
+
   const activeCount =
     (filters.service ? 1 : 0) +
+    filters.pets.length +
     (filters.maxPrice !== undefined ? 1 : 0) +
     filters.sizes.length +
     (["yard", "smokeFree", "noPets", "noKids", "superSitter", "vet", "trainer", "idVerified"] as const).filter((k) => filters[k]).length;
@@ -153,8 +161,31 @@ export function FilterSidebar({
           </div>
         </div>
 
-        {/* Pet Size Acceptance */}
+        {/* Pet types (sitter must accept every selected kind) */}
         <div className="flex flex-col gap-space-sm pt-space-xs">
+          <span className="font-label-lg text-label-lg text-on-surface">Pet Type</span>
+          <div className="flex flex-wrap gap-space-xs">
+            {PET_KINDS.filter((k) => kindCounts[k] > 0 || filters.pets.includes(k)).map((k) => {
+              const on = filters.pets.includes(k);
+              return (
+                <button
+                  aria-pressed={on}
+                  className={`${chipBase} ${on ? "bg-primary text-on-primary" : chipOff}`}
+                  key={k}
+                  onClick={() => togglePet(k)}
+                  type="button"
+                >
+                  <span className={`material-symbols-outlined text-sm ${on ? "" : "text-outline"}`}>{PET_KIND_META[k].icon}</span>
+                  <span>{PET_KIND_META[k].label}</span>
+                  <span className={on ? "text-on-primary/80" : "text-outline"}>{kindCounts[k]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Pet Size Acceptance */}
+        <div className={`flex flex-col gap-space-sm pt-space-xs ${showSizes ? "" : "hidden"}`}>
           <span className="font-label-lg text-label-lg text-on-surface">Dog Size</span>
           <div className="grid grid-cols-2 gap-space-xs">
             {PET_SIZES.map((s) => {

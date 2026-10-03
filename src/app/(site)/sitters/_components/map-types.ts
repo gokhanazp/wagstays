@@ -10,4 +10,5 @@ export type MapPin = {
   avatarUrl: string;
   locationNote: string | null;
   distanceKm: number;
+  kinds: string[];
 };

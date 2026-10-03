@@ -9,6 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
 import { getActiveCity } from "@/lib/queries";
 import { DEFAULT_TIME_ZONE } from "@/lib/constants";
+import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 import { ApprovalError, approveApplicationTx, fromZonedInput } from "@/lib/sitter-approval";
 
 export type AdminFormState =
@@ -267,6 +268,9 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
   const priceCents = Math.round(parsed.data.price * 100);
   const active = parsed.data.active;
   if (svc.priceCents === priceCents && svc.active === active) return { ok: true, message: "No changes." };
+  if (active && !svc.active && svc.type === "DOG_WALKING" && !(await db.sitterSpecies.findFirst({ where: { sitterId: svc.sitterId, kind: "DOG" } }))) {
+    return { error: "Add dogs to this sitter's pets before turning on Dog Walking." };
+  }
   if (!active && svc.active) {
     const others = await db.service.count({ where: { sitterId: svc.sitterId, active: true, id: { not: svc.id } } });
     if (others === 0) return { error: "A sitter needs at least one active service. Pause the sitter instead." };
@@ -279,4 +283,40 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
   });
   revalidateSitter(svc.sitter.id, svc.sitter.slug);
   return { ok: true, message: "Saved." };
+}
+
+const SpeciesSchema = z.object({
+  sitterId: id,
+  kinds: z
+    .array(z.enum(PET_KINDS, { error: "Unknown pet type." }))
+    .min(1, "Choose at least one kind of pet.")
+    .transform((v) => normalizeKinds(v)),
+});
+
+export async function updateSitterSpecies(_: AdminFormState, formData: FormData): Promise<AdminFormState> {
+  const admin = await getAdminOrNull();
+  if (!admin) return NOT_ALLOWED;
+  const parsed = SpeciesSchema.safeParse({ sitterId: formData.get("sitterId"), kinds: formData.getAll("kinds") });
+  if (!parsed.success) {
+    const fieldErrors = z.flattenError(parsed.error).fieldErrors;
+    return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
+  }
+  const { sitterId, kinds } = parsed.data;
+  const sitter = await db.sitterProfile.findUnique({
+    where: { id: sitterId },
+    select: { id: true, slug: true, species: { select: { kind: true } }, services: { where: { type: "DOG_WALKING", active: true }, select: { id: true } } },
+  });
+  if (!sitter) return { error: "Sitter not found." };
+  if (!kinds.includes("DOG") && sitter.services.length) {
+    return { error: "This sitter offers Dog Walking, so dogs must stay selected. Turn Dog Walking off first." };
+  }
+  const before = normalizeKinds(sitter.species.map((s) => s.kind));
+  if (before.join() === kinds.join()) return { ok: true, message: "No changes to save." };
+  await db.$transaction([
+    db.sitterSpecies.deleteMany({ where: { sitterId, kind: { notIn: kinds } } }),
+    db.sitterSpecies.createMany({ data: kinds.map((kind) => ({ sitterId, kind })), skipDuplicates: true }),
+  ]);
+  await audit(admin.id, "sitter.species", "SitterProfile", sitterId, { before: { kinds: before }, after: { kinds } });
+  revalidateSitter(sitterId, sitter.slug);
+  return { ok: true, message: "Pets updated." };
 }

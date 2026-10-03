@@ -48,7 +48,7 @@ export const getLandingCity = cache(async (citySlug: string) => {
   const [sitters, favs] = await Promise.all([
     db.sitterProfile.findMany({
       where: { cityId: city.id, status: "ACTIVE", user: { suspended: false } },
-      include: { neighbourhood: true, services: { where: { active: true } }, tags: { orderBy: { sortOrder: "asc" } } },
+      include: { neighbourhood: true, services: { where: { active: true } }, tags: { orderBy: { sortOrder: "asc" } }, species: { select: { kind: true } } },
     }),
     favouriteIds(),
   ]);

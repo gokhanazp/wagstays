@@ -4,6 +4,7 @@ import { db } from "./db";
 import { distanceKm } from "./format";
 import { PET_SIZES, SERVICE_SLUGS, serviceFromSlug, type PetSize, type ServiceType } from "./constants";
 import { getCurrentUser } from "./session";
+import { PET_KINDS, normalizeKinds, type PetKind } from "./pets";
 import { freeSittersForRange } from "./availability";
 import { formatDayRange, isIsoDay, todayIn } from "./availability-core";
 
@@ -38,6 +39,7 @@ const sitterCardInclude = {
   neighbourhood: true,
   services: { where: { active: true } },
   tags: { orderBy: { sortOrder: "asc" as const } },
+  species: { select: { kind: true } },
 };
 
 async function favoriteIds() {
@@ -86,6 +88,8 @@ export type SearchFilters = {
   minPrice?: number; // dollars
   maxPrice?: number; // dollars
   sizes: PetSize[];
+  /** pet kinds the sitter must accept — ALL of them (search `pets=cat,rabbit`) */
+  pets: PetKind[];
   yard: boolean;
   smokeFree: boolean;
   noPets: boolean;
@@ -118,6 +122,7 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
     .split(",")
     .map((s) => s.toUpperCase())
     .filter((s): s is PetSize => (PET_SIZES as readonly string[]).includes(s));
+  const pets = normalizeKinds((one("pets") ?? "").split(",").map((s) => s.trim().toUpperCase()));
   const sort = one("sort");
   return {
     city: one("city") || undefined,
@@ -126,6 +131,7 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
     minPrice: num("minPrice"),
     maxPrice: num("maxPrice"),
     sizes,
+    pets,
     yard: flag("yard"),
     smokeFree: flag("smokeFree"),
     noPets: flag("noPets"),
@@ -150,6 +156,7 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
   if (f.hood) q.set("hood", f.hood);
   if (f.minPrice !== undefined) q.set("minPrice", String(f.minPrice));
   if (f.maxPrice !== undefined) q.set("maxPrice", String(f.maxPrice));
+  if (f.pets?.length) q.set("pets", f.pets.join(",").toLowerCase());
   if (f.sizes?.length) q.set("sizes", f.sizes.join(",").toLowerCase());
   for (const k of ["yard", "smokeFree", "noPets", "noKids", "superSitter", "vet", "trainer", "idVerified"] as const) {
     if (f[k]) q.set(k, "1");
@@ -185,9 +192,15 @@ export async function searchSitters(f: SearchFilters) {
     (["DOG_WALKING", "BOARDING", "DAY_CARE", "DROP_IN"] as const).map((t) => [t, all.filter((s) => s.services.some((x) => x.type === t)).length]),
   ) as Record<ServiceType, number>;
   const medicalCount = all.filter((s) => s.vetKnowledge).length;
+  const kindCounts = Object.fromEntries(PET_KINDS.map((k) => [k, all.filter((s) => s.species.some((x) => x.kind === k)).length])) as Record<PetKind, number>;
 
+  // Dog sizes only matter for dogs: a size filter implies the sitter takes dogs, unless the search is for other pets only.
+  const sizesApply = f.sizes.length > 0 && (!f.pets.length || f.pets.includes("DOG"));
   const sizeOk = (s: (typeof withPrice)[number]) =>
-    f.sizes.every((z) => ({ SMALL: s.acceptsSmall, MEDIUM: s.acceptsMedium, LARGE: s.acceptsLarge, GIANT: s.acceptsGiant })[z]);
+    !sizesApply ||
+    (s.species.some((x) => x.kind === "DOG") &&
+      f.sizes.every((z) => ({ SMALL: s.acceptsSmall, MEDIUM: s.acceptsMedium, LARGE: s.acceptsLarge, GIANT: s.acceptsGiant })[z]));
+  const petsOk = (s: (typeof withPrice)[number]) => f.pets.every((k) => s.species.some((x) => x.kind === k));
 
   // availableLabel: "Available Oct 18–22" when a date range is searched
   let results: ((typeof withPrice)[number] & { availableLabel?: string })[] = withPrice.filter(
@@ -197,6 +210,7 @@ export async function searchSitters(f: SearchFilters) {
       (f.minPrice === undefined || s.price.priceCents >= f.minPrice * 100) &&
       (f.maxPrice === undefined || f.maxPrice >= PRICE_RANGE.max || s.price.priceCents <= f.maxPrice * 100) &&
       sizeOk(s) &&
+      petsOk(s) &&
       (!f.yard || s.hasYard) &&
       (!f.smokeFree || s.smokeFree) &&
       (!f.noPets || !s.hasOtherPets) &&
@@ -245,9 +259,10 @@ export async function searchSitters(f: SearchFilters) {
     pageSize: SEARCH_PAGE_SIZE,
     sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE),
     /** every match, for map pins */
-    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm })),
+    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind) })),
     serviceCounts,
     medicalCount,
+    kindCounts,
   };
 }
 
@@ -266,6 +281,7 @@ export const getSitterBySlug = cache(async (slug: string) => {
       photos: { orderBy: { sortOrder: "asc" } },
       tags: { orderBy: { sortOrder: "asc" } },
       skills: { orderBy: { sortOrder: "asc" } },
+      species: { select: { kind: true } },
       reviews: { where: { hidden: false }, orderBy: { createdAt: "desc" } },
       _count: { select: { photos: true } },
     },

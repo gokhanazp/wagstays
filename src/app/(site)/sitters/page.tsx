@@ -85,6 +85,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
             <FilterSidebar
               extras={extras}
               filters={filters}
+              kindCounts={result.kindCounts}
               medicalCount={result.medicalCount}
               priceRange={PRICE_RANGE}
               serviceCounts={result.serviceCounts}

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
+import { PetKindIcons } from "@/components/PetKinds";
 import type { MapPin } from "./map-types";
 import { UNIT_SHORT } from "./search-url";
 
@@ -75,6 +76,7 @@ export function SitterMap({
                 • {selected.locationNote ?? "Nearby"} ({formatDistance(selected.distanceKm)})
               </span>
             </div>
+            <PetKindIcons className="mt-0.5" kinds={selected.kinds} />
           </div>
           <span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors">
             <span className="material-symbols-outlined text-base">arrow_forward</span>

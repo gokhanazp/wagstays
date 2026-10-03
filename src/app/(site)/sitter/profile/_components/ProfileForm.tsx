@@ -6,6 +6,7 @@ import { BTN, Card, CardHeader, Field, INPUT, TEXTAREA, Toggle } from "@/compone
 import { Select } from "@/components/forms/Select";
 import { PET_SIZE_LABELS, PET_SIZES } from "@/lib/constants";
 import { BIO_MAX, HOME_TYPES } from "@/lib/sitter";
+import { PetKindPicker } from "@/components/PetKinds";
 import { Feedback } from "../../_components/Feedback";
 import { useFormAction } from "../../_components/useFormAction";
 
@@ -32,6 +33,9 @@ export type ProfileValues = {
   acceptsMedium: boolean;
   acceptsLarge: boolean;
   acceptsGiant: boolean;
+  kinds: string[];
+  /** Sitter offers Dog Walking → DOG can't be unticked. */
+  offersDogWalking: boolean;
 };
 
 const SIZE_FIELD = { SMALL: "acceptsSmall", MEDIUM: "acceptsMedium", LARGE: "acceptsLarge", GIANT: "acceptsGiant" } as const;
@@ -40,6 +44,7 @@ export function ProfileForm({ values: v }: { values: ProfileValues }) {
   const { state, pending, onSubmit } = useFormAction(updateProfile);
   const [bio, setBio] = useState(v.bio);
   const [otherPets, setOtherPets] = useState(v.hasOtherPets);
+  const [kinds, setKinds] = useState<string[]>(v.kinds);
   const err = (k: string) => state?.fieldErrors?.[k];
 
   return (
@@ -123,7 +128,25 @@ export function ProfileForm({ values: v }: { values: ProfileValues }) {
       </Card>
 
       <Card className="pb-space-lg">
-        <CardHeader icon="straighten" title="Pet sizes you accept" />
+        <div className="scroll-mt-28" id="pets" />
+        <CardHeader icon="pets" title="Pets I care for" />
+        <div className="px-space-lg pt-space-md flex flex-col gap-space-sm">
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Shown on your profile and used in search — owners can only book you for these pets.
+            {v.offersDogWalking && " Dogs stay on while you offer Dog Walking."}
+          </p>
+          <PetKindPicker
+            locked={v.offersDogWalking ? ["DOG"] : []}
+            lockedHint="You offer Dog Walking — turn it off in Services to remove dogs."
+            onChange={setKinds}
+            value={kinds}
+          />
+          {err("kinds") && <Feedback state={{ error: err("kinds")![0] }} />}
+        </div>
+      </Card>
+
+      <Card className={`pb-space-lg ${kinds.includes("DOG") ? "" : "hidden"}`}>
+        <CardHeader icon="straighten" title="Dog sizes you accept" />
         <div className="px-space-lg pt-space-md flex flex-col gap-space-xs">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-space-sm">
             {PET_SIZES.map((s) => (

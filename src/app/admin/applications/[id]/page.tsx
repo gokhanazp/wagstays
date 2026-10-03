@@ -1,3 +1,4 @@
+import { PetKindChips } from "@/components/PetKinds";
 import { signedApplicationFileUrl } from "@/lib/application-files-server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -163,8 +164,14 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
             <Card className="pb-space-lg">
-              <CardHeader icon="pets" title="Pet sizes" />
-              <div className="flex flex-wrap gap-space-xs px-space-lg pt-space-md">
+              <CardHeader icon="pets" title="Pets & dog sizes" />
+              <div className="px-space-lg pt-space-md">
+                <PetKindChips kinds={app.acceptedKinds.length ? app.acceptedKinds : ["DOG"]} size="sm" />
+                {!app.acceptedKinds.length && (
+                  <p className="pt-space-xs font-body-sm text-body-sm text-on-surface-variant">Not chosen (older application) — dogs will be used on approval.</p>
+                )}
+              </div>
+              <div className={`flex flex-wrap gap-space-xs px-space-lg pt-space-md ${app.acceptedKinds.length && !app.acceptedKinds.includes("DOG") ? "hidden" : ""}`}>
                 {sizes.length ? (
                   sizes.map((s) => (
                     <StatusChip key={s} tone="primary">

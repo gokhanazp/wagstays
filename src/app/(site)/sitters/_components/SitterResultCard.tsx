@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
 import type { SitterCard } from "@/lib/queries";
+import { PetKindIcons } from "@/components/PetKinds";
 import { UNIT_LONG } from "./search-url";
 
 const SECONDARY_ICONS = new Set(["photo_camera", "videocam", "favorite", "monitor_heart"]);
@@ -77,6 +78,7 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
                   {sitter.locationNote ?? sitter.neighbourhood.name} ({formatDistance(sitter.distanceKm)} away)
                 </span>
               </p>
+              <PetKindIcons className="mt-1" kinds={sitter.species.map((x) => x.kind)} />
             </div>
             <div className="text-right shrink-0">
               <div className="font-headline-md text-headline-md text-primary font-extrabold">{formatMoney(price.priceCents)}</div>

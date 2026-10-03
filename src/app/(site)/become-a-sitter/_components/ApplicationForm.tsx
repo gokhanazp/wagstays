@@ -6,6 +6,7 @@ import { Select } from "@/components/forms/Select";
 import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { PET_SIZE_LABELS, PET_SIZES, SERVICE_LABELS, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
+import { PetKindPicker } from "@/components/PetKinds";
 import { FileUploadRow, HomePhotos } from "./Uploads";
 
 type Prefill = { firstName: string; lastName: string; email: string; phone: string };
@@ -110,6 +111,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
     ) as Record<ServiceType, { on: boolean; price: string }>,
   );
   const [experience, setExperience] = useState("3-6");
+  const [kinds, setKinds] = useState<string[]>(["DOG"]);
   const [homeType, setHomeType] = useState("HOUSE_WITH_YARD");
   const [bio, setBio] = useState("");
   const [idDoc, setIdDoc] = useState("");
@@ -139,7 +141,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
   const checks = [
     [personal.firstName.trim() !== "", personal.lastName.trim() !== "", emailOk(personal.email), phoneOk(personal.phone), personal.neighbourhood !== ""],
     [servicesOk],
-    [experience !== "", homeType !== "", bio.trim().length >= BIO_MIN],
+    [experience !== "", kinds.length > 0, homeType !== "", bio.trim().length >= BIO_MIN],
     [idDoc !== "", agreeTerms, agreeAccuracy],
   ];
   const stepDone = checks.map((c) => c.every(Boolean));
@@ -443,6 +445,23 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 <FieldError msg={err("experience")} />
               </div>
               <div className="flex flex-col gap-space-xs pt-space-xs">
+                <span className="font-title-md text-title-md text-on-surface">Which pets will you care for?</span>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Pick every kind you&apos;re comfortable with — owners can only book you for these.
+                  {services.DOG_WALKING.on && " Dogs stay selected while you offer Dog Walking."}
+                </p>
+                <div className="pt-1">
+                  <PetKindPicker
+                    locked={services.DOG_WALKING.on ? ["DOG"] : []}
+                    lockedHint="You're offering Dog Walking"
+                    name="acceptedKinds"
+                    onChange={setKinds}
+                    value={kinds}
+                  />
+                </div>
+                <FieldError msg={err("acceptedKinds")} />
+              </div>
+              <div className={`flex flex-col gap-space-xs pt-space-xs ${kinds.includes("DOG") ? "" : "hidden"}`}>
                 <span className="font-title-md text-title-md text-on-surface">Dog sizes you can welcome</span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
                   Tick the options that suit your home and physical strength.

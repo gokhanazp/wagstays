@@ -5,7 +5,8 @@ import { RangePanel } from "@/components/forms/DatePicker";
 import { Select } from "@/components/forms/Select";
 import { PET_SIZES, PET_SIZE_LABELS, SERVICE_LABELS, SERVICE_TYPES, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
-import { SERVICE_ICONS, formatDateRange, petLabel, type SearchExtras } from "./search-url";
+import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
+import { SERVICE_ICONS, formatDateRange, petTypeLabel, type SearchExtras } from "./search-url";
 import { useSearchNav } from "./useSearchNav";
 
 type Hood = { slug: string; name: string };
@@ -37,6 +38,15 @@ export function SearchTopBar({
   const cityName = current?.name ?? "";
   const hoods = current?.hoods ?? [];
   const [sizes, setSizes] = useState<PetSize[]>(filters.sizes);
+  const [pets, setPets] = useState<PetKind[]>(filters.pets);
+  // Single-choice value for the "Pet type" tile: "", a kind ("CAT") or a dog size ("DOG:SMALL").
+  const petValue =
+    pets.length > 1 || sizes.length > 1 || (sizes.length === 1 && pets.length === 1 && pets[0] !== "DOG")
+      ? "MIXED"
+      : pets.length === 0
+        ? sizes.length === 1 ? `DOG:${sizes[0]}` : ""
+        : pets[0] === "DOG" && sizes.length === 1 ? `DOG:${sizes[0]}` : pets[0];
+  const petIcon = pets.length === 1 ? PET_KIND_META[pets[0]].icon : "pets";
   const [from, setFrom] = useState(extras.from ?? "");
   const [to, setTo] = useState(extras.to ?? "");
   const [datesOpen, setDatesOpen] = useState(false);
@@ -63,6 +73,7 @@ export function SearchTopBar({
         city: city === citySlug && !filters.city ? undefined : city,
         hood: city === citySlug && hood === centreHood && !filters.hood ? undefined : hood,
         sizes,
+        pets,
       },
       { from: from || undefined, to: to && (!from || to >= from) ? to : undefined },
     );
@@ -152,24 +163,32 @@ export function SearchTopBar({
               unitLabel="night"
             />
           </div>
-          {/* Pet Profile Spec */}
+          {/* Pet type (+ dog size) */}
           <div className={tile}>
             <div className={`${iconCircle} text-primary group-hover:bg-primary group-hover:text-on-primary`}>
-              <span className="material-symbols-outlined text-xl">pets</span>
+              <span className="material-symbols-outlined text-xl">{petIcon}</span>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pet</span>
-              <span className={value}>{petLabel(sizes, PET_SIZE_LABELS)}</span>
+              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pet Type</span>
+              <span className={value}>{petTypeLabel(pets, sizes, PET_SIZE_LABELS)}</span>
             </div>
             <Select
-              aria-label="Dog size"
-              onChange={(v) => setSizes(v ? [v as PetSize] : [])}
+              aria-label="Pet type"
+              onChange={(v) => {
+                if (v === "MIXED") return;
+                const [kind, size] = v.split(":");
+                setPets(kind ? [kind as PetKind] : []);
+                setSizes(size ? [size as PetSize] : []);
+              }}
               options={[
-                { value: "", label: sizes.length > 1 ? petLabel(sizes, PET_SIZE_LABELS) : "Any Dog Size" },
-                ...PET_SIZES.map((s) => ({ value: s, label: `1 ${PET_SIZE_LABELS[s].label} Dog (${PET_SIZE_LABELS[s].range})` })),
+                ...(petValue === "MIXED" ? [{ value: "MIXED", label: petTypeLabel(pets, sizes, PET_SIZE_LABELS), icon: "pets" }] : []),
+                { value: "", label: "Any Pet", icon: "pets" },
+                { value: "DOG", label: "Dog · Any Size", icon: PET_KIND_META.DOG.icon, group: "Dogs" },
+                ...PET_SIZES.map((s) => ({ value: `DOG:${s}`, label: `${PET_SIZE_LABELS[s].label} Dog (${PET_SIZE_LABELS[s].range})`, icon: PET_KIND_META.DOG.icon, group: "Dogs" })),
+                ...PET_KINDS.filter((k) => k !== "DOG").map((k) => ({ value: k, label: PET_KIND_META[k].label, icon: PET_KIND_META[k].icon, group: "Other pets" })),
               ]}
               panelMinWidth={260}
-              value={sizes.length === 1 ? sizes[0] : ""}
+              value={petValue}
               variant="overlay"
             />
           </div>

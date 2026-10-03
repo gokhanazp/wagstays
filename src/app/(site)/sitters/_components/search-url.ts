@@ -1,5 +1,6 @@
 import { SERVICE_SLUGS, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
+import { PET_KIND_META, type PetKind } from "@/lib/pets";
 
 /**
  * The date range (`from` / `to`, YYYY-MM-DD). It filters results by sitter availability on the server
@@ -19,6 +20,7 @@ export function buildSearchHref(f: Partial<SearchFilters>, extras: SearchExtras 
   if (f.hood) q.set("hood", f.hood);
   if (f.minPrice !== undefined) q.set("minPrice", String(f.minPrice));
   if (f.maxPrice !== undefined) q.set("maxPrice", String(f.maxPrice));
+  if (f.pets?.length) q.set("pets", f.pets.join(",").toLowerCase());
   if (f.sizes?.length) q.set("sizes", f.sizes.join(",").toLowerCase());
   for (const k of ["yard", "smokeFree", "noPets", "noKids", "superSitter", "vet", "trainer", "idVerified"] as const) {
     if (f[k]) q.set(k, "1");
@@ -72,6 +74,15 @@ export function formatDateRange(from?: string, to?: string) {
   if (from) return `From ${fmtDate(from, true)}`;
   if (to) return `Until ${fmtDate(to, true)}`;
   return "Add dates";
+}
+
+/** Top-bar "Pet type" summary: "Any Pet", "Cat", "Dog · Small", "Cat + Rabbit". */
+export function petTypeLabel(pets: PetKind[], sizes: PetSize[], labels: Record<PetSize, { label: string }>) {
+  const dogSizes = sizes.length && (!pets.length || pets.includes("DOG"));
+  if (!pets.length) return dogSizes ? petLabel(sizes, labels) : "Any Pet";
+  if (pets.length === 1 && pets[0] === "DOG") return petLabel(sizes, labels);
+  const kinds = pets.length > 2 ? `${pets.length} pet types` : pets.map((k) => (k === "OTHER" ? "Other" : PET_KIND_META[k].label)).join(" + ");
+  return kinds;
 }
 
 export function petLabel(sizes: PetSize[], labels: Record<PetSize, { label: string }>) {

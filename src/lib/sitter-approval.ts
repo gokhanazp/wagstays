@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { DEFAULT_TIME_ZONE, type ServiceType } from "./constants";
+import { normalizeKinds } from "./pets";
 
 // Turns an approved SitterApplication into a live SitterProfile (+ User + Service rows).
 // Called by the admin "Approve" action inside a single transaction.
@@ -186,6 +187,14 @@ export async function approveApplicationTx(tx: Tx, applicationId: string, defaul
       status: "ACTIVE",
       rating: 0,
       reviewCount: 0,
+      species: {
+        // Pets the applicant chose; older applications (or none chosen) fall back to dogs. Dog walking implies dogs.
+        create: (() => {
+          const kinds = normalizeKinds(app.acceptedKinds);
+          if (!kinds.length || (app.services.some((s) => s.type === "DOG_WALKING") && !kinds.includes("DOG"))) kinds.unshift("DOG");
+          return normalizeKinds(kinds).map((kind) => ({ kind }));
+        })(),
+      },
       services: {
         create: app.services.map((s) => ({
           type: s.type,

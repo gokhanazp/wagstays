@@ -9,6 +9,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { priceBooking } from "@/lib/pricing";
+import { petBlockReason } from "@/lib/pets";
 import { getFees } from "@/lib/settings";
 import { loadSnapshot } from "@/lib/availability";
 import {
@@ -105,16 +106,37 @@ export async function createBooking(slug: string, _: BookingState, formData: For
 
   const sitter = await db.sitterProfile.findUnique({
     where: { slug },
-    select: { id: true, status: true, city: { select: { taxRateBps: true } } },
+    select: {
+      id: true,
+      status: true,
+      displayName: true,
+      acceptsSmall: true,
+      acceptsMedium: true,
+      acceptsLarge: true,
+      acceptsGiant: true,
+      species: { select: { kind: true } },
+      city: { select: { taxRateBps: true } },
+    },
   });
   if (!sitter || sitter.status !== "ACTIVE") return { error: "This sitter isn't taking bookings right now." };
 
   const [service, pet] = await Promise.all([
     db.service.findFirst({ where: { id: d.serviceId, sitterId: sitter.id, active: true } }),
-    db.pet.findFirst({ where: { id: d.petId, ownerId: user.id, archivedAt: null }, select: { id: true } }),
+    db.pet.findFirst({
+      where: { id: d.petId, ownerId: user.id, archivedAt: null },
+      select: { id: true, name: true, species: true, speciesOther: true, size: true },
+    }),
   ]);
   if (!service) return { error: "That service isn't offered by this sitter." };
   if (!pet) return { error: "Please choose one of your own pets." };
+
+  // The sitter must care for this kind of pet (and, for dogs, this size); dog walking is for dogs only.
+  const blocked = petBlockReason(
+    { ...sitter, firstName: sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0], kinds: sitter.species.map((s) => s.kind) },
+    pet,
+    service.type,
+  );
+  if (blocked) return { error: `${blocked} — please choose another pet, service or sitter.`, fieldErrors: { petId: [blocked] } };
 
   const stay = isStayService(service.type);
   if (stay && !d.endDate) return { error: service.type === "BOARDING" ? "Please choose a check-out date." : "Please choose the last day." };

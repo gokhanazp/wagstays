@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useId, useMemo, useRef, useState } from "react";
 import { RangePanel } from "@/components/forms/DatePicker";
 import { Popover } from "@/components/forms/Popover";
+import { Select } from "@/components/forms/Select";
+import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
 
 type Hood = { slug: string; name: string; city: string; cityLabel: string };
 
@@ -48,6 +50,21 @@ export function HomeSearch({
   const [end, setEnd] = useState(defaultEnd);
   const [datesOpen, setDatesOpen] = useState(false);
   const [pets, setPets] = useState(1);
+  // "" = any pet; otherwise the kind every sitter in the results must accept (search `pets=`)
+  const [kind, setKind] = useState<PetKind | "">("");
+  const pickKind = (k: PetKind | "") => {
+    setKind(k);
+    if (k && k !== "DOG" && service === "dog-walking") setService("drop-in"); // walks are for dogs
+  };
+  const pickService = (slug: (typeof TABS)[number]["slug"]) => {
+    setService(slug);
+    if (slug === "dog-walking" && kind && kind !== "DOG") setKind("DOG");
+  };
+  const kindNoun = (k: PetKind | "", n: number) => {
+    if (!k || k === "OTHER") return n > 1 ? "Pets" : "Pet";
+    const m = PET_KIND_META[k];
+    return n > 1 ? m.plural.replace(/\b\w/g, (c) => c.toUpperCase()) : m.label;
+  };
   const datesAnchor = useRef<HTMLDivElement>(null);
   const whereTile = useRef<HTMLDivElement>(null);
   const whereInput = useRef<HTMLInputElement>(null);
@@ -113,7 +130,8 @@ export function HomeSearch({
     }
     if (start) q.set("start", start);
     if (end) q.set("end", end);
-    if (pets > 1) q.set("pets", String(pets));
+    if (kind) q.set("pets", kind.toLowerCase());
+    if (pets > 1) q.set("petCount", String(pets));
     router.push(`/sitters?${q.toString()}`);
   };
 
@@ -139,7 +157,7 @@ export function HomeSearch({
                 active ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
               }`}
               key={t.slug}
-              onClick={() => setService(t.slug)}
+              onClick={() => pickService(t.slug)}
               role="tab"
               type="button"
             >
@@ -250,16 +268,32 @@ export function HomeSearch({
         </div>
         {/* Pet Type & Quantity Counter */}
         <div className="lg:col-span-3 bg-surface-container-low rounded-2xl p-space-sm flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="relative flex items-center gap-3 min-w-0 flex-1 cursor-pointer group">
             <div className="w-10 h-10 rounded-xl bg-surface-container-lowest flex items-center justify-center text-tertiary shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-xl">sound_detection_dog_barking</span>
+              <span className="material-symbols-outlined text-xl">{kind ? PET_KIND_META[kind].icon : "pets"}</span>
             </div>
             <div className="flex flex-col truncate">
-              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pets</span>
-              <span aria-live="polite" className="font-title-md text-title-md text-on-surface truncate">
-                {pets > 1 ? `${pets} Pets` : "1 Dog / Cat"}
+              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-0.5">
+                Pets
+                <span className="material-symbols-outlined text-sm">expand_more</span>
+              </span>
+              <span aria-live="polite" className="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">
+                {kind ? `${pets} ${kindNoun(kind, pets)}` : pets > 1 ? `${pets} Pets` : "1 Dog / Cat"}
               </span>
             </div>
+            <Select
+              aria-label="Pet type"
+              onChange={(v) => pickKind(v as PetKind | "")}
+              options={[
+                { value: "", label: "Any pet", icon: "pets" },
+                { value: "DOG", label: "Dog", icon: PET_KIND_META.DOG.icon },
+                { value: "CAT", label: "Cat", icon: PET_KIND_META.CAT.icon },
+                ...PET_KINDS.filter((k) => k !== "DOG" && k !== "CAT").map((k) => ({ value: k, label: PET_KIND_META[k].label, icon: PET_KIND_META[k].icon, group: "Other…" })),
+              ]}
+              panelMinWidth={220}
+              value={kind}
+              variant="overlay"
+            />
           </div>
           <div className="flex items-center gap-1.5 shrink-0 bg-surface-container-lowest rounded-full p-1 shadow-sm">
             <button

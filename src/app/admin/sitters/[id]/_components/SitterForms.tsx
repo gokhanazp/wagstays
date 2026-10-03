@@ -1,7 +1,8 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { updateService, updateSitter, type AdminFormState } from "@/app/actions/admin-sitters";
+import { updateService, updateSitter, updateSitterSpecies, type AdminFormState } from "@/app/actions/admin-sitters";
+import { PetKindPicker } from "@/components/PetKinds";
 import { BTN, Field, INPUT, TEXTAREA, Toggle } from "@/components/ui";
 import { Select } from "@/components/forms/Select";
 
@@ -173,6 +174,30 @@ export function ServiceRowForm({
       </div>
       {err && <span className="font-body-sm text-body-sm text-error">{err}</span>}
       {state?.ok && state.message && <span className="font-body-sm text-body-sm text-primary">{state.message}</span>}
+    </form>
+  );
+}
+
+export function SpeciesForm({ sitterId, kinds, offersDogWalking }: { sitterId: string; kinds: string[]; offersDogWalking: boolean }) {
+  const [state, action, pending] = useActionState(updateSitterSpecies, undefined);
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    startTransition(() => action(fd));
+  };
+  return (
+    <form className="flex flex-col gap-space-md px-space-lg pt-space-md" noValidate onSubmit={onSubmit}>
+      <input name="sitterId" type="hidden" value={sitterId} />
+      <p className="font-body-sm text-body-sm text-on-surface-variant">
+        Shown on the profile, used by search filters and enforced at booking.{offersDogWalking && " Dogs are locked while Dog Walking is active."}
+      </p>
+      <PetKindPicker defaultValue={kinds} locked={offersDogWalking ? ["DOG"] : []} lockedHint="Dog Walking is active" />
+      <Feedback state={state} />
+      <div className="flex justify-end">
+        <button className={`${BTN.small} bg-[#EBF3EF] text-primary border border-[#C8DDD4] hover:bg-[#DCECE4]`} disabled={pending} type="submit">
+          {pending ? "Saving…" : "Save pets"}
+        </button>
+      </div>
     </form>
   );
 }

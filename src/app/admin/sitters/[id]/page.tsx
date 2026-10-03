@@ -14,7 +14,7 @@ import {
   type ServiceType,
 } from "@/lib/constants";
 import { BTN, Card, CardHeader, EmptyState, PageHeader, StatCard, StatusChip, TD, TH, Table, formatDate } from "@/components/ui";
-import { ServiceRowForm, SitterForm } from "./_components/SitterForms";
+import { ServiceRowForm, SitterForm, SpeciesForm } from "./_components/SitterForms";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -33,6 +33,7 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
       user: { select: { id: true, email: true, phone: true, createdAt: true, suspended: true } },
       services: { include: { _count: { select: { bookings: true } } } },
       application: { select: { id: true, trackingCode: true } },
+      species: { select: { kind: true } },
       _count: { select: { bookings: true, reviews: true, favorites: true } },
     },
   });
@@ -130,6 +131,15 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
         </Card>
 
         <div className="flex flex-col gap-space-lg min-w-0">
+          <Card className="pb-space-lg">
+            <CardHeader icon="pets" title="Pets cared for" />
+            <SpeciesForm
+              kinds={sitter.species.map((s) => s.kind)}
+              offersDogWalking={sitter.services.some((s) => s.type === "DOG_WALKING" && s.active)}
+              sitterId={sitter.id}
+            />
+          </Card>
+
           <Card className="pb-space-sm">
             <CardHeader icon="sell" title="Services" />
             <div className="px-space-lg pt-space-xs">

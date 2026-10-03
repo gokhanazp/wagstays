@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { SERVICE_TYPES, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
+import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 
 export type ApplicationState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -37,6 +38,10 @@ const ApplicationSchema = z.object({
   acceptsMedium: checkbox,
   acceptsLarge: checkbox,
   acceptsGiant: checkbox,
+  acceptedKinds: z
+    .array(z.enum(PET_KINDS, { error: "Please choose from the listed pets." }))
+    .min(1, "Choose at least one kind of pet you'll care for.")
+    .transform((v) => normalizeKinds(v)),
   certFirstAid: checkbox,
   certMedication: checkbox,
   certPuppy: checkbox,
@@ -62,7 +67,7 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
     [...formData.entries()].filter(([, v]) => typeof v === "string"),
   ) as Record<string, string>;
 
-  const parsed = ApplicationSchema.safeParse(raw);
+  const parsed = ApplicationSchema.safeParse({ ...raw, acceptedKinds: formData.getAll("acceptedKinds").filter((v) => typeof v === "string") });
   const fieldErrors: Record<string, string[] | undefined> = parsed.success
     ? {}
     : { ...z.flattenError(parsed.error).fieldErrors };
@@ -78,6 +83,12 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
       continue;
     }
     services.push({ type, priceCents: Math.round(price * 100) });
+  }
+  if (parsed.success && services.some((s) => s.type === "DOG_WALKING") && !parsed.data.acceptedKinds.includes("DOG")) {
+    fieldErrors.acceptedKinds = ["Dog Walking means caring for dogs — tick Dog or turn off Dog Walking."];
+  }
+  if (parsed.success && parsed.data.acceptedKinds.includes("DOG") && !(parsed.data.acceptsSmall || parsed.data.acceptsMedium || parsed.data.acceptsLarge || parsed.data.acceptsGiant)) {
+    fieldErrors.acceptedKinds = ["Tick at least one dog size you can welcome."];
   }
   if (services.length === 0 && !SERVICE_TYPES.some((t) => fieldErrors[`price_${t}`])) {
     fieldErrors.services = ["Turn on at least one service you'd like to offer."];

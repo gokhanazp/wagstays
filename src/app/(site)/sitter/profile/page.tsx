@@ -14,11 +14,13 @@ export const metadata: Metadata = { title: "My Profile | WagStays" };
 
 export default async function SitterProfilePage() {
   const { profile: p } = await requireSitter();
-  const [photos, skills, tags, settings] = await Promise.all([
+  const [photos, skills, tags, settings, species, dogWalking] = await Promise.all([
     db.sitterPhoto.findMany({ where: { sitterId: p.id }, orderBy: [{ sortOrder: "asc" }, { id: "asc" }], select: { id: true, url: true, caption: true } }),
     db.sitterSkill.findMany({ where: { sitterId: p.id }, orderBy: { sortOrder: "asc" }, select: { id: true, label: true, emoji: true } }),
     db.sitterTag.findMany({ where: { sitterId: p.id }, orderBy: { sortOrder: "asc" }, select: { id: true, label: true, icon: true } }),
     getPlatformSettings(),
+    db.sitterSpecies.findMany({ where: { sitterId: p.id }, select: { kind: true } }),
+    db.service.count({ where: { sitterId: p.id, type: "DOG_WALKING", active: true } }),
   ]);
 
   const badges = [
@@ -75,6 +77,8 @@ export default async function SitterProfilePage() {
           acceptsMedium: p.acceptsMedium,
           acceptsLarge: p.acceptsLarge,
           acceptsGiant: p.acceptsGiant,
+          kinds: species.map((s) => s.kind),
+          offersDogWalking: dogWalking > 0,
         }}
       />
 

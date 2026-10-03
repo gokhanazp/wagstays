@@ -30,7 +30,16 @@ import { priceBooking, type Fees } from "@/lib/pricing";
 import { SERVICE_ICONS } from "../../_components/search-url";
 
 export type WidgetService = { id: string; type: string; priceCents: number; unit: string; durationMins: number | null };
-export type WidgetPet = { id: string; name: string; breed: string | null; ageYears: number | null };
+export type WidgetPet = {
+  id: string;
+  name: string;
+  breed: string | null;
+  ageYears: number | null;
+  icon: string;
+  isDog: boolean;
+  /** why this sitter can't take the pet ("Sarah doesn't care for rabbits"), null when bookable */
+  blocked: string | null;
+};
 
 const OPTION_SUFFIX: Record<string, (mins: number | null) => string> = {
   DOG_WALKING: (m) => `${m ?? 60} min`,
@@ -110,7 +119,7 @@ export function BookingWidget({
     (s && nextBookableDay(snap, minDate > today ? minDate : today, s.type, s.durationMins, now, 120)) ?? addDays(today, 1);
 
   const [serviceId, setServiceId] = useState(() => (services.find((s) => s.type === "DOG_WALKING") ?? services[0])?.id ?? "");
-  const [petId, setPetId] = useState(pets?.[0]?.id ?? "");
+  const [petId, setPetId] = useState((pets?.find((p) => !p.blocked) ?? pets?.[0])?.id ?? "");
   const [date, setDate] = useState(() => firstDay(services.find((s) => s.id === serviceId)));
   // stays start with a full default range (1 night / 1 day) so the next calendar click starts a new range
   const defaultEnd = (s: WidgetService | undefined, start: string) => (!s || !isStayService(s.type) ? "" : s.type === "BOARDING" ? addDays(start, 1) : start);
@@ -144,7 +153,11 @@ export function BookingWidget({
   const first = rows?.[0]?.check;
   const quantity = first?.ok ? first.quantity : stay ? 0 : 1;
   const conflicts = rows?.filter((r) => !r.check.ok) ?? [];
-  const valid = !!rows && conflicts.length === 0;
+  // Pets this sitter can't take (kind / dog size / dog walking for non-dogs) can't be booked.
+  const petReason = (p: WidgetPet) => p.blocked ?? (type === "DOG_WALKING" && !p.isDog ? "Dog walking is for dogs only" : null);
+  const selectedPet = pets?.find((p) => p.id === petId);
+  const petBlocked = selectedPet ? petReason(selectedPet) : null;
+  const valid = !!rows && conflicts.length === 0 && !petBlocked;
   const occurrences = repeat ? weeks : 1;
 
   const price = useMemo(
@@ -159,6 +172,10 @@ export function BookingWidget({
     const next = services.find((s) => s.id === id);
     setServiceId(id);
     setMinute(null);
+    // a cat can't go on a dog walk — move the selection to a pet this service can take
+    const okFor = (p: WidgetPet) => !p.blocked && (next?.type !== "DOG_WALKING" || p.isDog);
+    const current = pets?.find((p) => p.id === petId);
+    if (current && !okFor(current)) setPetId(pets?.find(okFor)?.id ?? petId);
     const start = next && (!date || !isDayBookable(snap, date, next.type, next.durationMins, now)) ? firstDay(next) : date;
     setDate(start);
     setEndDate(defaultEnd(next, start));
@@ -235,21 +252,29 @@ export function BookingWidget({
               {loggedIn && pets.length > 0 ? (
                 pets.map((p) => {
                   const active = p.id === petId;
+                  const reason = petReason(p);
                   return (
                     <button
+                      aria-describedby={reason ? `pet-reason-${p.id}` : undefined}
                       aria-pressed={active}
                       className={`grow basis-40 min-w-0 py-2 px-3 rounded-xl font-label-md text-label-md flex items-center justify-between gap-1 transition-colors ${
-                        active ? "bg-primary-container text-on-primary-container shadow-sm" : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                        reason
+                          ? "bg-surface-container-low text-outline line-through decoration-outline/60 cursor-not-allowed"
+                          : active
+                            ? "bg-primary-container text-on-primary-container shadow-sm"
+                            : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                       }`}
+                      disabled={!!reason}
                       key={p.id}
                       onClick={() => setPetId(p.id)}
+                      title={reason ?? undefined}
                       type="button"
                     >
                       <span className="flex items-center gap-1.5 min-w-0">
-                        <span className="material-symbols-outlined text-base">pets</span>
+                        <span className="material-symbols-outlined text-base">{reason ? "block" : p.icon}</span>
                         <span className="truncate">{petLabel(p)}</span>
                       </span>
-                      {active && <span className="material-symbols-outlined text-base">check_circle</span>}
+                      {active && !reason && <span className="material-symbols-outlined text-base">check_circle</span>}
                     </button>
                   );
                 })
@@ -274,6 +299,20 @@ export function BookingWidget({
                 <span className="material-symbols-outlined text-lg">add</span>
               </Link>
             </div>
+            {pets?.some((p) => petReason(p)) && (
+              <ul className="flex flex-col gap-0.5">
+                {pets
+                  .filter((p) => petReason(p))
+                  .map((p) => (
+                    <li className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" id={`pet-reason-${p.id}`} key={p.id}>
+                      <span className="material-symbols-outlined text-sm text-secondary">info</span>
+                      <span>
+                        {p.name}: {petReason(p)}.
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
           </div>
 
           {stay ? (

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { petKindLabel } from "@/lib/pets";
+import { PET_KIND_META, petBlockReason, petKindLabel, petKindOf } from "@/lib/pets";
 import { getFees, getPlatformSettings } from "@/lib/settings";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
@@ -57,7 +57,13 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
   const pets = await getOwnerPets(user.id);
 
   const service = sitter.services.find((s) => s.id === one(sp.service)) ?? sitter.services.find((s) => s.type === "DOG_WALKING") ?? sitter.services[0];
-  const petId = pets.find((p) => p.id === one(sp.pet))?.id ?? pets[0]?.id ?? "";
+  const acceptance = {
+    ...sitter,
+    firstName: sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0],
+    kinds: sitter.species.map((s) => s.kind),
+  };
+  const blockedFor = (p: (typeof pets)[number]) => petBlockReason(acceptance, p, service.type);
+  const petId = pets.find((p) => p.id === one(sp.pet))?.id ?? (pets.find((p) => !blockedFor(p)) ?? pets[0])?.id ?? "";
   // Schedule from the profile widget (?date, ?end, ?slot=HH:MM, ?recurring=1&weeks=N). Missing or stale
   // values fall back to the sitter's next bookable day; the availability check below reports conflicts.
   const tz = sitter.city.timeZone;
@@ -160,6 +166,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             microchip: p.microchip,
             photoUrl: p.photoUrl,
             traits: p.traits.map((t) => ({ id: t.id, label: t.label, tone: t.tone })),
+            icon: PET_KIND_META[petKindOf(p)].icon,
+            blocked: blockedFor(p),
           }))}
           initialPetId={petId}
           schedule={{

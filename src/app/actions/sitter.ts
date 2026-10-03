@@ -18,6 +18,7 @@ import {
   SERVICE_UNITS,
   TAG_ICONS,
 } from "@/lib/sitter";
+import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 
 // Every action re-loads the signed-in sitter (requireSitter) and only touches rows that belong to
 // that sitter's profile — ids posted by the client are never trusted on their own.
@@ -159,21 +160,36 @@ const ProfileSchema = z
     acceptsMedium: checkbox,
     acceptsLarge: checkbox,
     acceptsGiant: checkbox,
+    kinds: z
+      .array(z.enum(PET_KINDS, "Unknown pet type."))
+      .min(1, "Choose at least one kind of pet you care for.")
+      .transform((v) => normalizeKinds(v)),
   })
-  .refine((d) => d.acceptsSmall || d.acceptsMedium || d.acceptsLarge || d.acceptsGiant, {
-    message: "Choose at least one pet size you accept.",
+  .refine((d) => !d.kinds.includes("DOG") || d.acceptsSmall || d.acceptsMedium || d.acceptsLarge || d.acceptsGiant, {
+    message: "Choose at least one dog size you accept.",
     path: ["acceptsSmall"],
   });
 
 export async function updateProfile(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const parsed = ProfileSchema.safeParse(Object.fromEntries(formData));
+  const parsed = ProfileSchema.safeParse({ ...Object.fromEntries(formData), kinds: formData.getAll("kinds") });
   if (!parsed.success) return fail(parsed.error);
-  const d = parsed.data;
-  await db.sitterProfile.update({
-    where: { id: profile.id },
-    data: { ...d, otherPetsNote: d.hasOtherPets ? d.otherPetsNote : null },
-  });
+  const { kinds, ...d } = parsed.data;
+  // Dog walking only makes sense for dogs — keep DOG while that service is on.
+  if (!kinds.includes("DOG") && (await db.service.count({ where: { sitterId: profile.id, type: "DOG_WALKING", active: true } }))) {
+    return {
+      error: "Please check “Pets I care for”.",
+      fieldErrors: { kinds: ["You offer Dog Walking, so dogs must stay selected. Turn off Dog Walking in Services first."] },
+    };
+  }
+  await db.$transaction([
+    db.sitterProfile.update({
+      where: { id: profile.id },
+      data: { ...d, otherPetsNote: d.hasOtherPets ? d.otherPetsNote : null },
+    }),
+    db.sitterSpecies.deleteMany({ where: { sitterId: profile.id, kind: { notIn: kinds } } }),
+    db.sitterSpecies.createMany({ data: kinds.map((kind) => ({ sitterId: profile.id, kind })), skipDuplicates: true }),
+  ]);
   revalidateSitter(profile);
   return { ok: "Profile saved." };
 }
@@ -348,6 +364,9 @@ export async function updateService(_: SitterActionState, formData: FormData): P
     .safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(parsed.error);
   const d = parsed.data;
+  if (t === "DOG_WALKING" && d.active && !(await db.sitterSpecies.findFirst({ where: { sitterId: profile.id, kind: "DOG" } }))) {
+    return { error: "Dog Walking needs dogs in “Pets I care for” — add dogs on your profile first." };
+  }
 
   const data = {
     active: d.active,
