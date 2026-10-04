@@ -52,6 +52,9 @@ model User {
   avatarUrl    String?
   role         String              @default("OWNER") // OWNER | SITTER | ADMIN
   suspended    Boolean             @default(false)
+  approvalStatus String            @default("APPROVED") // APPROVED | PENDING | REJECTED — pet parents, only used when PlatformSettings.requireOwnerApproval is on
+  approvedAt   DateTime?
+  approvalNote String?             // admin note when rejecting / approving
   wagPointsCents Int               @default(0)
   referralCode String?             @unique // share link code, e.g. "EMILY7K2"
   referredById String?
@@ -444,6 +447,7 @@ model PlatformSettings {
   supportPhone           String   @default("+1 (416) 555-0142")
   pointsEarnRateBps      Int      @default(500)  // WagPoints earned on completed bookings: 5% of the subtotal
   referralRewardCents    Int      @default(1000) // $10 to both people after the friend's first completed booking
+  requireOwnerApproval   Boolean  @default(false) // new pet parents can browse but not book until an admin approves them
   updatedAt              DateTime @default(now()) @updatedAt
 }
 
