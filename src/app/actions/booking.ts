@@ -11,6 +11,7 @@ import { getCurrentUser } from "@/lib/session";
 import { priceBooking } from "@/lib/pricing";
 import { petBlockReason } from "@/lib/pets";
 import { getFees } from "@/lib/settings";
+import { getOwnerReadiness, readinessMessage } from "@/lib/owner-readiness";
 import { loadSnapshot } from "@/lib/availability";
 import {
   DEFAULT_WEEKS,
@@ -96,6 +97,9 @@ export async function createBooking(slug: string, _: BookingState, formData: For
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/book/${slug}`)}`);
   if (user.suspended) return { error: "Your account is suspended." };
+  // Trust steps (phone, a pet, admin approval when required) — also covers weekly series, which are created here.
+  const readiness = await getOwnerReadiness(user.id);
+  if (!readiness.ready) return { error: readinessMessage(readiness) };
 
   const parsed = BookingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

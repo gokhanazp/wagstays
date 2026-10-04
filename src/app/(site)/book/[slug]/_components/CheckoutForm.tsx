@@ -70,6 +70,8 @@ type Props = {
   earnRateBps?: number;
   /** Link to the add-pet form that returns to this checkout afterwards. */
   addPetHref: string;
+  /** "Before your first booking" steps aren't done yet (checklist shown above the form; the server re-checks). */
+  notReady?: boolean;
 };
 
 const LEASH_OPTIONS = [
@@ -141,7 +143,7 @@ function defaultFeeding(p: Pet | undefined, hasAllergy: boolean) {
 const inlineInput =
   "w-full bg-transparent rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-outline";
 
-export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, owner, taxRateBps, fees, addPetHref, earnRateBps }: Props) {
+export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, owner, taxRateBps, fees, addPetHref, earnRateBps, notReady }: Props) {
   const [state, formAction, pending] = useActionState(createBooking.bind(null, sitter.slug), undefined);
   const [petId, setPetId] = useState(initialPetId);
   const [petMenuOpen, setPetMenuOpen] = useState(false);
@@ -836,7 +838,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
 
             <button
               className="w-full py-4 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-space-sm group disabled:opacity-70 disabled:pointer-events-none"
-              disabled={pending || !pet || !!pet.blocked || unavailable}
+              disabled={pending || !pet || !!pet.blocked || unavailable || notReady}
               id="pay-button"
               type="submit"
             >
@@ -845,6 +847,12 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
               </span>
               <span>{pending ? "Processing…" : `Confirm & Pay (${total}) 🐾`}</span>
             </button>
+            {notReady && !error && (
+              <a className="font-body-sm text-body-sm text-on-surface-variant text-center flex items-center justify-center gap-1 hover:text-primary" href="#before-booking">
+                <span className="material-symbols-outlined text-base">checklist</span>
+                Finish the &ldquo;Before your first booking&rdquo; steps to book.
+              </a>
+            )}
             {error && (
               <div className="font-body-sm text-body-sm text-error text-center flex flex-col items-center gap-0.5" role="alert">
                 <p className="flex items-center justify-center gap-1">

@@ -8,6 +8,7 @@ import { getOrigin } from "@/lib/origin";
 import { signOut } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { emit } from "@/lib/events";
+import { getPlatformSettings } from "@/lib/settings";
 import { REF_COOKIE, findReferrer, generateReferralCode } from "@/lib/referrals";
 
 export type AuthState =
@@ -56,7 +57,9 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
   const jar = await cookies();
   const referrer = await findReferrer(jar.get(REF_COOKIE)?.value);
   const referredById = referrer && referrer.id !== data.user.id ? referrer.id : null;
-  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role, referralCode: await generateReferralCode(), referredById } });
+  // Optional manual vetting of new pet parents (sitters are vetted through their application instead).
+  const approvalStatus = role === "OWNER" && (await getPlatformSettings()).requireOwnerApproval ? "PENDING" : "APPROVED";
+  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role, approvalStatus, referralCode: await generateReferralCode(), referredById } });
   if (jar.has(REF_COOKIE)) jar.delete(REF_COOKIE);
   emit({ type: "user.signedUp", userId: data.user.id });
 

@@ -25,6 +25,7 @@ export default async function SettingsPage() {
           referralRewardCents: s.referralRewardCents,
           supportEmail: s.supportEmail,
           supportPhone: s.supportPhone,
+          requireOwnerApproval: s.requireOwnerApproval,
         }}
         taxRateBps={ontario?.taxRateBps ?? 1300}
       />

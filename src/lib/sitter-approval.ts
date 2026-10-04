@@ -126,11 +126,17 @@ export async function approveApplicationTx(tx: Tx, applicationId: string, defaul
         lastName: app.lastName,
         phone: app.phone,
         role: "SITTER",
+        approvalStatus: "APPROVED",
+        approvedAt: new Date(),
       },
     });
     createdUser = true;
-  } else if (user.role !== "ADMIN" && user.role !== "SITTER") {
-    user = await tx.user.update({ where: { id: user.id }, data: { role: "SITTER" } });
+  } else if (user.role !== "ADMIN") {
+    // An approved sitter has passed ID and police checks, so any pending pet-parent approval is settled too.
+    user = await tx.user.update({
+      where: { id: user.id },
+      data: { role: "SITTER", ...(user.approvalStatus !== "APPROVED" && { approvalStatus: "APPROVED", approvedAt: new Date() }) },
+    });
   }
   if (await tx.sitterProfile.findUnique({ where: { userId: user.id }, select: { id: true } })) {
     throw new ApprovalError(`${user.email} already has a sitter profile.`);

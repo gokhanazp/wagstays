@@ -92,6 +92,7 @@ export function BookingWidget({
   askHref,
   availability,
   nowMs,
+  readinessHint,
 }: {
   slug: string;
   firstName: string;
@@ -110,6 +111,8 @@ export function BookingWidget({
   nowMs: number;
   /** "Ask <name> a question" target (messaging); falls back to the Meet & Greet flow. */
   askHref?: string;
+  /** small "before you book" note (e.g. missing phone number); the checkout shows the full checklist */
+  readinessHint?: string | null;
 }) {
   const router = useRouter();
   const snap = availability;
@@ -505,6 +508,12 @@ export function BookingWidget({
             )}
           </div>
 
+          {readinessHint && (
+            <p className="flex items-start gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
+              <span className="material-symbols-outlined text-base text-tertiary">info</span>
+              {readinessHint}
+            </p>
+          )}
           <button
             className="w-full h-14 rounded-full bg-secondary hover:bg-secondary-container text-on-secondary hover:text-on-secondary-container font-label-lg text-label-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={pending !== null || !valid}

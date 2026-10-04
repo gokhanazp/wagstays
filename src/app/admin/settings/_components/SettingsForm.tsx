@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { saveSettings } from "@/app/actions/admin-core";
 import { priceBooking } from "@/lib/pricing";
 import { formatMoney } from "@/lib/format";
-import { BTN, Card, CardHeader, Field, INPUT } from "@/components/ui";
+import { BTN, Card, CardHeader, Field, INPUT, Toggle } from "@/components/ui";
 import { FormStatus } from "../../_components/FormStatus";
 import { keepValuesOnSubmit } from "../../_components/form-utils";
 
@@ -17,6 +17,7 @@ type Settings = {
   referralRewardCents: number;
   supportEmail: string;
   supportPhone: string;
+  requireOwnerApproval: boolean;
 };
 
 const toDollars = (c: number) => (c / 100).toFixed(2);
@@ -105,6 +106,20 @@ export function SettingsForm({ settings, taxRateBps }: { settings: Settings; tax
             <Field error={fe.supportPhone} label="Support phone">
               <input className={INPUT} defaultValue={settings.supportPhone} name="supportPhone" required type="tel" />
             </Field>
+          </div>
+        </Card>
+        <Card className="flex flex-col gap-space-md pb-space-lg">
+          <CardHeader icon="how_to_reg" title="Pet parent sign-ups" />
+          <div className="px-space-lg flex flex-col gap-space-sm">
+            <Toggle
+              defaultChecked={settings.requireOwnerApproval}
+              description="New pet parents can browse and set up their pets, but can't book until an admin approves them on Users → Pending approval. Sitters are always vetted through their application. Existing accounts aren't affected."
+              label="Require admin approval for new pet parents"
+              name="requireOwnerApproval"
+            />
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Every pet parent still adds a valid phone number and at least one pet before their first booking.
+            </p>
           </div>
         </Card>
         <FormStatus state={state} />

@@ -17,6 +17,10 @@ import { WagPointsLedger } from "../_components/WagPointsLedger";
 import { ROLE_LABEL, ROLE_TONE } from "../_components/roles";
 import { OwnerReviewRow, ownerReviewInclude, ownerReviewModerationNotes } from "../../reviews/_components/OwnerReviewRow";
 import { getOwnerReputation } from "@/lib/owner-reputation";
+import { getOwnerReadiness } from "@/lib/owner-readiness";
+import { getPlatformSettings } from "@/lib/settings";
+import { ApprovalControls } from "../_components/ApprovalControls";
+import { APPROVAL_LABEL } from "../_components/roles";
 
 export const metadata: Metadata = { title: "User" };
 
@@ -38,11 +42,13 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
     },
   });
   if (!user) notFound();
-  const [activeAdmins, logs, ownerRep, ownerReviews] = await Promise.all([
+  const [activeAdmins, logs, ownerRep, ownerReviews, readiness, settings] = await Promise.all([
     db.user.count({ where: { role: "ADMIN", suspended: false } }),
     db.auditLog.findMany({ where: { entityType: "User", entityId: user.id }, orderBy: { createdAt: "desc" }, take: 10, include: auditInclude }),
     getOwnerReputation(user.id),
     db.ownerReview.findMany({ where: { ownerId: user.id }, include: ownerReviewInclude, orderBy: { createdAt: "desc" }, take: 20 }),
+    getOwnerReadiness(user.id),
+    getPlatformSettings(),
   ]);
   const ownerReviewNotes = await ownerReviewModerationNotes(ownerReviews.map((r) => r.id));
 
@@ -102,6 +108,11 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
               </StatusChip>
             ) : (
               <StatusChip tone="success">Active</StatusChip>
+            )}
+            {user.approvalStatus !== "APPROVED" && APPROVAL_LABEL[user.approvalStatus] && (
+              <StatusChip icon={APPROVAL_LABEL[user.approvalStatus].icon} tone={APPROVAL_LABEL[user.approvalStatus].tone}>
+                {APPROVAL_LABEL[user.approvalStatus].label}
+              </StatusChip>
             )}
             {isSelf && <StatusChip tone="primary">You</StatusChip>}
           </span>
@@ -168,6 +179,46 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
           <WagPointsLedger userId={user.id} />
         </Card>
       </div>
+
+      {user.role !== "ADMIN" && (
+        <Card className="flex flex-col gap-space-md pb-space-lg">
+          <div id="approval" className="scroll-mt-space-lg" />
+          <CardHeader icon="how_to_reg" title="Approval & booking readiness" />
+          <div className="px-space-lg flex flex-col gap-space-md">
+            <div className="flex flex-wrap items-center gap-space-sm">
+              <StatusChip icon={APPROVAL_LABEL[user.approvalStatus]?.icon} tone={APPROVAL_LABEL[user.approvalStatus]?.tone ?? "neutral"}>
+                {APPROVAL_LABEL[user.approvalStatus]?.label ?? user.approvalStatus}
+              </StatusChip>
+              {user.approvedAt && <span className="font-body-sm text-body-sm text-on-surface-variant">Approved {formatDateTime(user.approvedAt)}</span>}
+              <StatusChip icon={readiness.ready ? "check_circle" : "pending"} tone={readiness.ready ? "success" : "warning"}>
+                {readiness.ready ? "Ready to book" : "Not ready to book"}
+              </StatusChip>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {readiness.steps.map((st) => (
+                <li key={st.key} className="flex items-start gap-space-xs font-body-sm text-body-sm text-on-surface">
+                  <span className={`material-symbols-outlined text-base ${st.done ? "text-primary" : "text-outline"}`}>{st.done ? "check_circle" : "radio_button_unchecked"}</span>
+                  <span>
+                    {st.key === "phone" ? "Phone" : st.key === "pet" ? "Pet" : "Approval"}:{" "}
+                    {st.key === "approval" ? (APPROVAL_LABEL[st.status ?? ""]?.label ?? st.label) : st.done ? (st.detail ?? st.label) : st.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {user.approvalNote && (
+              <p className="p-space-sm px-space-md rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant">
+                <strong className="text-on-surface">Note:</strong> {user.approvalNote}
+              </p>
+            )}
+            {!settings.requireOwnerApproval && user.approvalStatus === "APPROVED" ? (
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Manual approval is off (Platform Settings). You can still reject this account to stop them from booking.
+              </p>
+            ) : null}
+            {!user.deletedAt && <ApprovalControls name={name} status={user.approvalStatus} userId={user.id} />}
+          </div>
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-space-md pb-space-sm">
         <CardHeader icon="pets" title={`Pets (${user.pets.length})`} />

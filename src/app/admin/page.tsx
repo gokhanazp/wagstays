@@ -14,11 +14,13 @@ export const metadata: Metadata = { title: "Dashboard" };
 const TZ = DEFAULT_TIME_ZONE;
 const PLACED = { not: "DRAFT" } as const;
 const EARNING = ["CONFIRMED", "COMPLETED"];
+const NEW_OWNER = { role: "OWNER", deletedAt: null } as const;
 
 export default async function AdminDashboard() {
   const now = new Date();
   const monthStart = startOfMonthInZone(now, TZ);
   const days = lastDaysInZone(now, TZ, 30);
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 3600_000);
 
   const [
     activeSitters,
@@ -35,6 +37,9 @@ export default async function AdminDashboard() {
     cities,
     bookingsByCity,
     hoods,
+    newOwnersCount,
+    newOwners,
+    notReadyCount,
   ] = await Promise.all([
     db.sitterProfile.count({ where: { status: "ACTIVE", user: { suspended: false } } }),
     db.user.count({ where: { role: "OWNER" } }),
@@ -61,6 +66,14 @@ export default async function AdminDashboard() {
     }),
     db.booking.findMany({ where: { status: PLACED }, select: { status: true, totalCents: true, sitter: { select: { cityId: true } } } }),
     db.neighbourhood.findMany({ select: { slug: true, name: true } }),
+    db.user.count({ where: { ...NEW_OWNER, createdAt: { gte: weekAgo } } }),
+    db.user.findMany({
+      where: { ...NEW_OWNER, createdAt: { gte: weekAgo } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, firstName: true, lastName: true, email: true, createdAt: true, approvalStatus: true },
+    }),
+    db.user.count({ where: { role: "OWNER", deletedAt: null, suspended: false, OR: [{ phone: null }, { phone: "" }, { pets: { none: { archivedAt: null } } }] } }),
   ]);
   const hoodName = new Map(hoods.map((h) => [h.slug, h.name]));
 
@@ -185,6 +198,67 @@ export default async function AdminDashboard() {
               })}
             </ul>
           )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-space-lg">
+        <Card className="flex flex-col">
+          <CardHeader
+            action={
+              <Link className="font-label-md text-label-md text-primary hover:underline" href="/admin/users">
+                Pet parents
+              </Link>
+            }
+            icon="person_add"
+            title="New pet parents this week"
+          />
+          <div className="px-space-lg pt-space-sm flex items-baseline gap-space-sm">
+            <span className="font-headline-md text-headline-md text-on-surface">{newOwnersCount}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">signed up in the last 7 days</span>
+          </div>
+          {newOwners.length === 0 ? (
+            <EmptyState icon="person_add" title="No new sign-ups this week" />
+          ) : (
+            <ul className="flex flex-col p-space-sm">
+              {newOwners.map((u) => (
+                <li key={u.id}>
+                  <Link className="flex items-center justify-between gap-space-md px-space-md py-space-sm rounded-xl hover:bg-surface-container-low" href={`/admin/users/${u.id}`}>
+                    <span className="flex flex-col min-w-0">
+                      <span className="font-label-lg text-label-lg text-on-surface truncate">
+                        {u.firstName} {u.lastName}
+                      </span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
+                        {u.email} · {formatDate(u.createdAt)}
+                      </span>
+                    </span>
+                    {u.approvalStatus === "PENDING" ? (
+                      <StatusChip icon="hourglass_top" tone="warning">
+                        Pending
+                      </StatusChip>
+                    ) : u.approvalStatus === "REJECTED" ? (
+                      <StatusChip tone="danger">Rejected</StatusChip>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className="flex flex-col gap-space-sm pb-space-lg">
+          <CardHeader icon="pending_actions" title="Profiles not ready to book" />
+          <div className="px-space-lg flex items-baseline gap-space-sm">
+            <span className="font-headline-md text-headline-md text-on-surface">{notReadyCount}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">pet parent{notReadyCount === 1 ? "" : "s"} with no phone number or no pet yet</span>
+          </div>
+          <p className="px-space-lg font-body-sm text-body-sm text-on-surface-variant">
+            They can browse, but checkout asks them to finish these steps before their first booking.
+          </p>
+          <div className="px-space-lg">
+            <Link className={BTN.secondary} href="/admin/users?ready=no">
+              <span className="material-symbols-outlined text-xl">group</span>View in Pet Parents
+            </Link>
+          </div>
         </Card>
       </div>
 

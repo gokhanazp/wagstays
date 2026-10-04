@@ -32,6 +32,8 @@ import {
 } from "@/lib/availability-core";
 import { formatLongDate } from "@/lib/booking-time";
 import { CheckoutForm } from "./_components/CheckoutForm";
+import { ReadinessChecklist } from "./_components/ReadinessChecklist";
+import { getOwnerReadiness } from "@/lib/owner-readiness";
 import { durationLabel, serviceLine } from "./_lib";
 
 export const metadata: Metadata = { title: "Booking & Care Instructions" };
@@ -54,7 +56,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
   const sitter = await getSitterBySlug(slug);
   const fees = await getFees();
   if (!sitter || sitter.status !== "ACTIVE" || sitter.services.length === 0) notFound();
-  const pets = await getOwnerPets(user.id);
+  const [pets, readiness] = await Promise.all([getOwnerPets(user.id), getOwnerReadiness(user.id)]);
 
   const service = sitter.services.find((s) => s.id === one(sp.service)) ?? sitter.services.find((s) => s.type === "DOG_WALKING") ?? sitter.services[0];
   const acceptance = {
@@ -137,7 +139,13 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             </div>
           </div>
         </div>
+        {!readiness.ready && (
+          <div className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin pt-space-lg md:pt-space-xl -mb-space-sm md:-mb-space-md">
+            <ReadinessChecklist addPetHref={addPetHref} phone={readiness.phone} steps={readiness.steps} />
+          </div>
+        )}
         <CheckoutForm
+          notReady={!readiness.ready}
           sitter={{
             slug: sitter.slug,
             displayName: sitter.displayName,

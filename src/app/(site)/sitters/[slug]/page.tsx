@@ -11,6 +11,7 @@ import { formatDistance, formatMoney, formatRating, timeAgo } from "@/lib/format
 import { getOwnerPets, getSitterBySlug, type SitterDetail } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 import { BookingWidget } from "./_components/BookingWidget";
+import { getOwnerReadiness } from "@/lib/owner-readiness";
 import { loadSnapshot, publicSnapshot } from "@/lib/availability";
 import { addDays, todayIn } from "@/lib/availability-core";
 import { PhotoGallery } from "./_components/PhotoGallery";
@@ -138,7 +139,15 @@ export default async function SitterProfilePage({ params }: Props) {
   if (!sitter) notFound();
 
   const user = await getCurrentUser();
-  const pets = user ? await getOwnerPets(user.id) : null;
+  const [pets, readiness] = user ? await Promise.all([getOwnerPets(user.id), getOwnerReadiness(user.id)]) : [null, null];
+  const pendingStep = readiness?.steps.find((st) => !st.done && (st.key === "approval" || st.key === "phone"));
+  const readinessHint = !pendingStep
+    ? null
+    : pendingStep.key === "phone"
+      ? "Add your phone number before booking — you can do it at checkout."
+      : pendingStep.status === "PENDING"
+        ? "Your account is being reviewed — you can book once it's approved."
+        : "Your account can't book right now — please contact support.";
 
   const first = shortName(sitter.displayName);
   const about = {
@@ -599,6 +608,7 @@ export default async function SitterProfilePage({ params }: Props) {
                 taxLabel={HST_PROVINCES.has(sitter.city.provinceCode) ? "HST" : "Sales Tax"}
                 taxRateBps={sitter.city.taxRateBps}
                 fees={fees}
+                readinessHint={readinessHint}
               />
             </div>
           </div>

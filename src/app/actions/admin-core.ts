@@ -229,6 +229,10 @@ const SettingsSchema = z.object({
     .string()
     .trim()
     .refine((v) => /^\+?1?\D*(\d\D*){10}$/.test(v), "Enter a 10-digit Canadian phone number."),
+  requireOwnerApproval: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "on"),
 });
 
 export async function saveSettings(_: FormState, formData: FormData): Promise<FormState> {
@@ -246,6 +250,7 @@ export async function saveSettings(_: FormState, formData: FormData): Promise<Fo
     referralRewardCents: d.referralReward,
     supportEmail: d.supportEmail,
     supportPhone: d.supportPhone,
+    requireOwnerApproval: d.requireOwnerApproval,
   };
   const before = await db.platformSettings.upsert({ where: { id: "default" }, create: { id: "default" }, update: {} });
   await db.platformSettings.update({ where: { id: "default" }, data });
