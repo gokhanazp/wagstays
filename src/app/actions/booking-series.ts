@@ -1,14 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { requireSitter } from "@/lib/auth";
 import { allowedTransitions, transitionBooking } from "@/lib/booking-lifecycle";
-import { CANCEL_REASONS } from "@/app/(site)/account/_lib";
+import { CANCEL_REASONS } from "@/app/[locale]/(site)/account/_lib";
 import type { BookingStatus } from "@/lib/constants";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 // Weekly series actions: "cancel this and all later occurrences" for owners and sitters, and
 // "accept all pending" for sitters. Each occurrence goes through transitionBooking (WagPoints refunds,
@@ -79,7 +80,7 @@ export async function cancelSeriesAsOwner(bookingId: string, _: SeriesState, for
   const { done, errors } = await run(items, "OWNER", details ? `${reason} — ${details}` : reason);
   revalidateAll(booking.sitter.slug, items.map((i) => i.id));
   if (!done) return { error: errors[0] ?? "Couldn't cancel these bookings." };
-  redirect(`/account/bookings/${booking.id}?notice=cancelled`);
+  redirect(await localizedPath(`/account/bookings/${booking.id}?notice=cancelled`));
 }
 
 const SitterSchema = z.discriminatedUnion("intent", [

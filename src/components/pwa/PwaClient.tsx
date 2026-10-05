@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { pushPromptStatus } from "@/app/actions/push";
 import { EARLY_INSTALL_SCRIPT, captureInstallPrompt, currentSubscription, enablePush, needsHomeScreenFirst, pushSupported, registerServiceWorker } from "./push-client";

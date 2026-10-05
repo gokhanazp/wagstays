@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 /** WagStays brand mark: a heart-pad paw on a sage squircle, drawn from the design palette. */
 export function LogoMark({ className = "w-10 h-10" }: { className?: string }) {

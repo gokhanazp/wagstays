@@ -1,4 +1,6 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { intlLocale } from "@/i18n/routing";
 
 // Shared building blocks for dashboard-style pages (admin, account, sitter).
 // They follow the Warm Paw design system: white cards on vanilla, pill buttons, Material Symbols.
@@ -162,25 +164,28 @@ export function Toggle({ name, defaultChecked, label, description }: { name: str
 }
 
 export function Pager({ page, pageCount, hrefFor }: { page: number; pageCount: number; hrefFor: (p: number) => string }) {
+  const t = useTranslations("common.pager");
   if (pageCount <= 1) return null;
   return (
     <div className="flex items-center justify-end gap-space-xs px-space-lg py-space-md">
       <Link aria-disabled={page <= 1} className={`${BTN.small} ${page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-surface-container-low"}`} href={hrefFor(page - 1)}>
-        <span className="material-symbols-outlined text-base">chevron_left</span>Prev
+        <span className="material-symbols-outlined text-base">chevron_left</span>
+        {t("prev")}
       </Link>
       <span className="font-label-md text-label-md text-on-surface-variant px-space-sm">
-        Page {page} of {pageCount}
+        {t("pageOf", { page, count: pageCount })}
       </span>
       <Link aria-disabled={page >= pageCount} className={`${BTN.small} ${page >= pageCount ? "pointer-events-none opacity-40" : "hover:bg-surface-container-low"}`} href={hrefFor(page + 1)}>
-        Next<span className="material-symbols-outlined text-base">chevron_right</span>
+        {t("next")}
+        <span className="material-symbols-outlined text-base">chevron_right</span>
       </Link>
     </div>
   );
 }
 
-export function formatDateTime(d: Date, tz = "America/Toronto") {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "medium", timeStyle: "short" }).format(d);
+export function formatDateTime(d: Date, tz = "America/Toronto", locale = "en") {
+  return new Intl.DateTimeFormat(intlLocale(locale), { timeZone: tz, dateStyle: "medium", timeStyle: "short" }).format(d);
 }
-export function formatDate(d: Date, tz = "America/Toronto") {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "medium" }).format(d);
+export function formatDate(d: Date, tz = "America/Toronto", locale = "en") {
+  return new Intl.DateTimeFormat(intlLocale(locale), { timeZone: tz, dateStyle: "medium" }).format(d);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { installStore } from "./push-client";
 
@@ -8,6 +9,7 @@ import { installStore } from "./push-client";
  * an install prompt (Chromium on Android/desktop) — iOS Safari has no prompt, and installed users never see it.
  */
 export function InstallAppButton({ className, iconClassName }: { className?: string; iconClassName?: string }) {
+  const t = useTranslations("common.install");
   const canInstall = useSyncExternalStore(installStore.subscribe, installStore.canInstall, installStore.canInstallServer);
   if (!canInstall) return null;
   return (
@@ -23,8 +25,8 @@ export function InstallAppButton({ className, iconClassName }: { className?: str
         <span className="material-symbols-outlined text-lg">install_mobile</span>
       </span>
       <span className="flex flex-col leading-tight">
-        Get the app
-        <span className="font-body-sm text-[12px] text-on-surface-variant font-normal">Add WagStays to your home screen</span>
+        {t("title")}
+        <span className="font-body-sm text-[12px] text-on-surface-variant font-normal">{t("subtitle")}</span>
       </span>
     </button>
   );

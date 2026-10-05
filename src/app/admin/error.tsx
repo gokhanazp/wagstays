@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "../(site)/error";
+export { default } from "../[locale]/(site)/error";

@@ -1,8 +1,7 @@
 "use server";
 
 import { randomInt } from "node:crypto";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -11,6 +10,8 @@ import { getAdminOrNull } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { emit } from "@/lib/events";
 import { BODY_MAX, SUBJECT_MAX, TICKET_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES, type TicketStatus } from "@/lib/support";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type SupportFormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -104,7 +105,7 @@ export async function createTicket(_: SupportFormState, formData: FormData): Pro
   if (!ticketId) return { error: "Something went wrong creating your ticket — please try again." };
 
   revalidateTicket(ticketId);
-  redirect(`/account/support/${ticketId}?notice=created`);
+  redirect(await localizedPath(`/account/support/${ticketId}?notice=created`));
 }
 
 /** The opener's ticket, or null (admins use the admin actions). */

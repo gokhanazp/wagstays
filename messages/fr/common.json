@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "defaultTitle": "WagStays — Gardiens d'animaux et promeneurs de chiens de confiance à Toronto",
+    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Antécédents vérifiés, suivi GPS des promenades et couverture vétérinaire à chaque réservation."
+  },
+  "nav": {
+    "findSitter": "Trouver un gardien",
+    "dogWalking": "Promenade de chiens",
+    "howItWorks": "Comment ça marche",
+    "howPricingWorks": "Nos tarifs expliqués",
+    "becomeSitter": "Devenir gardien",
+    "help": "Aide",
+    "helpSupport": "Aide et soutien",
+    "favourites": "Favoris",
+    "messages": "Messages",
+    "adminPanel": "Panneau d'administration",
+    "sitterDashboard": "Tableau de bord du gardien",
+    "myBookings": "Mes réservations",
+    "myPets": "Mes animaux",
+    "wagPoints": "WagPoints",
+    "accountSettings": "Paramètres du compte",
+    "logIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "logOut": "Se déconnecter"
+  },
+  "header": {
+    "badgeAdmin": "Admin",
+    "badgeSitter": "Gardien",
+    "badgePets": "{count, plural, one {# animal} other {# animaux}}",
+    "profilePhotoAlt": "Profil de {name}"
+  },
+  "menu": {
+    "open": "Ouvrir le menu",
+    "close": "Fermer le menu",
+    "label": "Menu principal",
+    "welcome": "Bienvenue chez WagStays 🐾",
+    "welcomeText": "Réservez des gardiens vérifiés et de confiance près de chez vous.",
+    "explore": "Explorer",
+    "yourAccount": "Votre compte"
+  },
+  "install": {
+    "title": "Obtenir l'application",
+    "subtitle": "Ajoutez WagStays à votre écran d'accueil"
+  },
+  "language": {
+    "label": "Langue",
+    "switchTo": "Passer en {language}"
+  },
+  "footer": {
+    "tagline": "Voyagez l'esprit tranquille. Des gardiens vérifiés, fiables et attentionnés veillent au bonheur de votre petite famille à poils pendant votre absence.",
+    "social": {
+      "website": "Site Web",
+      "share": "Partager",
+      "photos": "Photos"
+    },
+    "ourServices": "Nos services",
+    "services": {
+      "dogWalking": "Promenade de chiens",
+      "catVisits": "Visites pour chats",
+      "boarding": "Pension à domicile",
+      "dayCare": "Garderie pour chiens",
+      "petTaxi": "Taxi pour animaux",
+      "pricing": "Nos tarifs expliqués"
+    },
+    "safety": "Sécurité et normes",
+    "trust": {
+      "vetCover": "Couverture vétérinaire de {amount}",
+      "verified": "Gardiens vérifiés",
+      "support": "Soutien en direct 24 h/24, 7 j/7",
+      "payments": "Paiements sécurisés"
+    },
+    "newsletterTitle": "Le Wag mensuel",
+    "newsletterText": "Conseils, guides de soins et offres exclusives — directement dans votre boîte de réception.",
+    "popularHoods": "Quartiers populaires",
+    "sittersIn": "Gardiens d'animaux à {city}",
+    "copyright": "© 2026 WagStays Technologies Inc. Tous droits réservés.",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "pipeda": "Avis de confidentialité (LPRPDE)"
+  },
+  "newsletter": {
+    "placeholder": "Votre adresse courriel",
+    "label": "Adresse courriel",
+    "submit": "S'abonner",
+    "subscribed": "Abonnement confirmé!",
+    "invalidEmail": "Veuillez entrer une adresse courriel valide."
+  },
+  "pager": {
+    "prev": "Préc.",
+    "next": "Suiv.",
+    "pageOf": "Page {page} sur {count}"
+  },
+  "forms": {
+    "select": "Choisir…",
+    "selectDate": "Choisir une date",
+    "chooseDate": "Choisissez une date",
+    "chooseDates": "Choisissez les dates",
+    "addDates": "Ajouter des dates",
+    "pickStart": "Choisissez une date de début",
+    "pickEnd": "Choisissez maintenant une date de fin",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "date": "Date",
+    "time": "Heure",
+    "fieldDate": "{field} – date",
+    "fieldTime": "{field} – heure",
+    "clear": "Effacer",
+    "done": "Terminé",
+    "optional": "Facultatif",
+    "rangeSummary": "{range} · {unit, select, day {{count, plural, one {# jour} other {# jours}}} other {{count, plural, one {# nuit} other {# nuits}}}}"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saveChanges": "Enregistrer les modifications",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "back": "Retour",
+    "backToHome": "Retour à l'accueil",
+    "continue": "Continuer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "remove": "Retirer",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "submit": "Soumettre",
+    "tryAgain": "Réessayer",
+    "viewAll": "Tout voir",
+    "learnMore": "En savoir plus",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins",
+    "copy": "Copier",
+    "copied": "Copié!"
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite. Veuillez réessayer.",
+    "network": "Veuillez vérifier votre connexion et réessayer.",
+    "notFoundTitle": "Cette page s'est sauvée",
+    "notFoundText": "Nous avons flairé partout, sans succès. Le lien est peut-être périmé ou la page a été déplacée.",
+    "error404": "Erreur 404",
+    "pageNotFound": "Page introuvable",
+    "somethingWrong": "Une erreur s'est produite",
+    "somethingWrongText": "Désolés — un problème est survenu lors du chargement de cette page. Veuillez réessayer. Si le problème persiste, contactez le soutien",
+    "mentionCode": "en indiquant le code <mono>{digest}</mono>"
+  },
+  "enums": {
+    "service": {
+      "DOG_WALKING": "Promenade de chiens",
+      "BOARDING": "Pension de nuit",
+      "DAY_CARE": "Garderie pour chiens",
+      "DROP_IN": "Visites à domicile"
+    },
+    "unit": {
+      "WALK": "promenade",
+      "NIGHT": "nuit",
+      "DAY": "jour",
+      "VISIT": "visite"
+    },
+    "perUnit": {
+      "WALK": "/ promenade",
+      "NIGHT": "/ nuit",
+      "DAY": "/ jour",
+      "VISIT": "/ visite"
+    },
+    "petSize": {
+      "SMALL": "Petit",
+      "MEDIUM": "Moyen",
+      "LARGE": "Grand",
+      "GIANT": "Très grand"
+    },
+    "petKind": {
+      "DOG": "Chien",
+      "CAT": "Chat",
+      "RABBIT": "Lapin",
+      "GUINEA_PIG": "Cochon d'Inde",
+      "HAMSTER": "Hamster",
+      "BIRD": "Oiseau",
+      "FERRET": "Furet",
+      "REPTILE": "Reptile",
+      "FISH": "Poisson",
+      "OTHER": "Autres animaux"
+    },
+    "petKindPlural": {
+      "DOG": "chiens",
+      "CAT": "chats",
+      "RABBIT": "lapins",
+      "GUINEA_PIG": "cochons d'Inde",
+      "HAMSTER": "hamsters",
+      "BIRD": "oiseaux",
+      "FERRET": "furets",
+      "REPTILE": "reptiles",
+      "FISH": "poissons",
+      "OTHER": "autres animaux"
+    },
+    "bookingStatus": {
+      "DRAFT": "Brouillon",
+      "PENDING": "En attente du gardien",
+      "CONFIRMED": "Confirmée",
+      "DECLINED": "Refusée",
+      "COMPLETED": "Terminée",
+      "CANCELLED": "Annulée"
+    },
+    "applicationStatus": {
+      "IN_REVIEW": "En cours d'examen",
+      "MEET_GREET": "Rencontre préalable",
+      "APPROVED": "Approuvée",
+      "REJECTED": "Refusée"
+    },
+    "role": {
+      "OWNER": "Propriétaire d'animal",
+      "SITTER": "Gardien",
+      "ADMIN": "Admin"
+    },
+    "weekday": {
+      "0": "dimanche",
+      "1": "lundi",
+      "2": "mardi",
+      "3": "mercredi",
+      "4": "jeudi",
+      "5": "vendredi",
+      "6": "samedi"
+    },
+    "weekdayShort": {
+      "0": "dim.",
+      "1": "lun.",
+      "2": "mar.",
+      "3": "mer.",
+      "4": "jeu.",
+      "5": "ven.",
+      "6": "sam."
+    }
+  },
+  "headerNav": {
+    "findSitter": "Trouver un gardien",
+    "dogWalking": "Promenades",
+    "howItWorks": "Comment ça marche",
+    "becomeSitter": "Devenir gardien"
+  }
+}

@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { getAdminOrNull } from "@/lib/auth";
@@ -8,6 +7,8 @@ import { db } from "@/lib/db";
 import { createPasswordLink } from "@/lib/password-links";
 import { getAuthUserId } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type SetPasswordState = { error?: string; fieldErrors?: Record<string, string[] | undefined> } | undefined;
 
@@ -28,7 +29,7 @@ export async function setPassword(_: SetPasswordState, formData: FormData): Prom
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { error: error.code === "same_password" ? "Please choose a different password from your current one." : error.message };
   const user = await db.user.findUnique({ where: { id: auth.id }, select: { role: true } });
-  redirect(user?.role === "SITTER" ? "/sitter" : user?.role === "ADMIN" ? "/admin" : "/");
+  redirect(await localizedPath(user?.role === "SITTER" ? "/sitter" : user?.role === "ADMIN" ? "/admin" : "/"));
 }
 
 /** Admin: issue a set-password link for a user (shown once in the admin UI). */

@@ -2,7 +2,7 @@
 
 import { emit } from "@/lib/events";
 import { conversationChannel, inboxChannel, ping } from "@/lib/realtime";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { MESSAGE_MAX, markRead, participantSide } from "@/lib/conversations";

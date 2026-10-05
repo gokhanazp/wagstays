@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useId, useRef, useState } from "react";
 import { Popover } from "@/components/forms/Popover";
 

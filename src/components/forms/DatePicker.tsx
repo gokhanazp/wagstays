@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { intlLocale } from "@/i18n/routing";
 import { Popover } from "./Popover";
 import { Select } from "./Select";
 import { SELECT_FIELD } from "./styles";
@@ -17,19 +19,28 @@ export const fromIso = (s?: string | null) => {
 const sameDay = (a: Date | null, b: Date | null) => !!a && !!b && toIso(a) === toIso(b);
 const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 
-export function formatIsoDate(iso?: string | null, opts: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric", year: "numeric" }) {
+export function formatIsoDate(
+  iso?: string | null,
+  opts: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric", year: "numeric" },
+  locale = "en",
+) {
   const d = fromIso(iso);
-  return d ? d.toLocaleDateString("en-CA", opts) : "";
+  return d ? d.toLocaleDateString(intlLocale(locale), opts) : "";
 }
-export function formatIsoRange(start?: string | null, end?: string | null) {
+export function formatIsoRange(start?: string | null, end?: string | null, locale = "en") {
   const s = fromIso(start);
   const e = fromIso(end);
   if (!s) return "";
-  const f = (d: Date) => d.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+  const f = (d: Date) => d.toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric" });
   return e ? `${f(s)} – ${f(e)}` : f(s);
 }
 
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+/** Two-letter weekday headers starting on Sunday: Su Mo … / di lu … */
+const weekdays = (locale: string) =>
+  Array.from({ length: 7 }, (_, i) => {
+    const w = new Date(2000, 0, 2 + i).toLocaleDateString(intlLocale(locale), { weekday: "short" }).replace(".", "");
+    return w.charAt(0).toUpperCase() + w.slice(1, 2);
+  });
 
 /**
  * Inline month calendar in the design language. `mode="range"` selects start → end with a
@@ -62,6 +73,8 @@ export function Calendar({
   /** Extra classes for a day button (e.g. availability colouring in a read-only preview). */
   dayClassName?: (iso: string) => string | undefined;
 }) {
+  const t = useTranslations("common.forms");
+  const locale = useLocale();
   const sel = fromIso(mode === "single" ? value : start);
   const selEnd = fromIso(end);
   const minD = fromIso(min);
@@ -90,10 +103,10 @@ export function Calendar({
     return (
       <div className="flex flex-col gap-space-xs w-[280px]" key={offset}>
         <div className="h-9 flex items-center justify-center font-title-md text-title-md text-on-surface">
-          {first.toLocaleDateString("en-CA", { month: "long", year: "numeric" })}
+          {first.toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric" })}
         </div>
         <div className="grid grid-cols-7">
-          {WEEKDAYS.map((w) => (
+          {weekdays(locale).map((w) => (
             <span className="h-8 flex items-center justify-center font-label-sm text-label-sm text-outline" key={w}>
               {w}
             </span>
@@ -114,7 +127,7 @@ export function Calendar({
                 key={i}
               >
                 <button
-                  aria-label={d.toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  aria-label={d.toLocaleDateString(intlLocale(locale), { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                   aria-pressed={isStart || isEnd}
                   className={`w-10 h-10 rounded-full font-label-lg text-label-lg transition-all ${
                     isStart || isEnd
@@ -143,7 +156,7 @@ export function Calendar({
   return (
     <div className="relative p-space-md">
       <button
-        aria-label="Previous month"
+        aria-label={t("previousMonth")}
         className="absolute left-space-md top-space-md w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container disabled:opacity-30"
         disabled={!canPrev}
         onClick={() => setView((v) => addMonths(v, -1))}
@@ -152,7 +165,7 @@ export function Calendar({
         <span className="material-symbols-outlined text-xl">chevron_left</span>
       </button>
       <button
-        aria-label="Next month"
+        aria-label={t("nextMonth")}
         className="absolute right-space-md top-space-md w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
         onClick={() => setView((v) => addMonths(v, 1))}
         type="button"
@@ -178,7 +191,7 @@ export function DatePicker({
   onChange,
   min,
   max,
-  placeholder = "Select a date",
+  placeholder,
   className = SELECT_FIELD,
   id,
   "aria-label": ariaLabel,
@@ -198,6 +211,8 @@ export function DatePicker({
   format?: Intl.DateTimeFormatOptions;
   isDateDisabled?: (iso: string) => boolean;
 }) {
+  const t = useTranslations("common.forms");
+  const locale = useLocale();
   const [inner, setInner] = useState(defaultValue ?? "");
   const current = value ?? inner;
   const [open, setOpen] = useState(false);
@@ -215,10 +230,10 @@ export function DatePicker({
         ref={anchor}
         type="button"
       >
-        <span className="block truncate">{current ? formatIsoDate(current, format) : <span className="text-outline">{placeholder}</span>}</span>
+        <span className="block truncate">{current ? formatIsoDate(current, format, locale) : <span className="text-outline">{placeholder ?? t("selectDate")}</span>}</span>
         {fieldIcon("calendar_month")}
       </button>
-      <Popover anchor={anchor} label={ariaLabel ?? "Choose a date"} onClose={() => setOpen(false)} open={open}>
+      <Popover anchor={anchor} label={ariaLabel ?? t("chooseDate")} onClose={() => setOpen(false)} open={open}>
         <Calendar
           isDateDisabled={isDateDisabled}
           max={max}
@@ -238,7 +253,7 @@ export function DatePicker({
               onClick={() => (setInner(""), onChange?.(""), setOpen(false))}
               type="button"
             >
-              Clear
+              {t("clear")}
             </button>
           </div>
         )}
@@ -257,7 +272,7 @@ export function DateRangePicker({
   defaultEnd,
   onChange,
   min,
-  placeholder = "Add dates",
+  placeholder,
   className = SELECT_FIELD,
   "aria-label": ariaLabel,
   unitLabel = "night",
@@ -276,12 +291,14 @@ export function DateRangePicker({
   placeholder?: string;
   className?: string;
   "aria-label"?: string;
-  unitLabel?: string;
+  unitLabel?: "night" | "day";
   isDateDisabled?: (iso: string) => boolean;
   id?: string;
   /** count days inclusively (day care: Oct 18–20 = 3 days) instead of nights */
   inclusive?: boolean;
 }) {
+  const t = useTranslations("common.forms");
+  const locale = useLocale();
   const [inner, setInner] = useState({ start: defaultStart ?? "", end: defaultEnd ?? "" });
   const s = start ?? inner.start;
   const e = end ?? inner.end;
@@ -301,7 +318,7 @@ export function DateRangePicker({
         ref={anchor}
         type="button"
       >
-        <span className="block truncate">{s ? formatIsoRange(s, e) : <span className="text-outline">{placeholder}</span>}</span>
+        <span className="block truncate">{s ? formatIsoRange(s, e, locale) : <span className="text-outline">{placeholder ?? t("addDates")}</span>}</span>
         {fieldIcon("date_range")}
       </button>
       <RangePanel
@@ -347,11 +364,13 @@ export function RangePanel({
   end?: string;
   min?: string;
   onChange: (start: string, end: string | undefined) => void;
-  unitLabel?: string;
+  unitLabel?: "night" | "day";
   title?: string;
   isDateDisabled?: (iso: string) => boolean;
   inclusive?: boolean;
 }) {
+  const t = useTranslations("common.forms");
+  const locale = useLocale();
   // one month on phones so the footer ("Done") stays on screen; two side by side from md up
   const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches);
   useEffect(() => {
@@ -366,21 +385,21 @@ export function RangePanel({
     return a && b ? Math.round((b.getTime() - a.getTime()) / 86_400_000) + (inclusive ? 1 : 0) : 0;
   }, [start, end, inclusive]);
   return (
-    <Popover anchor={anchor} label={title ?? "Choose dates"} onClose={onClose} open={open}>
+    <Popover anchor={anchor} label={title ?? t("chooseDates")} onClose={onClose} open={open}>
       {title && <div className="px-space-lg pt-space-md font-label-md text-label-md uppercase tracking-wider text-outline">{title}</div>}
       <Calendar end={end} isDateDisabled={isDateDisabled} min={min} mode="range" months={wide ? 2 : 1} onRangeChange={onChange} start={start} />
       <div className="flex items-center justify-between gap-space-md px-space-lg pb-space-md pt-space-sm border-t border-[#EFE7DE]">
         <span className="font-body-sm text-body-sm text-on-surface-variant">
           {!start
-            ? "Pick a start date"
+            ? t("pickStart")
             : !end
-              ? "Now pick an end date"
-              : `${formatIsoRange(start, end)} · ${nights} ${unitLabel}${nights === 1 ? "" : "s"}`}
+              ? t("pickEnd")
+              : t("rangeSummary", { range: formatIsoRange(start, end, locale), unit: unitLabel, count: nights })}
         </span>
         <span className="flex items-center gap-space-sm">
           {start && (
             <button className="h-9 px-space-md rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low" onClick={() => onChange("", undefined)} type="button">
-              Clear
+              {t("clear")}
             </button>
           )}
           <button
@@ -388,7 +407,7 @@ export function RangePanel({
             onClick={onClose}
             type="button"
           >
-            Done
+            {t("done")}
           </button>
         </span>
       </div>
@@ -396,13 +415,14 @@ export function RangePanel({
   );
 }
 
-const TIMES = Array.from({ length: 24 * 4 }, (_, i) => {
-  const h = Math.floor(i / 4);
-  const m = (i % 4) * 15;
-  const value = `${pad(h)}:${pad(m)}`;
-  const label = new Date(2000, 0, 1, h, m).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" });
-  return { value, label };
-});
+const timeOptions = (locale: string) =>
+  Array.from({ length: 24 * 4 }, (_, i) => {
+    const h = Math.floor(i / 4);
+    const m = (i % 4) * 15;
+    const value = `${pad(h)}:${pad(m)}`;
+    const label = new Date(2000, 0, 1, h, m).toLocaleTimeString(intlLocale(locale), { hour: "numeric", minute: "2-digit" });
+    return { value, label };
+  });
 
 /** Date + 15-minute time select. Posts `YYYY-MM-DDTHH:mm` (the old datetime-local format). */
 export function DateTimePicker({
@@ -416,13 +436,16 @@ export function DateTimePicker({
   min?: string;
   "aria-label"?: string;
 }) {
+  const t = useTranslations("common.forms");
+  const locale = useLocale();
+  const times = useMemo(() => timeOptions(locale), [locale]);
   const [date, setDate] = useState(defaultValue?.slice(0, 10) ?? "");
   const [time, setTime] = useState(defaultValue?.slice(11, 16) || "10:00");
   return (
     <div className="grid grid-cols-[1fr_140px] gap-space-sm">
       <input name={name} type="hidden" value={date ? `${date}T${time}` : ""} />
-      <DatePicker aria-label={ariaLabel ? `${ariaLabel} date` : "Date"} min={min} onChange={setDate} value={date} />
-      <Select aria-label={ariaLabel ? `${ariaLabel} time` : "Time"} onChange={setTime} options={TIMES} panelMinWidth={140} value={time} />
+      <DatePicker aria-label={ariaLabel ? t("fieldDate", { field: ariaLabel }) : t("date")} min={min} onChange={setDate} value={date} />
+      <Select aria-label={ariaLabel ? t("fieldTime", { field: ariaLabel }) : t("time")} onChange={setTime} options={times} panelMinWidth={140} value={time} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { pushEnabled, sendPush } from "@/lib/push";

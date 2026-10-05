@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { baseMetadata, RootDocument } from "@/app/_root/RootDocument";
 import Link from "next/link";
 import { DashboardNav } from "@/components/DashboardNav";
 import { LogoMark, Wordmark } from "@/components/Logo";
@@ -6,7 +7,10 @@ import { logout } from "@/app/actions/auth";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s · WagStays Admin" }, robots: { index: false } };
+export const viewport: Viewport = { themeColor: "#226150" };
+
+// Root layout for the English-only admin panel (outside app/[locale]).
+export const metadata: Metadata = { ...baseMetadata, title: { default: "Admin", template: "%s · WagStays Admin" }, robots: { index: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
@@ -18,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ]);
 
   return (
+    <RootDocument locale="en">
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-[264px_1fr]">
       <aside className="lg:sticky lg:top-0 lg:h-screen bg-surface-container-low border-b lg:border-b-0 lg:border-r border-[#EFE7DE] flex flex-col gap-space-lg p-space-md lg:p-space-lg">
         <div className="flex items-center justify-between">
@@ -66,5 +71,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
       <main className="min-w-0 px-margin-mobile md:px-margin py-space-xl flex flex-col gap-space-lg max-w-[1280px] w-full">{children}</main>
     </div>
+    </RootDocument>
   );
 }

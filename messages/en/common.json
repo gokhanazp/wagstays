@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "defaultTitle": "WagStays — Trusted Pet Sitters & Dog Walkers in Toronto",
+    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Background-checked sitters, live GPS walk tracking and vet care coverage on every booking."
+  },
+  "nav": {
+    "findSitter": "Find a Sitter",
+    "dogWalking": "Dog Walking",
+    "howItWorks": "How It Works",
+    "howPricingWorks": "How Pricing Works",
+    "becomeSitter": "Become a Sitter",
+    "help": "Help",
+    "helpSupport": "Help & Support",
+    "favourites": "Favourites",
+    "messages": "Messages",
+    "adminPanel": "Admin Panel",
+    "sitterDashboard": "Sitter Dashboard",
+    "myBookings": "My Bookings",
+    "myPets": "My Pets",
+    "wagPoints": "WagPoints",
+    "accountSettings": "Account Settings",
+    "logIn": "Log in",
+    "signUp": "Sign up",
+    "logOut": "Log out"
+  },
+  "header": {
+    "badgeAdmin": "Admin",
+    "badgeSitter": "Sitter",
+    "badgePets": "{count, plural, one {# Pet} other {# Pets}}",
+    "profilePhotoAlt": "{name}'s profile"
+  },
+  "menu": {
+    "open": "Open menu",
+    "close": "Close menu",
+    "label": "Main menu",
+    "welcome": "Welcome to WagStays 🐾",
+    "welcomeText": "Book trusted, verified sitters near you.",
+    "explore": "Explore",
+    "yourAccount": "Your account"
+  },
+  "install": {
+    "title": "Get the app",
+    "subtitle": "Add WagStays to your home screen"
+  },
+  "language": {
+    "label": "Language",
+    "switchTo": "Switch to {language}"
+  },
+  "footer": {
+    "tagline": "Travel with peace of mind. Trusted, loving and verified sitters keep your furry family happy every moment you're away.",
+    "social": {
+      "website": "Website",
+      "share": "Share",
+      "photos": "Photos"
+    },
+    "ourServices": "Our Services",
+    "services": {
+      "dogWalking": "Dog Walking",
+      "catVisits": "Cat Visits",
+      "boarding": "In-Home Boarding",
+      "dayCare": "Doggy Day Care",
+      "petTaxi": "Pet Taxi",
+      "pricing": "How pricing works"
+    },
+    "safety": "Safety & Standards",
+    "trust": {
+      "vetCover": "{amount} Vet Care Coverage",
+      "verified": "Verified Sitters",
+      "support": "24/7 Live Support",
+      "payments": "Secure Payments"
+    },
+    "newsletterTitle": "The Monthly Wag",
+    "newsletterText": "Tips, care guides and exclusive offers — straight to your inbox.",
+    "popularHoods": "Popular neighbourhoods",
+    "sittersIn": "Pet sitters in {city}",
+    "copyright": "© 2026 WagStays Technologies Inc. All rights reserved.",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "pipeda": "PIPEDA Privacy Notice"
+  },
+  "newsletter": {
+    "placeholder": "Your email address",
+    "label": "Email address",
+    "submit": "Subscribe",
+    "subscribed": "Subscribed!",
+    "invalidEmail": "Please enter a valid email."
+  },
+  "pager": {
+    "prev": "Prev",
+    "next": "Next",
+    "pageOf": "Page {page} of {count}"
+  },
+  "forms": {
+    "select": "Select…",
+    "selectDate": "Select a date",
+    "chooseDate": "Choose a date",
+    "chooseDates": "Choose dates",
+    "addDates": "Add dates",
+    "pickStart": "Pick a start date",
+    "pickEnd": "Now pick an end date",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "date": "Date",
+    "time": "Time",
+    "fieldDate": "{field} date",
+    "fieldTime": "{field} time",
+    "clear": "Clear",
+    "done": "Done",
+    "optional": "Optional",
+    "rangeSummary": "{range} · {unit, select, day {{count, plural, one {# day} other {# days}}} other {{count, plural, one {# night} other {# nights}}}}"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "backToHome": "Back to home",
+    "continue": "Continue",
+    "edit": "Edit",
+    "delete": "Delete",
+    "remove": "Remove",
+    "send": "Send",
+    "sending": "Sending…",
+    "submit": "Submit",
+    "tryAgain": "Try again",
+    "viewAll": "View all",
+    "learnMore": "Learn more",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Please check your connection and try again.",
+    "notFoundTitle": "This page wandered off",
+    "notFoundText": "We sniffed everywhere but couldn't find it. The link may be old, or the page may have moved.",
+    "error404": "Error 404",
+    "pageNotFound": "Page not found",
+    "somethingWrong": "Something went wrong",
+    "somethingWrongText": "Sorry — we hit a snag loading this page. Please try again. If it keeps happening, contact support",
+    "mentionCode": "and mention code <mono>{digest}</mono>"
+  },
+  "enums": {
+    "service": {
+      "DOG_WALKING": "Dog Walking",
+      "BOARDING": "Overnight Boarding",
+      "DAY_CARE": "Doggy Day Care",
+      "DROP_IN": "Drop-In Visits"
+    },
+    "unit": {
+      "WALK": "walk",
+      "NIGHT": "night",
+      "DAY": "day",
+      "VISIT": "visit"
+    },
+    "perUnit": {
+      "WALK": "/ walk",
+      "NIGHT": "/ night",
+      "DAY": "/ day",
+      "VISIT": "/ visit"
+    },
+    "petSize": {
+      "SMALL": "Small",
+      "MEDIUM": "Medium",
+      "LARGE": "Large",
+      "GIANT": "Giant"
+    },
+    "petKind": {
+      "DOG": "Dog",
+      "CAT": "Cat",
+      "RABBIT": "Rabbit",
+      "GUINEA_PIG": "Guinea Pig",
+      "HAMSTER": "Hamster",
+      "BIRD": "Bird",
+      "FERRET": "Ferret",
+      "REPTILE": "Reptile",
+      "FISH": "Fish",
+      "OTHER": "Other pets"
+    },
+    "petKindPlural": {
+      "DOG": "dogs",
+      "CAT": "cats",
+      "RABBIT": "rabbits",
+      "GUINEA_PIG": "guinea pigs",
+      "HAMSTER": "hamsters",
+      "BIRD": "birds",
+      "FERRET": "ferrets",
+      "REPTILE": "reptiles",
+      "FISH": "fish",
+      "OTHER": "other pets"
+    },
+    "bookingStatus": {
+      "DRAFT": "Draft",
+      "PENDING": "Awaiting sitter",
+      "CONFIRMED": "Confirmed",
+      "DECLINED": "Declined",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "applicationStatus": {
+      "IN_REVIEW": "In review",
+      "MEET_GREET": "Meet & Greet",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "role": {
+      "OWNER": "Pet Parent",
+      "SITTER": "Sitter",
+      "ADMIN": "Admin"
+    },
+    "weekday": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    },
+    "weekdayShort": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
+  "headerNav": {
+    "findSitter": "Find a Sitter",
+    "dogWalking": "Dog Walking",
+    "howItWorks": "How It Works",
+    "becomeSitter": "Become a Sitter"
+  }
+}

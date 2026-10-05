@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getOrigin } from "@/lib/origin";
@@ -10,6 +9,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { emit } from "@/lib/events";
 import { getPlatformSettings } from "@/lib/settings";
 import { REF_COOKIE, findReferrer, generateReferralCode } from "@/lib/referrals";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type AuthState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined>; checkEmail?: string; ok?: boolean; unconfirmedEmail?: string }
@@ -64,7 +65,7 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
   emit({ type: "user.signedUp", userId: data.user.id });
 
   if (!data.session) return { checkEmail: email };
-  redirect(next);
+  redirect(await localizedPath(next));
 }
 
 const LoginSchema = z.object({
@@ -86,12 +87,12 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
     return { error: "That email and password don't match our records." };
   }
   const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
-  redirect(account?.suspended ? "/suspended" : safeNext(formData.get("next")));
+  redirect(await localizedPath(account?.suspended ? "/suspended" : safeNext(formData.get("next"))));
 }
 
 export async function logout() {
   await signOut();
-  redirect("/");
+  redirect(await localizedPath("/"));
 }
 
 const ForgotSchema = z.object({ email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")) });

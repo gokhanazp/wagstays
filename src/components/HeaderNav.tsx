@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 const NAV = [
-  { href: "/sitters", label: "Find a Sitter", key: "find" },
-  { href: "/sitters?service=dog-walking", label: "Dog Walking", key: "walk" },
-  { href: "/#how-it-works", label: "How It Works", key: "how" },
-  { href: "/become-a-sitter", label: "Become a Sitter", key: "become" },
+  { href: "/sitters", label: "findSitter", key: "find" },
+  { href: "/sitters?service=dog-walking", label: "dogWalking", key: "walk" },
+  { href: "/#how-it-works", label: "howItWorks", key: "how" },
+  { href: "/become-a-sitter", label: "becomeSitter", key: "become" },
 ] as const;
 
 const BASE =
-  "px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all";
-const ACTIVE = "bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full shadow-sm";
+  "whitespace-nowrap px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all";
+const ACTIVE = "whitespace-nowrap bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full shadow-sm";
 
 function useActiveKey() {
   const pathname = usePathname();
@@ -25,9 +26,11 @@ function useActiveKey() {
 }
 
 export function HeaderNav() {
+  // compact labels so the longer French copy fits the desktop bar
+  const t = useTranslations("common.headerNav");
   const active = useActiveKey();
   return (
-    <nav className="hidden lg:flex items-center gap-space-xs p-space-xs bg-surface-container rounded-full">
+    <nav className="hidden xl:flex items-center gap-space-xs p-space-xs bg-surface-container rounded-full">
       {NAV.map((item) => (
         <Link
           key={item.key}
@@ -35,7 +38,7 @@ export function HeaderNav() {
           className={active === item.key ? `px-space-md py-space-sm ${ACTIVE}` : BASE}
           href={item.href}
         >
-          {item.label}
+          {t(item.label)}
         </Link>
       ))}
     </nav>
@@ -44,19 +47,22 @@ export function HeaderNav() {
 
 /** Soft pill everywhere, coral CTA on the sitter-application pages (matches the design). */
 export function BecomeSitterPill() {
+  const t = useTranslations("common.nav");
+  // duplicate of the nav item, shown only when the bar has room (the French bar is wider)
+  const show = useLocale() === "en" ? "min-[1440px]:inline-flex" : "2xl:inline-flex";
   const pathname = usePathname();
   const coral = pathname.startsWith("/become-a-sitter");
   return (
     <Link
       className={
         coral
-          ? "hidden xl:inline-flex items-center px-space-md py-space-sm rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-[0_4px_12px_rgba(162,62,36,0.2)]"
-          : "hidden xl:inline-flex items-center px-space-md py-space-sm rounded-full bg-surface-container-low text-primary font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all"
+          ? `hidden ${show} items-center whitespace-nowrap px-space-md py-space-sm rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-[0_4px_12px_rgba(162,62,36,0.2)]`
+          : `hidden ${show} items-center whitespace-nowrap px-space-md py-space-sm rounded-full bg-surface-container-low text-primary font-label-lg text-label-lg hover:bg-surface-container-high hover:text-on-surface transition-all`
       }
       href="/become-a-sitter"
     >
       <span className={`material-symbols-outlined text-base ${coral ? "mr-1.5" : "mr-1"}`}>pets</span>
-      Become a Sitter
+      {t("becomeSitter")}
     </Link>
   );
 }

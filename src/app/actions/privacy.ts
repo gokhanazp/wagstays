@@ -1,12 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { anonymiseAccount, deletionBlockers } from "@/lib/privacy";
 import { getCurrentUser } from "@/lib/session";
 import { createSupabaseAdminClient, verifyPassword } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type CloseAccountState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined>; blocked?: boolean }
@@ -47,5 +48,5 @@ export async function closeAccount(_: CloseAccountState, formData: FormData): Pr
   if (error) console.error("closeAccount: auth user delete failed", user.id, error.message);
 
   revalidatePath("/", "layout");
-  redirect("/account-closed");
+  redirect(await localizedPath("/account-closed"));
 }

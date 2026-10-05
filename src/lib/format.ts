@@ -1,31 +1,46 @@
-const whole = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
-const exact = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", minimumFractionDigits: 2 });
+import { intlLocale } from "@/i18n/routing";
 
-/** "$32" for whole-dollar amounts, "$3.50" otherwise. Pass `{ exact: true }` to always show cents. */
-export function formatMoney(cents: number, opts: { exact?: boolean } = {}) {
+// Formatting helpers take the site locale ("en" | "fr", from useLocale()/getLocale()); English is the default
+// so admin/server-only callers can omit it.
+const moneyFormats = new Map<string, Intl.NumberFormat>();
+function moneyFormat(locale: string, exact: boolean) {
+  const key = `${locale}:${exact}`;
+  let f = moneyFormats.get(key);
+  if (!f) {
+    f = new Intl.NumberFormat(intlLocale(locale), {
+      style: "currency",
+      currency: "CAD",
+      ...(exact ? { minimumFractionDigits: 2 } : { maximumFractionDigits: 0 }),
+    });
+    moneyFormats.set(key, f);
+  }
+  return f;
+}
+
+/** "$32" / "32 $" for whole-dollar amounts, "$3.50" / "3,50 $" otherwise. Pass `{ exact: true }` to always show cents. */
+export function formatMoney(cents: number, opts: { exact?: boolean; locale?: string } = {}) {
   const dollars = cents / 100;
-  const s = opts.exact || cents % 100 !== 0 ? exact.format(dollars) : whole.format(dollars);
+  const s = moneyFormat(opts.locale ?? "en", !!opts.exact || cents % 100 !== 0).format(dollars);
   return s.replace("CA$", "$");
 }
 
-export function formatDistance(km: number) {
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+export function formatDistance(km: number, locale = "en") {
+  const n = new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 1, minimumFractionDigits: km < 1 ? 0 : 1 });
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${n.format(km)} km`;
 }
 
-export function formatRating(r: number) {
-  return r >= 5 ? "5.0" : r.toFixed(2).replace(/0$/, "");
+export function formatRating(r: number, locale = "en") {
+  const s = r >= 5 ? "5.0" : r.toFixed(2).replace(/0$/, "");
+  return locale === "fr" ? s.replace(".", ",") : s;
 }
 
-export function timeAgo(date: Date, now = new Date()) {
+export function timeAgo(date: Date, now = new Date(), locale = "en") {
   const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
-  if (days < 1) return "today";
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  if (days < 30) {
-    const w = Math.floor(days / 7);
-    return `${w} week${w === 1 ? "" : "s"} ago`;
-  }
-  const m = Math.floor(days / 30);
-  return `${m} month${m === 1 ? "" : "s"} ago`;
+  const rtf = new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: "auto" });
+  if (days < 1) return rtf.format(0, "day");
+  if (days < 7) return rtf.format(-days, "day");
+  if (days < 30) return rtf.format(-Math.floor(days / 7), "week");
+  return rtf.format(-Math.floor(days / 30), "month");
 }
 
 /** Haversine distance in km */

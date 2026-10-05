@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { db } from "./db";
 import { getCurrentUser, type CurrentUser } from "./session";
+import { localizedPath } from "@/i18n/server";
 
 /** Path of the current request (set by src/proxy.ts) so guards can send users back after login. */
 async function currentPath() {
@@ -12,8 +13,8 @@ async function currentPath() {
 /** Any signed-in, non-suspended user. Use in pages and server actions. */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(await currentPath())}`);
-  if (user.suspended) redirect("/suspended");
+  if (!user) redirect(await localizedPath(`/login?next=${encodeURIComponent(await currentPath())}`));
+  if (user.suspended) redirect(await localizedPath("/suspended"));
   return user;
 }
 
@@ -28,7 +29,7 @@ export async function requireAdmin(): Promise<CurrentUser> {
 export async function requireSitter() {
   const user = await requireUser();
   const profile = await db.sitterProfile.findUnique({ where: { userId: user.id }, include: { city: true } });
-  if (!profile) redirect("/become-a-sitter");
+  if (!profile) redirect(await localizedPath("/become-a-sitter"));
   return { user, profile };
 }
 

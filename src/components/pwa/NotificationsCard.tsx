@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { removePushDevice, sendTestPush, type PushDevice } from "@/app/actions/push";
 import { BTN, Card, CardHeader } from "@/components/ui";

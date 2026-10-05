@@ -2,14 +2,15 @@
 
 import { changePoints } from "@/lib/wagpoints";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getAdminOrNull } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { ROLES } from "@/lib/constants";
 import { CANADIAN_TIME_ZONES, kebab } from "@/lib/admin-core";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type FormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -88,7 +89,7 @@ export async function saveCity(_: FormState, formData: FormData): Promise<FormSt
   const city = await db.city.create({ data: { ...data, isActive: false } });
   await audit(admin.id, "city.create", "City", city.id, { after: data });
   revalidatePath("/admin/cities");
-  redirect(`/admin/cities/${city.id}?created=1`);
+  redirect(await localizedPath(`/admin/cities/${city.id}?created=1`));
 }
 
 export async function setCityActive(cityId: string, active: boolean): Promise<SimpleResult> {

@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import NextLink from "next/link";
+import { useTranslations } from "next-intl";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { createPortal } from "react-dom";
 import { LogoMark, Wordmark } from "./Logo";
+import { LanguageRow } from "./LanguageSwitcher";
 import { InstallAppButton } from "./pwa/InstallAppButton";
 
-type MenuLink = { href: string; label: string; icon: string; badge?: number; meta?: string };
+type MenuLink = { href: string; label: string; icon: string; badge?: number; meta?: string; external?: boolean };
 type MenuUser = { firstName: string; lastName: string; email: string; avatarUrl: string | null; badge: string };
 
-const MAIN: MenuLink[] = [
-  { href: "/sitters", label: "Find a Sitter", icon: "search" },
-  { href: "/sitters?service=dog-walking", label: "Dog Walking", icon: "directions_walk" },
-  { href: "/#how-it-works", label: "How It Works", icon: "lightbulb" },
-  { href: "/pricing", label: "How Pricing Works", icon: "sell" },
-  { href: "/become-a-sitter", label: "Become a Sitter", icon: "volunteer_activism" },
-];
+const MAIN = [
+  { href: "/sitters", label: "findSitter", icon: "search" },
+  { href: "/sitters?service=dog-walking", label: "dogWalking", icon: "directions_walk" },
+  { href: "/#how-it-works", label: "howItWorks", icon: "lightbulb" },
+  { href: "/pricing", label: "howPricingWorks", icon: "sell" },
+  { href: "/become-a-sitter", label: "becomeSitter", icon: "volunteer_activism" },
+] as const;
 
 const ROW =
   "flex items-center gap-space-md min-h-12 px-space-md rounded-2xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low active:bg-surface-container transition-colors";
@@ -35,6 +37,7 @@ export function MobileMenu({
   accountLinks?: MenuLink[];
   logoutAction: () => Promise<void>;
 }) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
   // portal target only exists in the browser; false during SSR and hydration
   const mounted = useSyncExternalStore(
@@ -75,14 +78,14 @@ export function MobileMenu({
   };
 
   const sheet = (
-    <div aria-hidden={!open} className={`lg:hidden fixed inset-0 z-[90] ${open ? "" : "pointer-events-none"}`}>
+    <div aria-hidden={!open} className={`xl:hidden fixed inset-0 z-[90] ${open ? "" : "pointer-events-none"}`}>
       {/* backdrop */}
       <div
         className={`absolute inset-0 bg-on-surface/40 backdrop-blur-[2px] transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`}
         onClick={close}
       />
       <nav
-        aria-label="Main menu"
+        aria-label={t("menu.label")}
         className={`absolute right-0 top-0 h-dvh w-[88%] max-w-sm bg-background shadow-[0_20px_60px_-10px_rgba(83,72,62,0.35)] rounded-l-3xl flex flex-col transition-transform duration-300 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
@@ -95,7 +98,7 @@ export function MobileMenu({
             <Wordmark className="!text-[20px]" />
           </Link>
           <button
-            aria-label="Close menu"
+            aria-label={t("menu.close")}
             className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:bg-surface-container"
             onClick={close}
             ref={closeBtn}
@@ -133,22 +136,22 @@ export function MobileMenu({
             </Link>
           ) : (
             <div className="mx-space-xs p-space-md rounded-3xl bg-gradient-to-br from-surface-container to-surface-container-low flex flex-col gap-space-sm">
-              <span className="font-title-md text-title-md text-on-surface">Welcome to WagStays 🐾</span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Book trusted, verified sitters near you.</span>
+              <span className="font-title-md text-title-md text-on-surface">{t("menu.welcome")}</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">{t("menu.welcomeText")}</span>
               <div className="grid grid-cols-2 gap-space-sm pt-space-xs">
                 <Link
                   className="h-11 rounded-full bg-surface-container-lowest text-on-surface font-label-lg text-label-lg flex items-center justify-center border border-[#EFE7DE]"
                   href="/login"
                   onClick={close}
                 >
-                  Log in
+                  {t("nav.logIn")}
                 </Link>
                 <Link
                   className="h-11 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center shadow-[0_6px_16px_rgba(162,62,36,0.25)]"
                   href="/signup"
                   onClick={close}
                 >
-                  Sign up
+                  {t("nav.signUp")}
                 </Link>
               </div>
             </div>
@@ -156,7 +159,7 @@ export function MobileMenu({
 
           {/* main links */}
           <div className="flex flex-col gap-1">
-            <span className="px-space-md pb-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Explore</span>
+            <span className="px-space-md pb-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">{t("menu.explore")}</span>
             {MAIN.map((l) => (
               <Link
                 aria-current={isActive(l.href) ? "page" : undefined}
@@ -168,7 +171,7 @@ export function MobileMenu({
                 <span className={`${ICON_BOX} ${isActive(l.href) ? "bg-primary text-on-primary" : "bg-surface-container text-primary"}`}>
                   <span className="material-symbols-outlined text-xl">{l.icon}</span>
                 </span>
-                <span className="flex-1">{l.label}</span>
+                <span className="flex-1">{t(`nav.${l.label}`)}</span>
                 <span className="material-symbols-outlined text-lg text-outline-variant">chevron_right</span>
               </Link>
             ))}
@@ -177,9 +180,11 @@ export function MobileMenu({
           {/* account links */}
           {user && accountLinks.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="px-space-md pb-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">Your account</span>
-              {accountLinks.map((l) => (
-                <Link
+              <span className="px-space-md pb-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">{t("menu.yourAccount")}</span>
+              {accountLinks.map((l) => {
+                const Comp = l.external ? NextLink : Link;
+                return (
+                <Comp
                   aria-current={isActive(l.href) ? "page" : undefined}
                   className={`${ROW} ${isActive(l.href) ? "bg-[#EBF3EF] text-primary" : ""}`}
                   href={l.href}
@@ -198,18 +203,22 @@ export function MobileMenu({
                       {l.badge}
                     </span>
                   )}
-                </Link>
-              ))}
+                </Comp>
+                );
+              })}
             </div>
           )}
 
           <div className="flex flex-col gap-1">
             <InstallAppButton className={`${ROW} w-full text-left text-primary`} iconClassName={`${ICON_BOX} bg-[#EBF3EF] text-primary`} />
+            <Suspense>
+              <LanguageRow className={`${ROW} w-full`} iconClassName={`${ICON_BOX} bg-surface-container-low text-on-surface-variant`} />
+            </Suspense>
             <Link className={ROW} href="/account/support/new" onClick={close}>
               <span className={`${ICON_BOX} bg-surface-container-low text-on-surface-variant`}>
                 <span className="material-symbols-outlined text-xl">support_agent</span>
               </span>
-              <span className="flex-1">Help & Support</span>
+              <span className="flex-1">{t("nav.helpSupport")}</span>
             </Link>
           </div>
         </div>
@@ -222,7 +231,7 @@ export function MobileMenu({
                 type="submit"
               >
                 <span className="material-symbols-outlined text-lg">logout</span>
-                Log out
+                {t("nav.logOut")}
               </button>
             </form>
           </div>
@@ -236,8 +245,8 @@ export function MobileMenu({
       <button
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label="Open menu"
-        className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors text-on-surface-variant"
+        aria-label={t("menu.open")}
+        className="xl:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors text-on-surface-variant"
         onClick={() => setOpen(true)}
         ref={trigger}
         type="button"

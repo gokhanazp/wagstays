@@ -2,7 +2,6 @@
 
 import { verifyApplicationFiles } from "@/lib/application-files-server";
 import { randomInt } from "node:crypto";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -10,6 +9,8 @@ import { getCurrentUser } from "@/lib/session";
 import { SERVICE_TYPES, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type ApplicationState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -141,5 +142,5 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
   }
   if (!trackingCode) return { error: "Something went wrong saving your application. Please try again." };
 
-  redirect(`/become-a-sitter/submitted?code=${encodeURIComponent(trackingCode)}`);
+  redirect(await localizedPath(`/become-a-sitter/submitted?code=${encodeURIComponent(trackingCode)}`));
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Popover } from "./Popover";
 import { SELECT_FIELD } from "./styles";
@@ -33,7 +34,7 @@ export function Select({
   defaultValue,
   onChange,
   name,
-  placeholder = "Select…",
+  placeholder,
   className = SELECT_FIELD,
   variant = "field",
   disabled,
@@ -60,6 +61,8 @@ export function Select({
   panelMinWidth?: number;
   align?: "start" | "end";
 }) {
+  const t = useTranslations("common.forms");
+  const placeholderText = placeholder ?? t("select");
   const [inner, setInner] = useState(defaultValue ?? "");
   const current = value ?? inner;
   const selected = options.find((o) => o.value === current);
@@ -149,7 +152,7 @@ export function Select({
   // group heading shown above the first option of each group
   const headings = useMemo(() => options.map((o, i) => (o.group && o.group !== options[i - 1]?.group ? o.group : null)), [options]);
 
-  const display = renderValue ? renderValue(selected) : selected ? selected.label : <span className="text-outline">{placeholder}</span>;
+  const display = renderValue ? renderValue(selected) : selected ? selected.label : <span className="text-outline">{placeholderText}</span>;
 
   return (
     <>
@@ -185,7 +188,7 @@ export function Select({
             </span>
           </>
         )}
-        {variant === "overlay" && <span className="sr-only">{selected?.label ?? placeholder}</span>}
+        {variant === "overlay" && <span className="sr-only">{selected?.label ?? placeholderText}</span>}
       </button>
       <Popover align={align} anchor={anchorRef} matchWidth minWidth={panelMinWidth} onClose={close} open={open}>
         <ul

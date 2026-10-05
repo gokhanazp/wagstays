@@ -12,7 +12,8 @@
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
     "postinstall": "prisma generate",
-    "supabase:setup": "node scripts/supabase-setup.mjs"
+    "supabase:setup": "node scripts/supabase-setup.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -20,6 +21,7 @@
     "@supabase/supabase-js": "^2.117.2",
     "leaflet": "^1.9.4",
     "next": "16.3.8",
+    "next-intl": "^4.14.9",
     "prisma": "^6.19.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",

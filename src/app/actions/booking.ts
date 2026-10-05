@@ -3,8 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { changePoints } from "@/lib/wagpoints";
 import { emit } from "@/lib/events";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
@@ -29,6 +28,8 @@ import {
   parseSlot,
   type BookingRequest,
 } from "@/lib/availability-core";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type BookingState = { error?: string; conflicts?: string[]; fieldErrors?: Record<string, string[] | undefined> } | undefined;
 
@@ -103,7 +104,7 @@ function conflictMessage(rows: { req: BookingRequest; check: { ok: boolean; erro
 
 export async function createBooking(slug: string, _: BookingState, formData: FormData): Promise<BookingState> {
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/book/${slug}`)}`);
+  if (!user) redirect(await localizedPath(`/login?next=${encodeURIComponent(`/book/${slug}`)}`));
   if (user.suspended) return { error: "Your account is suspended." };
   // Trust steps (phone, a pet, admin approval when required) — also covers weekly series, which are created here.
   const readiness = await getOwnerReadiness(user.id);
@@ -265,5 +266,5 @@ export async function createBooking(slug: string, _: BookingState, formData: For
   revalidatePath(`/sitters/${slug}`);
   revalidatePath("/sitter", "layout");
   revalidatePath("/account/bookings");
-  redirect(`/book/${slug}/confirmed?id=${bookingIds[0]}`);
+  redirect(await localizedPath(`/book/${slug}/confirmed?id=${bookingIds[0]}`));
 }

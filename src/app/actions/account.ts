@@ -3,8 +3,7 @@
 import { getOrigin } from "@/lib/origin";
 import { verifyPassword } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
@@ -12,7 +11,9 @@ import { allowedTransitions, refreshSitterRating, transitionBooking } from "@/li
 import { saveUpload } from "@/lib/uploads";
 import { emit } from "@/lib/events";
 import { PET_SIZES } from "@/lib/constants";
-import { CANCEL_REASONS } from "@/app/(site)/account/_lib";
+import { CANCEL_REASONS } from "@/app/[locale]/(site)/account/_lib";
+import { redirect } from "next/navigation";
+import { localizedPath } from "@/i18n/server";
 
 export type FormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -82,7 +83,7 @@ export async function cancelBooking(bookingId: string, _: FormState, formData: F
   });
   if ("error" in res) return { error: res.error };
   revalidateBookingPages(booking.id, booking.sitter.slug);
-  redirect(`/account/bookings/${booking.id}?notice=cancelled`);
+  redirect(await localizedPath(`/account/bookings/${booking.id}?notice=cancelled`));
 }
 
 const ReviewSchema = z.object({
@@ -137,7 +138,7 @@ export async function createReview(bookingId: string, _: FormState, formData: Fo
   revalidateBookingPages(booking.id, booking.sitter.slug);
   revalidatePath("/sitters");
   revalidatePath("/");
-  redirect(`/account/bookings/${booking.id}?notice=reviewed#review`);
+  redirect(await localizedPath(`/account/bookings/${booking.id}?notice=reviewed#review`));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -255,9 +256,9 @@ export async function savePet(petId: string | null, _: FormState, formData: Form
   const next = petId ? null : safeNext(formData.get("next"));
   if (next) {
     next.searchParams.set("pet", id!);
-    redirect(`${next.pathname}${next.search}${next.hash}`);
+    redirect(await localizedPath(`${next.pathname}${next.search}${next.hash}`));
   }
-  if (!petId) redirect(`/account/pets?saved=${id}`);
+  if (!petId) redirect(await localizedPath(`/account/pets?saved=${id}`));
   return { ok: true, message: "Changes saved." };
 }
 
@@ -279,7 +280,7 @@ export async function deletePet(petId: string): Promise<FormState> {
   else await db.pet.delete({ where: { id: petId, ownerId: user.id } });
   revalidatePath("/account/pets");
   revalidatePath("/", "layout");
-  redirect("/account/pets?deleted=1");
+  redirect(await localizedPath("/account/pets?deleted=1"));
 }
 
 // ---------------------------------------------------------------------------------------------
