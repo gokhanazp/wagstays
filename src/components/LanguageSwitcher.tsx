@@ -67,3 +67,24 @@ export function LanguageRow({ className, iconClassName }: { className: string; i
     </button>
   );
 }
+
+/** Header button: globe + the other language's code ("FR" on English pages, "EN" on French ones). */
+export function LanguageButton({ className = "" }: { className?: string }) {
+  const t = useTranslations("common.language");
+  const { locale, go, pending } = useSwitch();
+  const other = routing.locales.find((l) => l !== locale) ?? routing.defaultLocale;
+  return (
+    <button
+      aria-label={t("switchTo", { language: LOCALE_NAMES[other].name })}
+      className={`h-10 px-3 rounded-full items-center gap-1 font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-60 ${className}`}
+      disabled={pending}
+      lang={other}
+      onClick={() => go(other)}
+      title={LOCALE_NAMES[other].name}
+      type="button"
+    >
+      <span aria-hidden="true" className="material-symbols-outlined text-xl">language</span>
+      {LOCALE_NAMES[other].short}
+    </button>
+  );
+}

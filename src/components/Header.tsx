@@ -11,6 +11,7 @@ import { formatMoney } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { Logo } from "./Logo";
 import { BecomeSitterPill, HeaderNav } from "./HeaderNav";
+import { LanguageButton } from "./LanguageSwitcher";
 import { MobileMenu } from "./MobileMenu";
 import { InstallAppButton } from "./pwa/InstallAppButton";
 
@@ -55,17 +56,19 @@ export async function Header() {
         <div className="flex items-center gap-space-md">
           <BecomeSitterPill />
           <div className="flex items-center gap-space-xs text-on-surface-variant">
-            <Link aria-label={t("nav.help")} className={`${ICON_BTN} hidden sm:flex`} href="/#how-it-works">
-              <span className="material-symbols-outlined text-xl">help</span>
-            </Link>
+            <Suspense>
+              <LanguageButton className="hidden lg:inline-flex" />
+            </Suspense>
             <Link aria-label={t("nav.favourites")} className={`${ICON_BTN} relative`} href={user ? "/favourites" : "/login?next=/favourites"}>
               <span className="material-symbols-outlined text-xl">favorite</span>
               {!!user?._count.favorites && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
             </Link>
-            <Link aria-label={t("nav.messages")} className={`${ICON_BTN} hidden sm:flex relative`} href="/messages">
-              <span className="material-symbols-outlined text-xl">chat_bubble</span>
-              {unread > 0 && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
-            </Link>
+            {user && (
+              <Link aria-label={t("nav.messages")} className={`${ICON_BTN} hidden sm:flex relative`} href="/messages">
+                <span className="material-symbols-outlined text-xl">chat_bubble</span>
+                {unread > 0 && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
+              </Link>
+            )}
             <MobileMenu
               accountLinks={[...(adminLink ? [adminLink] : []), ...menu.map((m) => (m.href === "/messages" ? { ...m, badge: unread } : m))]}
               logoutAction={logout}
