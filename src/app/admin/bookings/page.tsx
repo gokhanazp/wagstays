@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { bookingPets, petNames } from "@/lib/pets";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
@@ -165,7 +166,14 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/ad
                           <span className="font-body-sm text-body-sm text-on-surface-variant">{b.owner.email}</span>
                         </div>
                       </td>
-                      <td className={td}>{b.pet.name}</td>
+                      <td className={td}>
+                        {petNames(bookingPets(b).map((p) => p.name))}
+                        {b.petCount > 1 && (
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold whitespace-nowrap" data-testid="admin-pet-count">
+                            {b.petCount} pets
+                          </span>
+                        )}
+                      </td>
                       <td className={td}>
                         <div className="flex flex-col whitespace-nowrap">
                           <span>{b.sitter.displayName}</span>

@@ -10,6 +10,8 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { priceBooking } from "@/lib/pricing";
 import { petBlockReason } from "@/lib/pets";
+import { MAX_PETS_LIMIT, petCountBlockReason, quoteBooking } from "@/lib/quote";
+import { holidaysForDates } from "@/lib/holidays";
 import { getFees } from "@/lib/settings";
 import { getOwnerReadiness, readinessMessage } from "@/lib/owner-readiness";
 import { loadSnapshot } from "@/lib/availability";
@@ -45,7 +47,13 @@ const checkbox = z
 
 const BookingSchema = z.object({
   serviceId: z.string().min(1, "Please choose a service."),
-  petId: z.string().min(1, "Please choose a pet."),
+  // every pet in the booking, comma-separated, primary first (the legacy single `petId` is still accepted)
+  petIds: z
+    .string()
+    .optional()
+    .transform((v) => [...new Set((v ?? "").split(",").map((x) => x.trim()).filter(Boolean))])
+    .pipe(z.array(z.string().max(64)).max(MAX_PETS_LIMIT, `You can book at most ${MAX_PETS_LIMIT} pets at once.`)),
+  petId: z.string().max(64).optional(),
   date: z.string().refine(isIsoDay, "Please choose a valid date."),
   // check-out (boarding) / last day (day care)
   endDate: z
@@ -107,6 +115,8 @@ export async function createBooking(slug: string, _: BookingState, formData: For
     return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
   }
   const d = parsed.data;
+  const petIds = d.petIds.length ? d.petIds : d.petId ? [d.petId] : [];
+  if (!petIds.length) return { error: "Please choose a pet.", fieldErrors: { petIds: ["Please choose a pet."] } };
 
   const sitter = await db.sitterProfile.findUnique({
     where: { slug },
@@ -119,28 +129,34 @@ export async function createBooking(slug: string, _: BookingState, formData: For
       acceptsLarge: true,
       acceptsGiant: true,
       species: { select: { kind: true } },
-      city: { select: { taxRateBps: true } },
+      city: { select: { taxRateBps: true, provinceCode: true } },
     },
   });
   if (!sitter || sitter.status !== "ACTIVE") return { error: "This sitter isn't taking bookings right now." };
 
-  const [service, pet] = await Promise.all([
+  const [service, ownPets] = await Promise.all([
     db.service.findFirst({ where: { id: d.serviceId, sitterId: sitter.id, active: true } }),
-    db.pet.findFirst({
-      where: { id: d.petId, ownerId: user.id, archivedAt: null },
-      select: { id: true, name: true, species: true, speciesOther: true, size: true },
+    db.pet.findMany({
+      where: { id: { in: petIds }, ownerId: user.id, archivedAt: null },
+      select: { id: true, name: true, species: true, speciesOther: true, size: true, ageYears: true },
     }),
   ]);
   if (!service) return { error: "That service isn't offered by this sitter." };
-  if (!pet) return { error: "Please choose one of your own pets." };
+  // Every pet must be the owner's own (and not archived); keep the order the owner picked them in.
+  const pets = petIds.map((id) => ownPets.find((p) => p.id === id));
+  if (pets.some((p) => !p)) return { error: "Please choose your own pets." };
+  const chosen = pets as (typeof ownPets)[number][];
 
-  // The sitter must care for this kind of pet (and, for dogs, this size); dog walking is for dogs only.
-  const blocked = petBlockReason(
-    { ...sitter, firstName: sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0], kinds: sitter.species.map((s) => s.kind) },
-    pet,
-    service.type,
-  );
-  if (blocked) return { error: `${blocked} — please choose another pet, service or sitter.`, fieldErrors: { petId: [blocked] } };
+  // The sitter must care for each kind of pet (and, for dogs, its size); dog walking is for dogs only.
+  const firstName = sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0];
+  const acceptance = { ...sitter, firstName, kinds: sitter.species.map((s) => s.kind) };
+  for (const p of chosen) {
+    const blocked = petBlockReason(acceptance, p, service.type);
+    if (blocked) return { error: `${p.name}: ${blocked} — please choose another pet, service or sitter.`, fieldErrors: { petIds: [blocked] } };
+  }
+  // More than one pet only when the sitter has an additional-pet rate, up to the service's limit.
+  const countBlocked = petCountBlockReason(service, chosen.length, firstName);
+  if (countBlocked) return { error: `${countBlocked}.`, fieldErrors: { petIds: [countBlocked] } };
 
   const stay = isStayService(service.type);
   if (stay && !d.endDate) return { error: service.type === "BOARDING" ? "Please choose a check-out date." : "Please choose the last day." };
@@ -151,6 +167,7 @@ export async function createBooking(slug: string, _: BookingState, formData: For
     endDate: stay ? d.endDate : null,
     minute: parseSlot(d.slot)!,
     durationMins: service.durationMins,
+    petCount: chosen.length,
   };
   const lastDate = addDays(stay ? d.endDate! : d.date, 7 * (weeks - 1));
   if (stay && d.endDate! > addDays(d.date, MAX_STAY_DAYS)) return { error: `Stays can be at most ${MAX_STAY_DAYS} days.` };
@@ -178,9 +195,15 @@ export async function createBooking(slug: string, _: BookingState, formData: For
         const ids: string[] = [];
         for (const [i, r] of rows.entries()) {
           if (!r.check.ok) continue;
+          // Base rate + extra pets + holiday rate + puppy surcharge, per occurrence (holidays differ by week).
+          const quote = quoteBooking({
+            service,
+            pets: chosen,
+            dates: r.check.days,
+            holidays: holidaysForDates(r.check.days, sitter.city.provinceCode),
+          });
           const price = priceBooking({
-            unitPriceCents: service.priceCents,
-            quantity: r.check.quantity,
+            subtotalCents: quote.subtotalCents,
             taxRateBps: sitter.city.taxRateBps,
             fees,
             applyWagPoints: i === 0 && d.applyWagPoints && owner.wagPointsCents > 0,
@@ -191,7 +214,9 @@ export async function createBooking(slug: string, _: BookingState, formData: For
               ownerId: user.id,
               sitterId: sitter.id,
               serviceId: service.id,
-              petId: pet.id,
+              petId: chosen[0].id,
+              petCount: chosen.length,
+              pets: { create: chosen.map((p) => ({ petId: p.id })) },
               startAt: new Date(r.check.startAt),
               endAt: new Date(r.check.endAt),
               quantity: r.check.quantity,
@@ -210,6 +235,8 @@ export async function createBooking(slug: string, _: BookingState, formData: For
               vetClinic: d.vetClinic,
               vetPhone: d.vetPhone,
               ...price,
+              extrasCents: quote.extrasCents,
+              priceLines: quote.lines,
               cardBrand: d.cardBrand,
               cardLast4: d.cardLast4,
             },

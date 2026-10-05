@@ -13,6 +13,9 @@ import { ReviewForm } from "../../_components/ReviewForm";
 import { SeriesCancelForm } from "../_components/SeriesCancelForm";
 import { seriesMembers } from "@/lib/booking-series";
 import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/availability-core";
+import { bookingPriceLines } from "@/lib/quote";
+import { bookingPets, petNames } from "@/lib/pets";
+import { PetChips } from "@/components/booking/PetChips";
 
 export const metadata: Metadata = { title: "Booking Details | WagStays" };
 
@@ -32,6 +35,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
       sitter: { select: { id: true, slug: true, displayName: true, avatarUrl: true, rating: true, isSuperSitter: true, status: true, city: { select: { timeZone: true } } } },
       service: true,
       pet: true,
+      pets: { include: { pet: true } },
       review: true,
     },
   });
@@ -50,6 +54,8 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
     (m) => m.startAt >= booking.startAt && allowedTransitions(m.status, "OWNER").includes("CANCELLED"),
   ).length;
   const showQuantity = isStayService(booking.service.type) || booking.quantity > 1;
+  const pets = bookingPets(booking);
+  const names = petNames(pets.map((p) => p.name));
 
   const timeline: { icon: string; label: string; at: Date | null; tone: "done" | "bad" }[] = [
     { icon: "send", label: "Booking requested", at: booking.createdAt, tone: "done" },
@@ -93,12 +99,16 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   ].filter((r) => r.value);
 
   const price = [
-    {
-      label: showQuantity
-        ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(Math.round(booking.subtotalCents / Math.max(booking.quantity, 1)), { exact: true })}`
-        : `${serviceLabel(booking.service.type)} subtotal`,
-      cents: booking.subtotalCents,
-    },
+    ...(booking.priceLines
+      ? bookingPriceLines(booking).map((l) => ({ label: l.label, cents: l.amountCents }))
+      : [
+          {
+            label: showQuantity
+              ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(Math.round(booking.subtotalCents / Math.max(booking.quantity, 1)), { exact: true })}`
+              : `${serviceLabel(booking.service.type)} subtotal`,
+            cents: booking.subtotalCents,
+          },
+        ]),
     { label: "WagShield Vet Protection", cents: booking.protectionFeeCents },
     { label: "Platform Service Fee", cents: booking.serviceFeeCents },
     ...(booking.discountCents > 0 ? [{ label: "WagPoints Discount", cents: -booking.discountCents }] : []),
@@ -162,7 +172,9 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-space-md font-body-sm text-body-sm">
               {[
                 { icon: SERVICE_ICONS[booking.service.type] ?? "pets", label: "Service", value: serviceLabel(booking.service.type) + (booking.service.durationMins ? ` (${booking.service.durationMins} min)` : "") },
-                { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
+                pets.length > 1
+                  ? { icon: "pets", label: `${pets.length} pets`, value: names }
+                  : { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
                 {
                   icon: "calendar_month",
                   label: "Date & time",
@@ -191,6 +203,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                 </div>
               ))}
             </dl>
+            {pets.length > 1 && <PetChips pets={pets.map((p) => ({ id: p.id, name: p.name, photoUrl: p.photoUrl, breed: p.breed, href: `/account/pets/${p.id}` }))} />}
 
             {booking.sitterNote && (
               <div className="flex items-start gap-space-sm bg-primary-fixed/40 rounded-xl p-space-md font-body-sm text-body-sm text-on-surface">
@@ -234,7 +247,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           {booking.status === "COMPLETED" && (
             <Card className="pb-space-lg">
               <div id="review" className="scroll-mt-28" />
-              <CardHeader icon="star" title={booking.review ? "Your Review" : `How was ${booking.pet.name}'s ${serviceLabel(booking.service.type).toLowerCase()}?`} />
+              <CardHeader icon="star" title={booking.review ? "Your Review" : `How was ${names}'s ${serviceLabel(booking.service.type).toLowerCase()}?`} />
               <div className="px-space-lg pt-space-md">
                 {booking.review ? (
                   <div className="flex flex-col gap-space-xs">
@@ -273,7 +286,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               Message {firstName}
             </Link>
             {serviceActive && (
-              <Link className={`${BTN.secondary} w-full`} href={`/book/${booking.sitter.slug}?service=${booking.serviceId}&pet=${booking.petId}`}>
+              <Link className={`${BTN.secondary} w-full`} href={`/book/${booking.sitter.slug}?service=${booking.serviceId}&pets=${pets.map((p) => p.id).join(",")}`}>
                 <span className="material-symbols-outlined text-xl">replay</span>
                 Book again
               </Link>

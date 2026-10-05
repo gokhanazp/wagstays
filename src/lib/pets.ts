@@ -121,3 +121,20 @@ export function petBlockReason(
   if (serviceType === "DOG_WALKING" && kind !== "DOG") return "Dog walking is for dogs only";
   return null;
 }
+
+/** "Maple", "Maple & Biscuit", "Maple, Biscuit & Rex" */
+export function petNames(names: readonly (string | null | undefined)[]) {
+  const n = names.filter((x): x is string => !!x);
+  if (n.length <= 1) return n[0] ?? "";
+  return `${n.slice(0, -1).join(", ")} & ${n[n.length - 1]}`;
+}
+
+/**
+ * The pets of a booking, primary first: the BookingPet rows when present, otherwise the single `pet`
+ * (bookings made before multi-pet support).
+ */
+export function bookingPets<P extends { id: string }>(b: { pet: P; pets?: { pet: P }[] | null }): P[] {
+  const rows = (b.pets ?? []).map((r) => r.pet);
+  if (!rows.length) return [b.pet];
+  return [...rows.filter((p) => p.id === b.pet.id), ...rows.filter((p) => p.id !== b.pet.id)];
+}

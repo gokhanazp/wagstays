@@ -10,6 +10,7 @@ import { audit } from "@/lib/audit";
 import { getActiveCity } from "@/lib/queries";
 import { DEFAULT_TIME_ZONE } from "@/lib/constants";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
+import { parseServiceAddons } from "@/lib/service-addons";
 import { ApprovalError, approveApplicationTx, fromZonedInput } from "@/lib/sitter-approval";
 
 export type AdminFormState =
@@ -267,7 +268,17 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
 
   const priceCents = Math.round(parsed.data.price * 100);
   const active = parsed.data.active;
-  if (svc.priceCents === priceCents && svc.active === active) return { ok: true, message: "No changes." };
+  const addons = parseServiceAddons(Object.fromEntries(formData) as Record<string, FormDataEntryValue>, priceCents, svc.type);
+  if (!addons.ok) return { error: Object.values(addons.fieldErrors).flat()[0] ?? "Please check the add-on rates.", fieldErrors: addons.fieldErrors };
+  const rates = { maxPetsPerBooking: svc.maxPetsPerBooking, ...addons.data };
+  const beforeRates = {
+    maxPetsPerBooking: svc.maxPetsPerBooking,
+    additionalPetPriceCents: svc.additionalPetPriceCents,
+    holidayPriceCents: svc.holidayPriceCents,
+    puppyPriceCents: svc.puppyPriceCents,
+  };
+  const ratesChanged = (Object.keys(beforeRates) as (keyof typeof beforeRates)[]).some((k) => beforeRates[k] !== rates[k]);
+  if (svc.priceCents === priceCents && svc.active === active && !ratesChanged) return { ok: true, message: "No changes." };
   if (active && !svc.active && svc.type === "DOG_WALKING" && !(await db.sitterSpecies.findFirst({ where: { sitterId: svc.sitterId, kind: "DOG" } }))) {
     return { error: "Add dogs to this sitter's pets before turning on Dog Walking." };
   }
@@ -275,11 +286,11 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
     const others = await db.service.count({ where: { sitterId: svc.sitterId, active: true, id: { not: svc.id } } });
     if (others === 0) return { error: "A sitter needs at least one active service. Pause the sitter instead." };
   }
-  await db.service.update({ where: { id: svc.id }, data: { priceCents, active } });
+  await db.service.update({ where: { id: svc.id }, data: { priceCents, active, ...rates } });
   await audit(admin.id, "service.update", "Service", svc.id, {
     sitterId: svc.sitterId,
-    before: { priceCents: svc.priceCents, active: svc.active },
-    after: { priceCents, active },
+    before: { priceCents: svc.priceCents, active: svc.active, ...beforeRates },
+    after: { priceCents, active, ...rates },
   });
   revalidateSitter(svc.sitter.id, svc.sitter.slug);
   return { ok: true, message: "Saved." };

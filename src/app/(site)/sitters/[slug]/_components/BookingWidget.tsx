@@ -27,15 +27,28 @@ import {
 import { SERVICE_LABELS, UNIT_LABELS, type ServiceType } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
+import { holidaysForDates } from "@/lib/holidays";
+import { petCountBlockReason, petLimit, quoteBooking } from "@/lib/quote";
 import { SERVICE_ICONS } from "../../_components/search-url";
 
-export type WidgetService = { id: string; type: string; priceCents: number; unit: string; durationMins: number | null };
+export type WidgetService = {
+  id: string;
+  type: string;
+  priceCents: number;
+  unit: string;
+  durationMins: number | null;
+  maxPetsPerBooking: number;
+  additionalPetPriceCents: number | null;
+  holidayPriceCents: number | null;
+  puppyPriceCents: number | null;
+};
 export type WidgetPet = {
   id: string;
   name: string;
   breed: string | null;
   ageYears: number | null;
   icon: string;
+  photoUrl: string | null;
   isDog: boolean;
   /** why this sitter can't take the pet ("Sarah doesn't care for rabbits"), null when bookable */
   blocked: string | null;
@@ -54,6 +67,15 @@ const TIME_LABEL: Record<string, string> = {
   DAY_CARE: "Drop-off Time",
   DROP_IN: "Visit Time",
 };
+
+/** Plain dates of each night / day / visit when the availability check couldn't produce them. */
+function fallbackDays(type: string, date: string, endDate: string | null) {
+  if (!isStayService(type) || !endDate) return [date];
+  const out: string[] = [];
+  const last = type === "BOARDING" ? addDays(endDate, -1) : endDate;
+  for (let d = date; d <= last; d = addDays(d, 1)) out.push(d);
+  return out.length ? out : [date];
+}
 
 function lineTitle(s: WidgetService, quantity: number) {
   const mins = s.durationMins;
@@ -75,7 +97,7 @@ const FIELD =
 
 function petLabel(p: WidgetPet) {
   const breed = p.breed ? (p.breed.length > 10 ? p.breed.split(" ")[0] : p.breed) : null;
-  const age = p.ageYears != null ? `${Math.floor(p.ageYears)}y` : null;
+  const age = p.ageYears != null ? (p.ageYears < 1 ? "puppy" : `${Math.floor(p.ageYears)}y`) : null;
   const meta = [breed, age].filter(Boolean).join(", ");
   return meta ? `${p.name} (${meta})` : p.name;
 }
@@ -93,6 +115,7 @@ export function BookingWidget({
   availability,
   nowMs,
   readinessHint,
+  provinceCode,
 }: {
   slug: string;
   firstName: string;
@@ -113,6 +136,8 @@ export function BookingWidget({
   askHref?: string;
   /** small "before you book" note (e.g. missing phone number); the checkout shows the full checklist */
   readinessHint?: string | null;
+  /** City.provinceCode — statutory holidays for the holiday rate */
+  provinceCode: string;
 }) {
   const router = useRouter();
   const snap = availability;
@@ -122,7 +147,7 @@ export function BookingWidget({
     (s && nextBookableDay(snap, minDate > today ? minDate : today, s.type, s.durationMins, now, 120)) ?? addDays(today, 1);
 
   const [serviceId, setServiceId] = useState(() => (services.find((s) => s.type === "DOG_WALKING") ?? services[0])?.id ?? "");
-  const [petId, setPetId] = useState((pets?.find((p) => !p.blocked) ?? pets?.[0])?.id ?? "");
+  const [petIds, setPetIds] = useState<string[]>(() => [(pets?.find((p) => !p.blocked) ?? pets?.[0])?.id].filter((x): x is string => !!x));
   const [date, setDate] = useState(() => firstDay(services.find((s) => s.id === serviceId)));
   // stays start with a full default range (1 night / 1 day) so the next calendar click starts a new range
   const defaultEnd = (s: WidgetService | undefined, start: string) => (!s || !isStayService(s.type) ? "" : s.type === "BOARDING" ? addDays(start, 1) : start);
@@ -137,6 +162,8 @@ export function BookingWidget({
   const stay = isStayService(type);
   const duration = visitMinutes(type, service?.durationMins);
   const repeat = recurring && canRecur(type);
+  const limit = service ? petLimit(service) : 1;
+  const petCount = Math.max(1, petIds.length);
 
   const slots = useMemo(
     () => (!date ? [] : stay ? dropOffSlots(snap, date, now) : visitSlots(snap, date, duration, now)),
@@ -151,25 +178,48 @@ export function BookingWidget({
 
   const rows = useMemo(() => {
     if (!date || !chosen || (stay && !endDate)) return null;
-    return checkSeries(snap, { type, date, endDate: stay ? endDate : null, minute: chosen.minute, durationMins: service?.durationMins }, repeat ? weeks : 1, now);
-  }, [snap, type, date, endDate, stay, chosen, service?.durationMins, repeat, weeks, now]);
+    return checkSeries(
+      snap,
+      { type, date, endDate: stay ? endDate : null, minute: chosen.minute, durationMins: service?.durationMins, petCount },
+      repeat ? weeks : 1,
+      now,
+    );
+  }, [snap, type, date, endDate, stay, chosen, service?.durationMins, repeat, weeks, now, petCount]);
   const first = rows?.[0]?.check;
   const quantity = first?.ok ? first.quantity : stay ? 0 : 1;
   const conflicts = rows?.filter((r) => !r.check.ok) ?? [];
   // Pets this sitter can't take (kind / dog size / dog walking for non-dogs) can't be booked.
   const petReason = (p: WidgetPet) => p.blocked ?? (type === "DOG_WALKING" && !p.isDog ? "Dog walking is for dogs only" : null);
-  const selectedPet = pets?.find((p) => p.id === petId);
-  const petBlocked = selectedPet ? petReason(selectedPet) : null;
-  const valid = !!rows && conflicts.length === 0 && !petBlocked;
+  const selectedPets = useMemo(() => petIds.map((id) => pets?.find((p) => p.id === id)).filter((p): p is WidgetPet => !!p), [petIds, pets]);
+  const petBlocked = selectedPets.some((p) => petReason(p));
+  const countBlocked = service ? petCountBlockReason(service, selectedPets.length, firstName) : null;
+  const valid = !!rows && conflicts.length === 0 && !petBlocked && !countBlocked;
   const occurrences = repeat ? weeks : 1;
 
-  const price = useMemo(
-    () => (service ? priceBooking({ unitPriceCents: service.priceCents, quantity: Math.max(quantity, 1), taxRateBps, fees }) : null),
-    [service, quantity, taxRateBps, fees],
-  );
+  // Same quote + fees as checkout and the server: one quote per weekly occurrence (holiday rates differ).
+  const quotes = useMemo(() => {
+    if (!service) return [];
+    const occ = rows?.length ? rows : [{ req: { date, endDate: stay ? endDate : null }, check: { ok: false as const, error: "" } }];
+    return occ.map((r) => {
+      const dates = r.check.ok ? r.check.days : date ? fallbackDays(type, r.req.date, r.req.endDate ?? null) : [];
+      return quoteBooking({
+        service,
+        pets: selectedPets.length ? selectedPets : [{}],
+        dates: stay && !r.check.ok && !endDate ? [] : dates,
+        holidays: holidaysForDates(dates, provinceCode),
+        quantity: Math.max(quantity, 1),
+      });
+    });
+  }, [service, rows, date, endDate, stay, type, selectedPets, provinceCode, quantity]);
+  const prices = useMemo(() => quotes.map((q) => priceBooking({ subtotalCents: q.subtotalCents, taxRateBps, fees })), [quotes, taxRateBps, fees]);
+  const quote = quotes[0];
+  const price = prices[0] ?? null;
+  const seriesTotal = prices.reduce((sum, p) => sum + p.totalCents, 0);
   const loggedIn = pets !== null;
   const profilePath = `/sitters/${slug}`;
-  const disabledDay = (iso: string) => !isDayBookable(snap, iso, type, service?.durationMins, now);
+  const disabledDay = (iso: string) => !isDayBookable(snap, iso, type, service?.durationMins, now, petCount);
+  const togglePet = (id: string) =>
+    setPetIds((cur) => (cur.includes(id) ? (cur.length > 1 ? cur.filter((x) => x !== id) : cur) : limit > 1 ? [...cur, id] : [id]));
 
   function changeService(id: string) {
     const next = services.find((s) => s.id === id);
@@ -177,8 +227,12 @@ export function BookingWidget({
     setMinute(null);
     // a cat can't go on a dog walk — move the selection to a pet this service can take
     const okFor = (p: WidgetPet) => !p.blocked && (next?.type !== "DOG_WALKING" || p.isDog);
-    const current = pets?.find((p) => p.id === petId);
-    if (current && !okFor(current)) setPetId(pets?.find(okFor)?.id ?? petId);
+    const nextLimit = next ? petLimit(next) : 1;
+    const keep = petIds.filter((id) => pets?.some((p) => p.id === id && okFor(p))).slice(0, nextLimit);
+    if (keep.length !== petIds.length) {
+      const fallback = pets?.find(okFor)?.id ?? petIds[0];
+      setPetIds(keep.length ? keep : fallback ? [fallback] : []);
+    }
     const start = next && (!date || !isDayBookable(snap, date, next.type, next.durationMins, now)) ? firstDay(next) : date;
     setDate(start);
     setEndDate(defaultEnd(next, start));
@@ -187,7 +241,7 @@ export function BookingWidget({
   function go(meet: boolean) {
     if (!service || !date || !chosen || !valid) return;
     const q = new URLSearchParams({ service: service.id });
-    if (petId) q.set("pet", petId);
+    if (petIds.length) q.set("pets", petIds.join(","));
     q.set("date", date);
     if (stay && endDate) q.set("end", endDate);
     q.set("slot", minuteToHHMM(chosen.minute));
@@ -201,7 +255,7 @@ export function BookingWidget({
     router.push(loggedIn ? url : `/login?next=${encodeURIComponent(url)}`);
   }
 
-  if (!service || !price) {
+  if (!service || !price || !quote) {
     return (
       <div className="bg-surface-container-lowest p-space-xl rounded-3xl shadow-xl flex flex-col gap-space-md" id="booking-card">
         <h3 className="font-headline-sm text-headline-sm text-on-surface">Book with {firstName}</h3>
@@ -250,31 +304,49 @@ export function BookingWidget({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="font-label-md text-label-md text-on-surface font-semibold">Your Pet</span>
+            <span className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between gap-2">
+              <span>{limit > 1 ? "Your Pets" : "Your Pet"}</span>
+              {limit > 1 && loggedIn && pets.length > 1 && (
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
+                  {selectedPets.length} of up to {limit}
+                </span>
+              )}
+            </span>
             <div className="flex flex-wrap items-center gap-2">
               {loggedIn && pets.length > 0 ? (
                 pets.map((p) => {
-                  const active = p.id === petId;
+                  const active = petIds.includes(p.id);
                   const reason = petReason(p);
+                  const full = limit > 1 && !active && selectedPets.length >= limit;
                   return (
                     <button
                       aria-describedby={reason ? `pet-reason-${p.id}` : undefined}
                       aria-pressed={active}
-                      className={`grow basis-40 min-w-0 py-2 px-3 rounded-xl font-label-md text-label-md flex items-center justify-between gap-1 transition-colors ${
+                      className={`grow basis-40 min-w-0 py-1.5 pl-1.5 pr-3 rounded-xl font-label-md text-label-md flex items-center justify-between gap-1 transition-colors ${
                         reason
                           ? "bg-surface-container-low text-outline line-through decoration-outline/60 cursor-not-allowed"
                           : active
                             ? "bg-primary-container text-on-primary-container shadow-sm"
-                            : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                            : full
+                              ? "bg-surface-container-low text-outline cursor-not-allowed"
+                              : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
                       }`}
-                      disabled={!!reason}
+                      data-pet-chip={p.id}
+                      disabled={!!reason || full}
                       key={p.id}
-                      onClick={() => setPetId(p.id)}
-                      title={reason ?? undefined}
+                      onClick={() => togglePet(p.id)}
+                      title={reason ?? (full ? `Up to ${limit} pets per booking` : undefined)}
                       type="button"
                     >
                       <span className="flex items-center gap-1.5 min-w-0">
-                        <span className="material-symbols-outlined text-base">{reason ? "block" : p.icon}</span>
+                        <span className="w-7 h-7 rounded-full overflow-hidden bg-surface-container-lowest/70 flex items-center justify-center shrink-0">
+                          {p.photoUrl && !reason ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img alt="" className="w-full h-full object-cover" src={p.photoUrl} />
+                          ) : (
+                            <span className="material-symbols-outlined text-base">{reason ? "block" : p.icon}</span>
+                          )}
+                        </span>
                         <span className="truncate">{petLabel(p)}</span>
                       </span>
                       {active && !reason && <span className="material-symbols-outlined text-base">check_circle</span>}
@@ -302,6 +374,12 @@ export function BookingWidget({
                 <span className="material-symbols-outlined text-lg">add</span>
               </Link>
             </div>
+            {loggedIn && service && limit === 1 && pets.filter((p) => !petReason(p)).length > 1 && (
+              <p className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" data-testid="one-pet-note">
+                <span className="material-symbols-outlined text-sm text-secondary">info</span>
+                <span>{petCountBlockReason(service, 2, firstName)}.</span>
+              </p>
+            )}
             {pets?.some((p) => petReason(p)) && (
               <ul className="flex flex-col gap-0.5">
                 {pets
@@ -438,6 +516,12 @@ export function BookingWidget({
             </div>
           )}
 
+          {countBlocked && (
+            <div className="flex items-start gap-2 p-2.5 rounded-xl bg-error-container/60 text-on-error-container font-label-sm text-label-sm" role="alert">
+              <span className="material-symbols-outlined text-base">error</span>
+              <span>{countBlocked}.</span>
+            </div>
+          )}
           {rows && conflicts.length > 0 && (
             <div className="flex items-start gap-2 p-2.5 rounded-xl bg-error-container/60 text-on-error-container font-label-sm text-label-sm" role="alert">
               <span className="material-symbols-outlined text-base">error</span>
@@ -463,10 +547,12 @@ export function BookingWidget({
           )}
 
           <div className="bg-surface-container p-space-md rounded-2xl flex flex-col gap-space-xs mt-1">
-            <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-              <span>{lineTitle(service, Math.max(quantity, 1))}</span>
-              <span className="font-semibold text-on-surface">{formatMoney(price.subtotalCents)}</span>
-            </div>
+            {quote.lines.map((l, i) => (
+              <div className="flex items-start justify-between gap-2 font-body-sm text-body-sm text-on-surface-variant" data-price-line key={`${l.label}-${i}`}>
+                <span className="min-w-0">{i === 0 && !stay ? lineTitle(service, quantity || 1) : l.label}</span>
+                <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents)}</span>
+              </div>
+            ))}
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
                 WagShield Vet Care Cover
@@ -496,14 +582,19 @@ export function BookingWidget({
                   {repeat ? `Per ${stay ? "week" : "visit"} · incl. ${taxLabel}` : `Includes ${taxLabel} & WagShield`}
                 </span>
               </div>
-              <span className="font-headline-md text-headline-md text-secondary font-extrabold">{formatMoney(price.totalCents, { exact: true })}</span>
+              <span className="font-headline-md text-headline-md text-secondary font-extrabold" data-testid="widget-total">
+                {formatMoney(price.totalCents, { exact: true })}
+              </span>
             </div>
             {repeat && (
               <div className="flex items-baseline justify-between font-body-sm text-body-sm text-on-surface-variant">
                 <span>
-                  {occurrences} weekly {stay ? "bookings" : "visits"} × {formatMoney(price.totalCents, { exact: true })}
+                  {occurrences} weekly {stay ? "bookings" : "visits"}
+                  {prices.every((p) => p.totalCents === price.totalCents) ? ` × ${formatMoney(price.totalCents, { exact: true })}` : ""}
                 </span>
-                <span className="font-title-md text-title-md text-on-surface font-bold">{formatMoney(price.totalCents * occurrences, { exact: true })}</span>
+                <span className="font-title-md text-title-md text-on-surface font-bold">
+                  {formatMoney(prices.length === occurrences ? seriesTotal : price.totalCents * occurrences, { exact: true })}
+                </span>
               </div>
             )}
           </div>

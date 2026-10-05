@@ -101,7 +101,7 @@ export async function upcomingBookingsBetween(ownerId: string, sitterId: string)
     where: { ownerId, sitterId, status: { in: ["PENDING", "CONFIRMED"] }, endAt: { gte: new Date() } },
     orderBy: { startAt: "asc" },
     take: 5,
-    select: { id: true, startAt: true, status: true, meetAndGreet: true, service: { select: { type: true } }, pet: { select: { name: true } } },
+    select: { id: true, startAt: true, status: true, meetAndGreet: true, service: { select: { type: true } }, pet: { select: { name: true } }, petCount: true },
   });
 }
 

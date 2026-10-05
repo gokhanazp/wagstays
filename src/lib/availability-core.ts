@@ -10,7 +10,8 @@ import { TIME_SLOTS } from "./booking-slots";
 
 export type WeeklyRange = { weekday: number; startMinute: number; endMinute: number };
 export type TimeOffRange = { startDate: string; endDate: string; note?: string | null; id?: string };
-export type BusyBooking = { id: string; type: string; startAt: number; endAt: number };
+/** `petCount` = places the booking takes (stays only; missing = 1). */
+export type BusyBooking = { id: string; type: string; startAt: number; endAt: number; petCount?: number };
 
 export type AvailabilitySnapshot = {
   timeZone: string;
@@ -202,12 +203,13 @@ export function stayDates(b: Pick<BusyBooking, "type" | "startAt" | "endAt">, tz
   return eachDate(s, last < s ? s : last);
 }
 
-/** Stay bookings (boarding + day care share the capacity) on each local date. */
+/** Places taken by stay bookings (boarding + day care share the capacity; one per pet) on each local date. */
 export function stayLoad(snap: AvailabilitySnapshot, exclude?: string | null) {
   const load = new Map<string, number>();
   for (const b of snap.bookings) {
     if (!isStayService(b.type) || b.id === exclude) continue;
-    for (const d of stayDates(b, snap.timeZone)) load.set(d, (load.get(d) ?? 0) + 1);
+    const places = Math.max(1, b.petCount ?? 1);
+    for (const d of stayDates(b, snap.timeZone)) load.set(d, (load.get(d) ?? 0) + places);
   }
   return load;
 }
@@ -262,6 +264,8 @@ export type BookingRequest = {
   /** start (visits) / drop-off (stays) minute */
   minute: number;
   durationMins?: number | null;
+  /** pets in the booking — a stay needs this many free places on every night / day (default 1) */
+  petCount?: number;
 };
 
 export type BookingCheck =
@@ -274,8 +278,8 @@ const closedMsg = (iso: string, snap: AvailabilitySnapshot) =>
 /**
  * The single availability rule set. Visits: the whole slot inside opening hours, not on time off,
  * after the minimum notice, no overlap with another walk / drop-in. Stays: drop-off and pick-up on
- * open days, no time off in between (boarding), notice, and fewer than `capacity` concurrent stays
- * on every night / day.
+ * open days, no time off in between (boarding), notice, and `petCount` free places (capacity minus
+ * the pets of other stays) on every night / day.
  */
 export function checkBooking(snap: AvailabilitySnapshot, req: BookingRequest, now: number, exclude?: string | null): BookingCheck {
   const tz = snap.timeZone;
@@ -327,12 +331,21 @@ export function checkBooking(snap: AvailabilitySnapshot, req: BookingRequest, no
   const endAt =
     req.type === "BOARDING" ? zonedInstant(end, req.minute, tz) : zonedInstant(end, Math.max(...rangesOn(snap, end).map((r) => r.end)), tz);
 
+  const pets = Math.max(1, req.petCount ?? 1);
+  if (pets > snap.capacity) {
+    return { ok: false, error: `The sitter can host at most ${snap.capacity} pet${snap.capacity === 1 ? "" : "s"} at the same time.` };
+  }
   const load = stayLoad(snap, exclude);
-  const full = days.filter((d) => (load.get(d) ?? 0) >= snap.capacity);
+  const full = days.filter((d) => (load.get(d) ?? 0) + pets > snap.capacity);
   if (full.length) {
+    const list = `${full.slice(0, 3).map(formatDayLong).join(", ")}${full.length > 3 ? ` and ${full.length - 3} more` : ""}`;
+    const roomFor = Math.min(...full.map((d) => snap.capacity - (load.get(d) ?? 0)));
     return {
       ok: false,
-      error: `The sitter is fully booked on ${full.slice(0, 3).map(formatDayLong).join(", ")}${full.length > 3 ? ` and ${full.length - 3} more` : ""}.`,
+      error:
+        pets > 1 && roomFor > 0
+          ? `The sitter only has room for ${roomFor} more pet${roomFor === 1 ? "" : "s"} on ${list}.`
+          : `The sitter is fully booked on ${list}.`,
     };
   }
   return { ok: true, quantity: days.length, startAt, endAt, days };
@@ -354,12 +367,19 @@ export function checkSeries(snap: AvailabilitySnapshot, req: BookingRequest, wee
   });
 }
 
-/** Whether a calendar day can be picked for this service (used to grey out days). */
-export function isDayBookable(snap: AvailabilitySnapshot, iso: string, type: string, durationMins: number | null | undefined, now: number) {
+/** Whether a calendar day can be picked for this service (used to grey out days). Stays need `petCount` free places. */
+export function isDayBookable(
+  snap: AvailabilitySnapshot,
+  iso: string,
+  type: string,
+  durationMins: number | null | undefined,
+  now: number,
+  petCount = 1,
+) {
   if (iso < todayIn(snap.timeZone, now)) return false;
   if (!isStayService(type)) return visitSlots(snap, iso, visitMinutes(type, durationMins), now).some((s) => s.available);
   if (!isOpenDay(snap, iso)) return false;
-  if ((stayLoad(snap).get(iso) ?? 0) >= snap.capacity) return false;
+  if ((stayLoad(snap).get(iso) ?? 0) + Math.max(1, petCount) > snap.capacity) return false;
   // the stay must still be able to start that day (notice)
   const lastRange = rangesOn(snap, iso).at(-1)!;
   return zonedInstant(iso, lastRange.end - 1, snap.timeZone) >= noticeCutoff(snap, now);
@@ -373,9 +393,10 @@ export function nextBookableDay(
   durationMins: number | null | undefined,
   now: number,
   maxDays = 90,
+  petCount = 1,
 ) {
   for (let i = 0, d = from; i < maxDays; i++, d = addDays(d, 1)) {
-    if (isDayBookable(snap, d, type, durationMins, now)) return d;
+    if (isDayBookable(snap, d, type, durationMins, now, petCount)) return d;
   }
   return null;
 }
@@ -383,7 +404,7 @@ export function nextBookableDay(
 /**
  * Search: is the sitter free for the whole range? Boarding: the stay from → to (check-out) fits.
  * Day care: every open day in the range has room. Walks / drop-ins: every day in the range has at
- * least one free slot.
+ * least one free slot. Stays need `petCount` free places (default 1).
  */
 export function isFreeForRange(
   snap: AvailabilitySnapshot,
@@ -392,6 +413,7 @@ export function isFreeForRange(
   type: string,
   durationMins: number | null | undefined,
   now: number,
+  petCount = 1,
 ) {
   const end = to && to >= from ? to : from;
   if (type === "BOARDING") {
@@ -400,13 +422,13 @@ export function isFreeForRange(
       .flatMap((r) => [r.start, Math.max(r.start, r.end - SLOT_STEP_MINS)])
       .find((m) => zonedInstant(from, m, snap.timeZone) >= noticeCutoff(snap, now));
     if (drop === undefined) return false;
-    return checkBooking(snap, { type, date: from, endDate: out, minute: drop }, now).ok;
+    return checkBooking(snap, { type, date: from, endDate: out, minute: drop, petCount }, now).ok;
   }
   if (type === "DAY_CARE") {
     const days = eachDate(from, end);
     if (days.some((d) => isTimeOff(snap, d))) return false;
     const open = days.filter((d) => isOpenDay(snap, d));
-    return open.length > 0 && open.every((d) => isDayBookable(snap, d, type, null, now));
+    return open.length > 0 && open.every((d) => isDayBookable(snap, d, type, null, now, petCount));
   }
   return eachDate(from, end).every((d) => isDayBookable(snap, d, type, durationMins, now));
 }

@@ -144,10 +144,26 @@ export function SitterForm({ sitter, neighbourhoods }: { sitter: SitterFormValue
 export function ServiceRowForm({
   service,
 }: {
-  service: { id: string; label: string; unitLabel: string; price: number; active: boolean; bookings: number };
+  service: {
+    id: string;
+    type: string;
+    label: string;
+    unitLabel: string;
+    price: number;
+    active: boolean;
+    bookings: number;
+    maxPetsPerBooking: number;
+    additionalPetPriceCents: number | null;
+    holidayPriceCents: number | null;
+    puppyPriceCents: number | null;
+  };
 }) {
   const [state, action, pending] = useActionState(updateService, undefined);
-  const err = state?.fieldErrors?.price?.[0] ?? state?.error;
+  const fe = state?.fieldErrors;
+  const err = fe?.price?.[0] ?? fe?.additionalPet?.[0] ?? fe?.maxPets?.[0] ?? fe?.holiday?.[0] ?? fe?.puppy?.[0] ?? state?.error;
+  const [multi, setMulti] = useState(service.additionalPetPriceCents != null);
+  const dollars = (c: number | null) => (c == null ? "" : c / 100);
+  const small = `${INPUT} pl-7 h-10`;
   return (
     <form action={action} className="flex flex-col gap-space-xs py-space-md border-b border-[#EFE7DE] last:border-0" noValidate>
       <input name="serviceId" type="hidden" value={service.id} />
@@ -171,6 +187,35 @@ export function ServiceRowForm({
         <button className={`${BTN.small} bg-[#EBF3EF] text-primary border border-[#C8DDD4] hover:bg-[#DCECE4]`} disabled={pending} type="submit">
           {pending ? "Saving…" : "Save"}
         </button>
+      </div>
+      <div className="flex flex-wrap items-end gap-space-sm">
+        <label className="inline-flex items-center gap-space-xs cursor-pointer h-10">
+          <input checked={multi} className="accent-primary w-4 h-4" name="multiPets" onChange={(e) => setMulti(e.target.checked)} type="checkbox" value="1" />
+          <span className="font-label-md text-label-md text-on-surface-variant">Multiple pets</span>
+        </label>
+        {multi && (
+          <>
+            <label className="relative w-28 flex flex-col gap-0.5">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Extra pet</span>
+              <span className="absolute left-space-sm bottom-2.5 text-on-surface-variant font-body-md">$</span>
+              <input className={small} defaultValue={dollars(service.additionalPetPriceCents) || 0} inputMode="decimal" min={0} name="additionalPet" step="0.01" type="number" />
+            </label>
+            <label className="w-28 flex flex-col gap-0.5">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">{service.type === "DOG_WALKING" ? "Max dogs/walk" : "Max pets"}</span>
+              <input className={`${INPUT} h-10`} defaultValue={service.maxPetsPerBooking} max={6} min={1} name="maxPets" step="1" type="number" />
+            </label>
+          </>
+        )}
+        <label className="relative w-28 flex flex-col gap-0.5">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Holiday rate</span>
+          <span className="absolute left-space-sm bottom-2.5 text-on-surface-variant font-body-md">$</span>
+          <input className={small} defaultValue={dollars(service.holidayPriceCents)} inputMode="decimal" name="holiday" placeholder="—" step="0.01" type="number" />
+        </label>
+        <label className="relative w-28 flex flex-col gap-0.5">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Puppy +</span>
+          <span className="absolute left-space-sm bottom-2.5 text-on-surface-variant font-body-md">$</span>
+          <input className={small} defaultValue={dollars(service.puppyPriceCents)} inputMode="decimal" name="puppy" placeholder="—" step="0.01" type="number" />
+        </label>
       </div>
       {err && <span className="font-body-sm text-body-sm text-error">{err}</span>}
       {state?.ok && state.message && <span className="font-body-sm text-body-sm text-primary">{state.message}</span>}

@@ -31,13 +31,22 @@ export async function exportCooldownSeconds(userId: string) {
 
 const bookingPrice = {
   quantity: true,
+  petCount: true,
   subtotalCents: true,
+  extrasCents: true,
+  priceLines: true,
   protectionFeeCents: true,
   serviceFeeCents: true,
   discountCents: true,
   taxCents: true,
   totalCents: true,
 } as const;
+
+/** Every pet of a booking (primary first); older bookings without BookingPet rows list their single pet. */
+function exportPetNames(primary: string, rows: { pet: { name: string } }[]) {
+  const names = rows.map((r) => r.pet.name);
+  return names.length ? [primary, ...names.filter((n, i) => n !== primary || names.indexOf(n) !== i)] : [primary];
+}
 
 /** Everything WagStays holds about a user, as a plain JSON-serialisable object. */
 export async function buildDataExport(userId: string) {
@@ -114,6 +123,7 @@ export async function buildDataExport(userId: string) {
         service: { select: { type: true, unit: true } },
         sitter: { select: { displayName: true } },
         pet: { select: { name: true } },
+        pets: { select: { pet: { select: { name: true } } } },
         meetingAddress: true,
         leashPreference: true,
         otherAnimalsReaction: true,
@@ -178,6 +188,7 @@ export async function buildDataExport(userId: string) {
             service: { select: { type: true, unit: true } },
             owner: { select: { firstName: true } },
             pet: { select: { name: true } },
+            pets: { select: { pet: { select: { name: true } } } },
             ...bookingPrice,
             sitterNote: true,
             confirmedAt: true,
@@ -305,9 +316,23 @@ export async function buildDataExport(userId: string) {
       createdAt: user.createdAt,
     },
     pets,
-    bookingsAsOwner: ownerBookings.map(({ sitter, pet, service, ...b }) => ({ ...b, sitter: sitter.displayName, pet: pet.name, service: service.type, unit: service.unit })),
+    bookingsAsOwner: ownerBookings.map(({ sitter, pet, pets, service, ...b }) => ({
+      ...b,
+      sitter: sitter.displayName,
+      pet: pet.name,
+      pets: exportPetNames(pet.name, pets),
+      service: service.type,
+      unit: service.unit,
+    })),
     sitterProfile,
-    bookingsAsSitter: sitterBookings.map(({ owner, pet, service, ...b }) => ({ ...b, owner: owner.firstName, pet: pet.name, service: service.type, unit: service.unit })),
+    bookingsAsSitter: sitterBookings.map(({ owner, pet, pets, service, ...b }) => ({
+      ...b,
+      owner: owner.firstName,
+      pet: pet.name,
+      pets: exportPetNames(pet.name, pets),
+      service: service.type,
+      unit: service.unit,
+    })),
     reviewsWritten: reviewsWritten.map(({ sitter, ...r }) => ({ ...r, sitter: sitter.displayName })),
     reviewsReceived,
     ownerReviewsReceived,

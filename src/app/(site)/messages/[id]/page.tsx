@@ -104,6 +104,7 @@ export default async function ThreadPage({ params }: Props) {
                       <span className="flex flex-col">
                         <span className="font-label-lg text-label-lg text-on-surface whitespace-nowrap">
                           {SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type} · {b.pet.name}
+                          {b.petCount > 1 ? ` +${b.petCount - 1}` : ""}
                         </span>
                         <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{dateFmt.format(b.startAt)}</span>
                       </span>

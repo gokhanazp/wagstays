@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { bookingPets, petNames } from "@/lib/pets";
 import Link from "next/link";
 import { BTN, Card, CardHeader, EmptyState, PageHeader, StatCard, formatDate } from "@/components/ui";
 import { requireSitter } from "@/lib/auth";
@@ -139,7 +140,7 @@ export default async function SitterOverviewPage() {
                     <PetPhoto className="w-11 h-11 rounded-full" name={b.pet.name} url={b.pet.photoUrl} />
                     <span className="flex flex-col min-w-0 flex-1">
                       <span className="font-label-lg text-label-lg text-on-surface truncate">
-                        {b.pet.name} · {ownerShortName(b.owner)}
+                        {petNames(bookingPets(b).map((p) => p.name))} · {ownerShortName(b.owner)}
                       </span>
                       <span className="font-body-sm text-body-sm text-on-surface-variant truncate">{bookingWhen(b.startAt, b.endAt, tz)}</span>
                     </span>

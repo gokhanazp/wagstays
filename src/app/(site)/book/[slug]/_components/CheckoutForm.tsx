@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { createBooking } from "@/app/actions/booking";
 import { Select } from "@/components/forms/Select";
 import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { formatMoney, formatRating } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
+import { holidaysForDates } from "@/lib/holidays";
+import { petNames } from "@/lib/pets";
+import { quoteBooking } from "@/lib/quote";
 import { SERVICE_ICONS, plainTrait } from "../_lib";
 import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 
@@ -37,9 +40,24 @@ type Props = {
     isSuperSitter: boolean;
     completedBookings: number;
   };
-  service: { id: string; type: string; unitPriceCents: number; line: string };
+  service: {
+    id: string;
+    type: string;
+    unitPriceCents: number;
+    line: string;
+    maxPetsPerBooking: number;
+    additionalPetPriceCents: number | null;
+    holidayPriceCents: number | null;
+    puppyPriceCents: number | null;
+    /** most pets one booking may include (1 = no additional-pet rate) */
+    petLimit: number;
+    /** "Sarah takes one pet per booking for this service" when petLimit is 1 */
+    oneNote: string | null;
+  };
+  /** City.provinceCode — picks the statutory holiday list */
+  provinceCode: string;
   pets: Pet[];
-  initialPetId: string;
+  initialPetIds: string[];
   schedule: {
     date: string;
     /** check-out / last day for stays */
@@ -59,8 +77,10 @@ type Props = {
     meet: boolean;
     /** back to the profile widget to change the dates */
     changeHref: string;
-    /** dates that aren't available (the server re-checks on submit) */
-    conflicts: { date: string; error: string }[];
+    /** dates that aren't available, by number of pets (stays need a place per pet; the server re-checks on submit) */
+    conflictsByCount: Record<number, { date: string; error: string }[]>;
+    /** local dates (nights / days / visits) of each weekly occurrence, for the quote */
+    occurrenceDates: string[][];
     occurrenceCount: number;
   };
   owner: { fullName: string; wagPointsCents: number };
@@ -133,8 +153,8 @@ function petDetails(p: Pet) {
   return parts.join(" • ");
 }
 
-function defaultFeeding(p: Pet | undefined, hasAllergy: boolean) {
-  const name = p?.name ?? "your pet";
+function defaultFeeding(names: string, hasAllergy: boolean) {
+  const name = names || "your pet";
   return hasAllergy
     ? `Please only give the lamb treats packed in ${name}'s bag — no more than 2 per walk.`
     : `Treats are packed in ${name}'s bag — no more than 2 per walk, please.`;
@@ -143,11 +163,22 @@ function defaultFeeding(p: Pet | undefined, hasAllergy: boolean) {
 const inlineInput =
   "w-full bg-transparent rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-outline";
 
-export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, owner, taxRateBps, fees, addPetHref, earnRateBps, notReady }: Props) {
+export function CheckoutForm({
+  sitter,
+  service,
+  provinceCode,
+  pets,
+  initialPetIds,
+  schedule,
+  owner,
+  taxRateBps,
+  fees,
+  addPetHref,
+  earnRateBps,
+  notReady,
+}: Props) {
   const [state, formAction, pending] = useActionState(createBooking.bind(null, sitter.slug), undefined);
-  const [petId, setPetId] = useState(initialPetId);
-  const [petMenuOpen, setPetMenuOpen] = useState(false);
-  const petMenuRef = useRef<HTMLDivElement>(null);
+  const [petIds, setPetIds] = useState(initialPetIds);
   const canUsePoints = owner.wagPointsCents > 0;
   const [applyPoints, setApplyPoints] = useState(canUsePoints);
   const [cardDigits, setCardDigits] = useState("");
@@ -155,47 +186,63 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
   const [cvc, setCvc] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
 
-  const pet = pets.find((p) => p.id === petId);
-  const warning = pet?.traits.find((t) => t.tone === "warning");
+  const selected = useMemo(() => petIds.map((id) => pets.find((p) => p.id === id)).filter((p): p is Pet => !!p), [petIds, pets]);
+  const pet = selected[0];
+  const blockedPet = selected.find((p) => p.blocked);
+  const overLimit = selected.length > service.petLimit;
+  const names = petNames(selected.map((p) => p.name));
+  const warning = selected.flatMap((p) => p.traits).find((t) => t.tone === "warning");
+  const multi = service.petLimit > 1;
+  const togglePet = (id: string) =>
+    setPetIds((cur) => (cur.includes(id) ? (cur.length > 1 ? cur.filter((x) => x !== id) : cur) : multi ? [...cur, id] : [id]));
   const brand = detectBrand(cardDigits);
   const maxLen = brand === "Amex" ? 15 : 16;
 
-  // One booking row per weekly occurrence, each with its own amounts; WagPoints apply to the first only.
-  const price = useMemo(
+  // One booking row per weekly occurrence, each with its own quote (holidays differ by week) — the same
+  // quoteBooking() + priceBooking() the server runs. WagPoints apply to the first occurrence only.
+  const quotes = useMemo(
     () =>
-      priceBooking({
-        unitPriceCents: service.unitPriceCents,
-        quantity: schedule.quantity,
-        taxRateBps,
-        fees,
-        applyWagPoints: applyPoints && canUsePoints,
-        wagPointsBalanceCents: owner.wagPointsCents,
-      }),
-    [service.unitPriceCents, schedule.quantity, taxRateBps, fees, applyPoints, canUsePoints, owner.wagPointsCents],
+      schedule.occurrenceDates.map((dates) =>
+        quoteBooking({
+          service: { ...service, priceCents: service.unitPriceCents },
+          pets: selected.length ? selected : [{}],
+          dates,
+          holidays: holidaysForDates(dates, provinceCode),
+          quantity: schedule.quantity,
+        }),
+      ),
+    [service, provinceCode, schedule.occurrenceDates, schedule.quantity, selected],
   );
-  const perVisit = useMemo(
-    () => priceBooking({ unitPriceCents: service.unitPriceCents, quantity: schedule.quantity, taxRateBps, fees }),
-    [service.unitPriceCents, schedule.quantity, taxRateBps, fees],
+  const quote = quotes[0];
+  const prices = useMemo(
+    () =>
+      quotes.map((q, i) =>
+        priceBooking({
+          subtotalCents: q.subtotalCents,
+          taxRateBps,
+          fees,
+          applyWagPoints: i === 0 && applyPoints && canUsePoints,
+          wagPointsBalanceCents: owner.wagPointsCents,
+        }),
+      ),
+    [quotes, taxRateBps, fees, applyPoints, canUsePoints, owner.wagPointsCents],
   );
+  const price = prices[0];
   const series = schedule.weeks > 1;
-  const totalCents = price.totalCents + perVisit.totalCents * (schedule.weeks - 1);
+  const restCents = prices.slice(1).reduce((sum, p) => sum + p.totalCents, 0);
+  const restSame = prices.slice(1).every((p) => p.totalCents === prices[1]?.totalCents);
+  const totalCents = price.totalCents + restCents;
+  const conflicts = schedule.conflictsByCount[Math.max(1, selected.length)] ?? schedule.conflictsByCount[1] ?? [];
   const pointsOff = Math.min(fees.wagPointsDiscountCents, owner.wagPointsCents);
   const total = formatMoney(totalCents, { exact: true });
-  const unavailable = schedule.conflicts.length > 0;
+  const unavailable = conflicts.length > 0;
   const stay = service.type === "BOARDING" || service.type === "DAY_CARE";
-
-  useEffect(() => {
-    if (!petMenuOpen) return;
-    const close = (e: MouseEvent) => {
-      if (!petMenuRef.current?.contains(e.target as Node)) setPetMenuOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [petMenuOpen]);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     let msg: string | null = null;
     if (!pet) msg = "Please add a pet to your profile before booking.";
+    else if (blockedPet) msg = `${blockedPet.name}: ${blockedPet.blocked}.`;
+    else if (overLimit) msg = service.oneNote ? `${service.oneNote}.` : `You can book at most ${service.petLimit} pets for this service.`;
     else if (!brand) msg = "Please enter a Visa, Mastercard or Amex card number.";
     else if (cardDigits.length !== maxLen || !luhn(cardDigits)) msg = "That card number doesn't look right — please check it.";
     else if (!expiryValid(expiry)) msg = "Please enter a valid expiry date (MM/YY).";
@@ -210,7 +257,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
   return (
     <form action={formAction} onSubmit={onSubmit} className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin py-space-lg md:py-space-xl">
       <input type="hidden" name="serviceId" value={service.id} />
-      <input type="hidden" name="petId" value={petId} />
+      <input type="hidden" name="petIds" value={selected.map((p) => p.id).join(",")} />
       <input type="hidden" name="date" value={schedule.date} />
       {schedule.endDate && <input type="hidden" name="endDate" value={schedule.endDate} />}
       <input type="hidden" name="slot" value={schedule.slot} />
@@ -222,130 +269,133 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg md:gap-space-xl items-start">
         <div className="lg:col-span-8 flex flex-col gap-space-lg md:gap-space-xl min-w-0">
-          {/* 1. Selected pet */}
+          {/* 1. Selected pets */}
           <section className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-md">
             <div className="flex items-center justify-between gap-space-sm">
-              <div className="flex items-center gap-space-sm">
+              <div className="flex items-center gap-space-sm min-w-0">
                 <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-xl">pets</span>
                 </div>
                 <h2 className="font-title-md text-title-md text-on-surface">Who&apos;s Getting the Care?</h2>
               </div>
               {pets.length > 0 && (
-                <div className="relative" ref={petMenuRef}>
-                  <button
-                    aria-expanded={petMenuOpen}
-                    aria-haspopup="listbox"
-                    className="text-primary hover:text-on-primary-fixed-variant font-label-md text-label-md transition-colors flex items-center gap-1 whitespace-nowrap"
-                    onClick={() => setPetMenuOpen((o) => !o)}
-                    type="button"
-                  >
-                    <span>Change Pet</span>
-                    <span className="material-symbols-outlined text-sm">swap_horiz</span>
-                  </button>
-                  {petMenuOpen && (
-                    <ul
-                      className="absolute right-0 top-full mt-2 z-20 min-w-[220px] bg-surface-container-lowest rounded-xl shadow-md p-space-xs flex flex-col gap-0.5"
-                      role="listbox"
-                    >
-                      {pets.map((p) => (
-                        <li key={p.id}>
-                          <button
-                            aria-disabled={!!p.blocked}
-                            aria-selected={p.id === petId}
-                            className={`w-full flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-left font-label-md text-label-md transition-colors ${
-                              p.blocked ? "text-outline cursor-not-allowed" : p.id === petId ? "bg-primary/10 text-primary" : "text-on-surface hover:bg-surface-container"
-                            }`}
-                            disabled={!!p.blocked}
-                            onClick={() => {
-                              setPetId(p.id);
-                              setPetMenuOpen(false);
-                            }}
-                            role="option"
-                            type="button"
-                          >
-                            <span className="material-symbols-outlined text-base">{p.blocked ? "block" : p.icon}</span>
-                            <span className="flex-1">
-                              {p.name}
-                              {p.blocked ? (
-                                <span className="block font-body-sm text-body-sm text-on-surface-variant">{p.blocked}</span>
-                              ) : (
-                                p.breed && <span className="block font-body-sm text-body-sm text-on-surface-variant">{p.breed}</span>
-                              )}
-                            </span>
-                            {p.id === petId && <span className="material-symbols-outlined text-base">check</span>}
-                          </button>
-                        </li>
-                      ))}
-                      <li className="border-t border-surface-container-high mt-0.5 pt-0.5">
-                        <Link
-                          className="w-full flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container transition-colors"
-                          href={addPetHref}
-                        >
-                          <span className="material-symbols-outlined text-base">add_circle</span>
-                          Add a new pet
-                        </Link>
-                      </li>
-                    </ul>
-                  )}
-                </div>
+                <Link
+                  className="text-primary hover:text-on-primary-fixed-variant font-label-md text-label-md transition-colors flex items-center gap-1 whitespace-nowrap"
+                  href={addPetHref}
+                >
+                  <span className="material-symbols-outlined text-base">add_circle</span>
+                  <span>Add a pet</span>
+                </Link>
               )}
             </div>
 
-            {pet?.blocked && (
+            {pets.length > 1 && (
+              <div className="flex flex-col gap-space-xs">
+                <div aria-label={multi ? "Choose the pets for this booking" : "Choose a pet"} className="flex flex-wrap gap-space-xs" role="group">
+                  {pets.map((p) => {
+                    const on = petIds.includes(p.id);
+                    const full = multi && !on && selected.length >= service.petLimit;
+                    const disabled = !!p.blocked || full;
+                    return (
+                      <button
+                        aria-pressed={on}
+                        className={`h-10 pl-1 pr-space-sm rounded-full flex items-center gap-space-xs font-label-md text-label-md transition-colors max-w-full ${
+                          p.blocked
+                            ? "bg-surface-container-low text-outline line-through decoration-outline/60 cursor-not-allowed"
+                            : on
+                              ? "bg-primary-container text-on-primary-container shadow-sm"
+                              : full
+                                ? "bg-surface-container-low text-outline cursor-not-allowed"
+                                : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+                        }`}
+                        data-pet-chip={p.id}
+                        disabled={disabled && !on}
+                        key={p.id}
+                        onClick={() => togglePet(p.id)}
+                        title={p.blocked ?? (full ? `Up to ${service.petLimit} pets per booking` : undefined)}
+                        type="button"
+                      >
+                        <span className="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shrink-0">
+                          {p.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img alt="" className="w-full h-full object-cover" src={p.photoUrl} />
+                          ) : (
+                            <span className="material-symbols-outlined text-primary text-base">{p.blocked ? "block" : p.icon}</span>
+                          )}
+                        </span>
+                        <span className="truncate">{p.name}</span>
+                        {on && <span className="material-symbols-outlined text-base">check_circle</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface-variant">
+                  <span className="material-symbols-outlined text-base text-primary">info</span>
+                  {multi
+                    ? `Up to ${service.petLimit} ${service.type === "DOG_WALKING" ? "dogs per walk" : "pets per booking"} · ${formatMoney(service.additionalPetPriceCents ?? 0)} for each extra pet.`
+                    : `${service.oneNote ?? `${sitter.firstName} takes one pet per booking for this service`}.`}
+                </p>
+              </div>
+            )}
+
+            {blockedPet && (
               <p className="flex items-start gap-space-xs p-space-sm px-space-md rounded-xl bg-error-container text-on-error-container font-body-sm text-body-sm" role="alert">
                 <span className="material-symbols-outlined text-base">block</span>
-                {pet.blocked} — choose another pet{pets.some((p) => !p.blocked) ? "" : " or sitter"}.
+                {blockedPet.name}: {blockedPet.blocked} — choose another pet{pets.some((p) => !p.blocked) ? "" : " or sitter"}.
               </p>
             )}
-            {pet ? (
-              <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row items-center gap-space-md">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 shadow-sm relative bg-primary-fixed flex items-center justify-center">
-                  {pet.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img alt={`${pet.name}, ${pet.breed ?? "pet"}`} className="w-full h-full object-cover" src={pet.photoUrl} />
-                  ) : (
-                    <span className="material-symbols-outlined text-primary text-5xl">pets</span>
-                  )}
-                  {pet.microchip && (
-                    <span className="absolute bottom-1 right-1 bg-surface-container-lowest/90 px-1.5 py-0.5 rounded-full font-label-sm text-label-sm text-primary flex items-center gap-0.5 shadow-sm">
-                      <span className="material-symbols-outlined text-xs">verified</span>
-                      Chipped
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 flex flex-col gap-space-xs text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-space-xs">
-                    <span className="font-headline-sm text-headline-sm text-on-surface">{pet.name}</span>
-                    {pet.breed && (
-                      <span className="bg-primary/10 text-primary px-space-sm py-0.5 rounded-full font-label-sm text-label-sm">{pet.breed}</span>
-                    )}
-                    {pet.ageYears != null && (
-                      <span className="bg-surface-container text-on-surface-variant px-space-sm py-0.5 rounded-full font-label-sm text-label-sm">
-                        {pet.ageYears} {pet.ageYears === 1 ? "yr" : "yrs"}
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{petDetails(pet)}</p>
-                  {pet.traits.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-space-xs pt-space-xs">
-                      {pet.traits.map((t) => (
-                        <span
-                          className={`px-space-sm py-0.5 font-label-sm text-label-sm rounded-full flex items-center gap-1 ${
-                            t.tone === "warning"
-                              ? "bg-error-container text-on-error-container"
-                              : t.tone === "primary"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-surface-container-highest/80 text-on-surface-variant"
-                          }`}
-                          key={t.id}
-                        >
-                          {t.label}
+            {selected.length > 0 ? (
+              <div className="flex flex-col gap-space-sm">
+                {selected.map((pet) => (
+                  <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row items-center gap-space-md" data-pet-card={pet.id} key={pet.id}>
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 shadow-sm relative bg-primary-fixed flex items-center justify-center">
+                      {pet.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img alt={`${pet.name}, ${pet.breed ?? "pet"}`} className="w-full h-full object-cover" src={pet.photoUrl} />
+                      ) : (
+                        <span className="material-symbols-outlined text-primary text-5xl">pets</span>
+                      )}
+                      {pet.microchip && (
+                        <span className="absolute bottom-1 right-1 bg-surface-container-lowest/90 px-1.5 py-0.5 rounded-full font-label-sm text-label-sm text-primary flex items-center gap-0.5 shadow-sm">
+                          <span className="material-symbols-outlined text-xs">verified</span>
+                          Chipped
                         </span>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
+                    <div className="flex-1 min-w-0 flex flex-col gap-space-xs text-center sm:text-left">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-space-xs">
+                        <span className="font-headline-sm text-headline-sm text-on-surface">{pet.name}</span>
+                        {pet.breed && (
+                          <span className="bg-primary/10 text-primary px-space-sm py-0.5 rounded-full font-label-sm text-label-sm">{pet.breed}</span>
+                        )}
+                        {pet.ageYears != null && (
+                          <span className="bg-surface-container text-on-surface-variant px-space-sm py-0.5 rounded-full font-label-sm text-label-sm">
+                            {pet.ageYears < 1 ? "Puppy · <1 yr" : `${pet.ageYears} ${pet.ageYears === 1 ? "yr" : "yrs"}`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{petDetails(pet)}</p>
+                      {pet.traits.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-space-xs pt-space-xs">
+                          {pet.traits.map((t) => (
+                            <span
+                              className={`px-space-sm py-0.5 font-label-sm text-label-sm rounded-full flex items-center gap-1 ${
+                                t.tone === "warning"
+                                  ? "bg-error-container text-on-error-container"
+                                  : t.tone === "primary"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-surface-container-highest/80 text-on-surface-variant"
+                              }`}
+                              key={t.id}
+                            >
+                              {t.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm font-body-sm text-body-sm text-on-surface-variant">
@@ -359,7 +409,6 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                 </Link>
               </div>
             )}
-
             {/* Contact & vet */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
               <div className="bg-surface-container p-space-md rounded-xl flex flex-col gap-space-xs">
@@ -432,7 +481,7 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
               <div>
                 <h2 className="font-title-md text-title-md text-on-surface">Care &amp; Walk Instructions</h2>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Your sitter {sitter.firstName} will follow these guidelines before heading out with {pet?.name ?? "your pet"}.
+                  Your sitter {sitter.firstName} will follow these guidelines before heading out with {names || "your pet"}.
                 </p>
               </div>
             </div>
@@ -476,9 +525,9 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   {warning && <strong className="text-secondary font-semibold block">{plainTrait(warning.label)} — please take note! </strong>}
                   <textarea
                     className="w-full bg-transparent resize-none rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary leading-relaxed [field-sizing:content]"
-                    defaultValue={defaultFeeding(pet, !!warning)}
+                    defaultValue={defaultFeeding(names, !!warning)}
                     id="feeding"
-                    key={petId}
+                    key={petIds.join()}
                     name="feedingRules"
                     rows={1}
                   />
@@ -740,13 +789,13 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   <div className="min-w-0 flex flex-col gap-0.5">
                     <span className="font-semibold">
                       {schedule.occurrenceCount > 1
-                        ? `${schedule.conflicts.length} of ${schedule.occurrenceCount} weekly dates aren't available`
+                        ? `${conflicts.length} of ${schedule.occurrenceCount} weekly dates aren't available`
                         : "This time isn't available"}
                     </span>
-                    {schedule.conflicts.slice(0, 6).map((c) => (
+                    {conflicts.slice(0, 6).map((c) => (
                       <span key={c.date}>{schedule.occurrenceCount > 1 ? `${c.date}: ${c.error}` : c.error}</span>
                     ))}
-                    {schedule.conflicts.length > 6 && <span>and {schedule.conflicts.length - 6} more</span>}
+                    {conflicts.length > 6 && <span>and {conflicts.length - 6} more</span>}
                   </div>
                 </div>
               )}
@@ -776,10 +825,21 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   Per {stay ? "booking" : "visit"} · {schedule.weeks} weekly occurrences
                 </span>
               )}
-              <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
-                <span>{stay ? `${schedule.quantityLabel} × ${formatMoney(service.unitPriceCents, { exact: true })}` : `1x ${service.line}`}</span>
-                <span className="font-semibold text-on-surface">{formatMoney(price.subtotalCents, { exact: true })}</span>
-              </div>
+              {selected.length > 1 && (
+                <span className="font-label-md text-label-md text-on-surface" data-testid="summary-pets">
+                  {selected.length} pets · {names}
+                </span>
+              )}
+              {quote.lines.map((l, i) => (
+                <div
+                  className={`flex justify-between items-start gap-space-sm font-body-md text-body-md ${i === 0 ? "text-on-surface-variant" : "text-on-surface-variant/90"}`}
+                  data-price-line
+                  key={`${l.label}-${i}`}
+                >
+                  <span className="min-w-0">{i === 0 && !stay ? `${quote.units}x ${service.line}` : l.label}</span>
+                  <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents, { exact: true })}</span>
+                </div>
+              ))}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
                 <span className="flex items-center gap-1">
                   WagShield Vet Protection
@@ -817,9 +877,9 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   </div>
                   <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface">
                     <span>
-                      {schedule.weeks - 1} more × {formatMoney(perVisit.totalCents, { exact: true })}
+                      {schedule.weeks - 1} more{restSame ? ` × ${formatMoney(prices[1]?.totalCents ?? 0, { exact: true })}` : " (holiday rates vary)"}
                     </span>
-                    <span className="font-semibold">{formatMoney(perVisit.totalCents * (schedule.weeks - 1), { exact: true })}</span>
+                    <span className="font-semibold">{formatMoney(restCents, { exact: true })}</span>
                   </div>
                 </>
               )}
@@ -832,13 +892,15 @@ export function CheckoutForm({ sitter, service, pets, initialPetId, schedule, ow
                   {series ? `${schedule.weeks} weekly ${stay ? "bookings" : "visits"} · incl. HST` : "Incl. HST & WagShield"}
                 </span>
               </div>
-              <div className="font-headline-lg text-headline-lg text-primary font-extrabold tracking-tight">{total}</div>
+              <div className="font-headline-lg text-headline-lg text-primary font-extrabold tracking-tight" data-testid="checkout-total">
+                {total}
+              </div>
             </div>
             <EarnPointsNote className="justify-center -mt-space-xs" earnRateBps={earnRateBps} subtotalCents={price.subtotalCents} />
 
             <button
               className="w-full py-4 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-space-sm group disabled:opacity-70 disabled:pointer-events-none"
-              disabled={pending || !pet || !!pet.blocked || unavailable || notReady}
+              disabled={pending || !pet || !!blockedPet || overLimit || unavailable || notReady}
               id="pay-button"
               type="submit"
             >

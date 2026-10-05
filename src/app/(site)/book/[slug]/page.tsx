@@ -19,6 +19,7 @@ import {
   formatDayLong,
   formatMinute,
   formatMinuteRange,
+  eachDate,
   isIsoDay,
   isStayService,
   minuteToHHMM,
@@ -35,6 +36,7 @@ import { CheckoutForm } from "./_components/CheckoutForm";
 import { ReadinessChecklist } from "./_components/ReadinessChecklist";
 import { getOwnerReadiness } from "@/lib/owner-readiness";
 import { durationLabel, serviceLine } from "./_lib";
+import { petCountBlockReason, petLimit } from "@/lib/quote";
 
 export const metadata: Metadata = { title: "Booking & Care Instructions" };
 
@@ -65,7 +67,12 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
     kinds: sitter.species.map((s) => s.kind),
   };
   const blockedFor = (p: (typeof pets)[number]) => petBlockReason(acceptance, p, service.type);
-  const petId = pets.find((p) => p.id === one(sp.pet))?.id ?? (pets.find((p) => !blockedFor(p)) ?? pets[0])?.id ?? "";
+  // Pets from the widget (?pets=id,id) plus a pet just added from here (?pet=id, also the legacy single param).
+  const limit = petLimit(service);
+  const wanted = [...(one(sp.pets) ?? "").split(","), one(sp.pet) ?? ""].map((x) => x.trim()).filter((id) => pets.some((p) => p.id === id));
+  const unique = [...new Set(wanted)];
+  const picked = limit === 1 ? (one(sp.pet) && unique.includes(one(sp.pet)!) ? [one(sp.pet)!] : unique.slice(0, 1)) : unique.slice(0, limit);
+  const petIds = picked.length ? picked : [(pets.find((p) => !blockedFor(p)) ?? pets[0])?.id].filter((x): x is string => !!x);
   // Schedule from the profile widget (?date, ?end, ?slot=HH:MM, ?recurring=1&weeks=N). Missing or stale
   // values fall back to the sitter's next bookable day; the availability check below reports conflicts.
   const tz = sitter.city.timeZone;
@@ -86,7 +93,27 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
   const weeks = recurring ? (Number.isInteger(weeksRaw) && weeksRaw >= MIN_WEEKS && weeksRaw <= MAX_WEEKS ? weeksRaw : DEFAULT_WEEKS) : 1;
   const lastDate = addDays(endDate ?? date, 7 * (weeks - 1));
   const planSnap = lastDate > addDays(today, 180) ? ((await loadSnapshot(sitter.id, today, lastDate)) ?? snap) : snap;
-  const rows = checkSeries(planSnap, { type: service.type, date, endDate, minute, durationMins: service.durationMins }, weeks, nowMs);
+  const plan = { type: service.type, date, endDate, minute, durationMins: service.durationMins };
+  const rows = checkSeries(planSnap, { ...plan, petCount: petIds.length || 1 }, weeks, nowMs);
+  // Conflicts for every pet count the owner can pick here (stays need one free place per pet).
+  const conflictsByCount = Object.fromEntries(
+    Array.from({ length: limit }, (_, i) => i + 1).map((n) => [
+      n,
+      (n === (petIds.length || 1) ? rows : checkSeries(planSnap, { ...plan, petCount: n }, weeks, nowMs))
+        .filter((r) => !r.check.ok)
+        .map((r) => ({ date: formatDayLong(r.req.date), error: r.check.ok ? "" : r.check.error })),
+    ]),
+  );
+  // Local dates priced per occurrence (nights / days / visits) — holiday rates depend on them.
+  const occurrenceDates = rows.map((r) =>
+    r.check.ok
+      ? r.check.days
+      : !stay
+        ? [r.req.date]
+        : service.type === "BOARDING"
+          ? eachDate(r.req.date, addDays(r.req.endDate!, -1))
+          : eachDate(r.req.date, r.req.endDate!),
+  );
   const first = rows[0].check;
   const quantity = first.ok ? first.quantity : stay ? Math.max(1, daysBetween(date, endDate!) + (service.type === "DAY_CARE" ? 1 : 0)) : 1;
   const duration = durationLabel(service.durationMins);
@@ -100,7 +127,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
 
   // "Add a new pet" returns here (the pet form appends pet=<newId>).
   const backQs = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== "pet") backQs.set(k, one(v)!);
+  for (const [k, v] of Object.entries(sp)) if (v !== undefined && k !== "pet" && k !== "pets") backQs.set(k, one(v)!);
+  if (petIds.length) backQs.set("pets", petIds.join(","));
   const addPetHref = `/account/pets/new?next=${encodeURIComponent(`/book/${slug}${backQs.size ? `?${backQs}` : ""}`)}`;
 
   return (
@@ -160,7 +188,14 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             type: service.type,
             unitPriceCents: service.priceCents,
             line: serviceLine(service),
+            maxPetsPerBooking: service.maxPetsPerBooking,
+            additionalPetPriceCents: service.additionalPetPriceCents,
+            holidayPriceCents: service.holidayPriceCents,
+            puppyPriceCents: service.puppyPriceCents,
+            petLimit: limit,
+            oneNote: petCountBlockReason(service, 2, acceptance.firstName),
           }}
+          provinceCode={sitter.city.provinceCode}
           pets={pets.map((p) => ({
             id: p.id,
             name: p.name,
@@ -177,7 +212,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             icon: PET_KIND_META[petKindOf(p)].icon,
             blocked: blockedFor(p),
           }))}
-          initialPetId={petId}
+          initialPetIds={petIds}
           schedule={{
             date,
             endDate,
@@ -192,7 +227,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             quantityLabel: quantityLabel(service.type, quantity),
             meet: flag(sp.meet),
             changeHref: `/sitters/${sitter.slug}#book`,
-            conflicts: rows.filter((r) => !r.check.ok).map((r) => ({ date: formatDayLong(r.req.date), error: r.check.ok ? "" : r.check.error })),
+            conflictsByCount,
+            occurrenceDates,
             occurrenceCount: rows.length,
           }}
           owner={{

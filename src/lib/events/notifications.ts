@@ -1,4 +1,5 @@
 import "server-only";
+import { bookingPets, petNames } from "../pets";
 import { db } from "../db";
 import { pushEnabled, sendPush, type PushPayload } from "../push";
 import type { DomainEvent, EventHandler } from "./index";
@@ -23,7 +24,8 @@ function loadBooking(id: string) {
       id: true,
       ownerId: true,
       meetAndGreet: true,
-      pet: { select: { name: true } },
+      pet: { select: { id: true, name: true } },
+      pets: { select: { pet: { select: { id: true, name: true } } } },
       owner: { select: { firstName: true } },
       service: { select: { type: true } },
       sitter: { select: { userId: true, displayName: true } },
@@ -39,7 +41,8 @@ const sitterUrl = (b: Booking) => `/sitter/bookings/${b.id}`;
 const firstName = (displayName: string) => displayName.split(" ")[0] || displayName;
 
 function bookingNotifications(event: Extract<DomainEvent, { bookingId: string }>, b: Booking): Out[] {
-  const pet = b.pet.name;
+  // "Maple" / "Maple & Biscuit"
+  const pet = petNames(bookingPets(b).map((p) => p.name));
   const sitter = firstName(b.sitter.displayName);
   const noun = NOUN[b.service.type] ?? "booking";
   const tag = `booking-${b.id}`;

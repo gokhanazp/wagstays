@@ -304,7 +304,11 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
                       </td>
                       <td className={TD}>
                         {SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type}
-                        <span className="text-on-surface-variant"> · {b.pet.name}</span>
+                        <span className="text-on-surface-variant">
+                          {" "}
+                          · {b.pet.name}
+                          {b.petCount > 1 ? ` +${b.petCount - 1}` : ""}
+                        </span>
                       </td>
                       <td className={TD}>{b.sitter.displayName}</td>
                       <td className={TD}>{s ? <StatusChip tone={s.tone}>{s.label}</StatusChip> : b.status}</td>

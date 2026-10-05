@@ -104,6 +104,8 @@ export type SearchFilters = {
   /** availability filter: only sitters free from → to (YYYY-MM-DD; `to` = check-out for boarding) */
   from?: string;
   to?: string;
+  /** pets in the request (home search "2 pets"): stays need this many free places; default 1 */
+  petCount?: number;
 };
 
 export const SEARCH_PAGE_SIZE = 4;
@@ -143,8 +145,13 @@ export function parseSearchParams(sp: RawParams): SearchFilters {
     sort: (["price-asc", "price-desc", "rating", "distance"].includes(sort ?? "") ? sort : "recommended") as SearchFilters["sort"],
     page: Math.max(1, Math.floor(num("page") ?? 1)),
     view: one("view") === "map" ? "map" : "list",
-    from: isIsoDay(one("from")) ? one("from") : undefined,
-    to: isIsoDay(one("to")) ? one("to") : undefined,
+    // the home search sends start / end
+    from: isIsoDay(one("from")) ? one("from") : isIsoDay(one("start")) ? one("start") : undefined,
+    to: isIsoDay(one("to")) ? one("to") : isIsoDay(one("end")) ? one("end") : undefined,
+    petCount: (() => {
+      const n = Math.floor(num("petCount") ?? 1);
+      return n > 1 ? Math.min(n, 6) : undefined;
+    })(),
   };
 }
 
@@ -166,6 +173,7 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
   if (f.view === "map") q.set("view", "map");
   if (f.from) q.set("from", f.from);
   if (f.to) q.set("to", f.to);
+  if (f.petCount && f.petCount > 1) q.set("petCount", String(f.petCount));
   const s = q.toString();
   return s ? `?${s}` : "";
 }
@@ -231,6 +239,7 @@ export async function searchSitters(f: SearchFilters) {
       from,
       to,
       f.service,
+      f.petCount ?? 1,
     );
     const label = `Available ${formatDayRange(from, to)}`;
     results = results.filter((s) => free.has(s.id)).map((s) => ({ ...s, availableLabel: label }));

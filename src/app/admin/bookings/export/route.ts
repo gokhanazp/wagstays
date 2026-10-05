@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { bookingPets, petNames } from "@/lib/pets";
 import { getAdminOrNull } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { BOOKING_STATUS_LABELS, SERVICE_LABELS, type BookingStatus, type ServiceType } from "@/lib/constants";
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   const rows = await findBookings(f);
 
   const header = [
-    "Ref", "Booking ID", "Status", "Owner", "Owner email", "Pet", "Sitter", "Service", "Start (local)", "End (local)", "Time zone",
+    "Ref", "Booking ID", "Status", "Owner", "Owner email", "Pets", "Pet count", "Sitter", "Service", "Start (local)", "End (local)", "Time zone",
     "Meet & Greet", "Recurring weekly", "Subtotal (CAD)", "WagShield (CAD)", "Service fee (CAD)", "Discount (CAD)", "Tax (CAD)", "Total (CAD)", "Created",
   ];
   const lines = [header.map(cell).join(",")];
@@ -45,7 +46,8 @@ export async function GET(request: NextRequest) {
         BOOKING_STATUS_LABELS[b.status as BookingStatus]?.label ?? b.status,
         `${b.owner.firstName} ${b.owner.lastName}`,
         b.owner.email,
-        b.pet.name,
+        petNames(bookingPets(b).map((p) => p.name)),
+        b.petCount,
         b.sitter.displayName,
         SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type,
         enCA(b.startAt, tz),

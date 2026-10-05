@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { bookingPets, petNames } from "@/lib/pets";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
@@ -49,7 +50,8 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/accou
     include: {
       sitter: { select: { slug: true, displayName: true, avatarUrl: true, city: { select: { timeZone: true } } } },
       service: { select: { type: true } },
-      pet: { select: { name: true, breed: true } },
+      pet: { select: { id: true, name: true, breed: true } },
+      pets: { select: { pet: { select: { id: true, name: true, breed: true } } } },
       review: { select: { id: true } },
     },
   });
@@ -149,8 +151,7 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/accou
                       )}
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-base text-primary">pets</span>
-                        {b.pet.name}
-                        {b.pet.breed ? ` (${b.pet.breed})` : ""}
+                        {b.pets.length > 1 ? petNames(bookingPets(b).map((p) => p.name)) : `${b.pet.name}${b.pet.breed ? ` (${b.pet.breed})` : ""}`}
                       </span>
                     </div>
                     <span className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface">

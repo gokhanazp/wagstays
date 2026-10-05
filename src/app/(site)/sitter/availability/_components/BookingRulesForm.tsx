@@ -15,12 +15,12 @@ export function BookingRulesForm({ boardingCapacity, noticeHours }: { boardingCa
   const notices = NOTICE.includes(noticeHours) ? NOTICE : [...NOTICE, noticeHours].sort((a, b) => a - b);
   return (
     <form className="flex flex-col gap-space-md px-space-lg pt-space-md" noValidate onSubmit={onSubmit}>
-      <Field error={state?.fieldErrors?.boardingCapacity} hint="How many pets can board or attend day care with you at the same time." label="Boarding & day care capacity">
+      <Field error={state?.fieldErrors?.boardingCapacity} hint="How many pets can board or attend day care with you at the same time — a booking with 2 pets takes 2 places." label="Boarding & day care capacity">
         <Select
           aria-label="Boarding and day care capacity"
           defaultValue={String(boardingCapacity)}
           name="boardingCapacity"
-          options={Array.from({ length: AVAILABILITY_LIMITS.maxCapacity }, (_, i) => ({ value: String(i + 1), label: `${i + 1} pet${i ? "s" : ""} at a time` }))}
+          options={Array.from({ length: AVAILABILITY_LIMITS.maxCapacity }, (_, i) => ({ value: String(i + 1), label: `${i + 1} pet${i ? "s" : ""} at the same time` }))}
         />
       </Field>
       <Field error={state?.fieldErrors?.noticeHours} hint="Owners can't book anything that starts sooner than this." label="Minimum notice">

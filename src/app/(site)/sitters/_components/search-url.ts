@@ -32,6 +32,7 @@ export function buildSearchHref(f: Partial<SearchFilters>, extras: SearchExtras 
   const to = "to" in extras ? extras.to : f.to;
   if (from) q.set("from", from);
   if (to) q.set("to", to);
+  if (f.petCount && f.petCount > 1) q.set("petCount", String(f.petCount));
   const s = q.toString();
   return `/sitters${s ? `?${s}` : ""}`;
 }

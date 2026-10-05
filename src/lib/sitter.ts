@@ -24,6 +24,27 @@ export const SERVICE_DURATIONS: Record<ServiceType, number[] | null> = {
   DROP_IN: [15, 30, 45, 60],
 };
 
+/**
+ * Add-on rate limits (cents) for the sitter + admin service editors (src/app/actions/sitter.ts,
+ * admin-sitters.ts). Additional pet / puppy are per pet per night/day/visit; the holiday rate replaces the
+ * base price and must be at least the base price (and at most twice it).
+ */
+export const ADDON_BOUNDS = {
+  additionalPet: { min: 0, max: 10000 },
+  puppy: { min: 100, max: 5000 },
+  holidayMaxFactor: 2,
+  maxPets: { min: 1, max: 6 },
+} as const;
+
+/** Parses an optional dollar amount from a form ("" / missing = null). Returns NaN for junk. */
+export function dollarsToCents(v: FormDataEntryValue | string | null | undefined): number | null {
+  const t = typeof v === "string" ? v.trim().replace(/^\$/, "") : "";
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || Math.abs(n * 100 - Math.round(n * 100)) > 1e-6) return Number.NaN;
+  return Math.round(n * 100);
+}
+
 export const SERVICE_DEFAULT_PRICE: Record<ServiceType, number> = {
   DOG_WALKING: 3000,
   BOARDING: 6500,

@@ -75,7 +75,8 @@ export function bookingWhere(f: BookingFilters): Prisma.BookingWhereInput {
 
 export const bookingListInclude = {
   owner: { select: { id: true, firstName: true, lastName: true, email: true } },
-  pet: { select: { name: true, species: true, speciesOther: true, breed: true } },
+  pet: { select: { id: true, name: true, species: true, speciesOther: true, breed: true } },
+  pets: { select: { pet: { select: { id: true, name: true, species: true, speciesOther: true, breed: true } } } },
   sitter: { select: { id: true, displayName: true, slug: true, city: { select: { timeZone: true } } } },
   service: { select: { type: true } },
 } satisfies Prisma.BookingInclude;

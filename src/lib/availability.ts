@@ -57,7 +57,7 @@ export async function loadSnapshots(sitterIds: string[], fromDate: string, toDat
         startAt: { lt: new Date(zonedInstant(addDays(toDate, 2), 0, DEFAULT_TIME_ZONE)) },
         endAt: { gt: new Date(zonedInstant(addDays(fromDate, -1), 0, DEFAULT_TIME_ZONE)) },
       },
-      select: { id: true, sitterId: true, startAt: true, endAt: true, service: { select: { type: true } } },
+      select: { id: true, sitterId: true, startAt: true, endAt: true, petCount: true, service: { select: { type: true } } },
     }),
   ]);
   for (const p of profiles) {
@@ -69,7 +69,7 @@ export async function loadSnapshots(sitterIds: string[], fromDate: string, toDat
       timeOff: timeOff.filter((t) => t.sitterId === p.id).map(({ id, startDate, endDate, note }) => ({ id, startDate, endDate, note })),
       bookings: bookings
         .filter((b) => b.sitterId === p.id)
-        .map((b) => ({ id: b.id, type: b.service.type, startAt: b.startAt.getTime(), endAt: b.endAt.getTime() })),
+        .map((b) => ({ id: b.id, type: b.service.type, startAt: b.startAt.getTime(), endAt: b.endAt.getTime(), petCount: b.petCount })),
     });
   }
   return out;
@@ -113,6 +113,8 @@ export async function isSlotAvailable(
     startAt: Date;
     endAt: Date;
     excludeBookingId?: string | null;
+    /** places the booking needs (stays); default 1 */
+    petCount?: number;
   },
   client: Client = db,
 ): Promise<BookingCheck> {
@@ -132,6 +134,7 @@ export async function isSlotAvailable(
       endDate: e.iso,
       minute: s.minute,
       durationMins: isStayService(type) ? null : Math.round((opts.endAt.getTime() - opts.startAt.getTime()) / 60_000),
+      petCount: opts.petCount,
     },
     Date.now(),
     opts.excludeBookingId,
@@ -146,12 +149,12 @@ export async function availableSlotsForDate(sitterId: string, date: string, serv
 }
 
 /** Search helper: is the sitter free for the range (any active service when `serviceType` is omitted)? */
-export async function isSitterFreeForRange(sitterId: string, from: string, to: string | null | undefined, serviceType?: string) {
-  return (await freeSittersForRange([sitterId], from, to, serviceType)).has(sitterId);
+export async function isSitterFreeForRange(sitterId: string, from: string, to: string | null | undefined, serviceType?: string, petCount = 1) {
+  return (await freeSittersForRange([sitterId], from, to, serviceType, petCount)).has(sitterId);
 }
 
-/** Batch version used by search: ids of the sitters free for the range. */
-export async function freeSittersForRange(sitterIds: string[], from: string, to: string | null | undefined, serviceType?: string) {
+/** Batch version used by search: ids of the sitters free for the range (stays need `petCount` free places). */
+export async function freeSittersForRange(sitterIds: string[], from: string, to: string | null | undefined, serviceType?: string, petCount = 1) {
   const end = to && to >= from ? to : from;
   const [snaps, services] = await Promise.all([
     loadSnapshots(sitterIds, from, end > from ? end : addDays(from, 1)),
@@ -164,7 +167,7 @@ export async function freeSittersForRange(sitterIds: string[], from: string, to:
   const free = new Set<string>();
   for (const [id, snap] of snaps) {
     if (from < todayIn(snap.timeZone, now)) continue;
-    if (services.some((s) => s.sitterId === id && isFreeForRange(snap, from, end, s.type, s.durationMins, now))) free.add(id);
+    if (services.some((s) => s.sitterId === id && isFreeForRange(snap, from, end, s.type, s.durationMins, now, petCount))) free.add(id);
   }
   return free;
 }

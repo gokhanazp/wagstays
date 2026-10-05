@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { petKindLabel } from "@/lib/pets";
+import { bookingPets, petKindLabel, petNames } from "@/lib/pets";
+import { bookingPriceLines } from "@/lib/quote";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -26,7 +27,14 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
     include: {
       owner: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, wagPointsCents: true, createdAt: true, suspended: true } },
       pet: { include: { traits: true } },
-      sitter: { include: { user: { select: { email: true, phone: true } }, city: { select: { name: true, timeZone: true } }, neighbourhood: { select: { name: true } } } },
+      pets: { include: { pet: { include: { traits: true } } } },
+      sitter: {
+        include: {
+          user: { select: { email: true, phone: true } },
+          city: { select: { name: true, timeZone: true } },
+          neighbourhood: { select: { name: true } },
+        },
+      },
       service: true,
       review: true,
     },
@@ -36,10 +44,17 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
   const tz = b.sitter.city.timeZone;
   const status = b.status as BookingStatus;
   const st = BOOKING_STATUS_LABELS[status] ?? { label: b.status, tone: "neutral" as const };
-  const allowed = allowedTransitions(b.status, "ADMIN").filter((t): t is "CONFIRMED" | "DECLINED" | "COMPLETED" | "CANCELLED" => t !== "DRAFT" && t !== "PENDING");
+  const allowed = allowedTransitions(b.status, "ADMIN").filter(
+    (t): t is "CONFIRMED" | "DECLINED" | "COMPLETED" | "CANCELLED" => t !== "DRAFT" && t !== "PENDING",
+  );
 
   const history = await db.auditLog.findMany({
-    where: { OR: [{ entityType: "Booking", entityId: b.id }, { entityType: "User", entityId: b.ownerId, action: "user.wagpoints_credit", details: { contains: b.id } }] },
+    where: {
+      OR: [
+        { entityType: "Booking", entityId: b.id },
+        { entityType: "User", entityId: b.ownerId, action: "user.wagpoints_credit", details: { contains: b.id } },
+      ],
+    },
     include: { actor: { select: { firstName: true, lastName: true } } },
     orderBy: { createdAt: "desc" },
     take: 20,
@@ -62,8 +77,16 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
   if (b.status === "PENDING") timeline.push({ icon: "hourglass_top", title: "Awaiting the sitter's reply", at: null, tone: "text-tertiary" });
 
   const unit = UNIT_LABELS[b.service.unit] ?? b.service.unit.toLowerCase();
+  const pets = bookingPets(b);
   const price: [string, number, string?][] = [
-    [`${SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type} (${formatMoney(b.service.priceCents)} / ${unit})`, b.subtotalCents],
+    ...(b.priceLines
+      ? bookingPriceLines(b).map((l): [string, number] => [l.label, l.amountCents])
+      : [
+          [`${SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type} (${formatMoney(b.service.priceCents)} / ${unit})`, b.subtotalCents] as [
+            string,
+            number,
+          ],
+        ]),
     ["WagShield protection", b.protectionFeeCents],
     ["Service fee", b.serviceFeeCents],
   ];
@@ -94,7 +117,8 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
         }
         description={
           <>
-            {b.pet.name} with {b.sitter.displayName} · {formatDateTime(b.startAt, tz)} · <span className="font-mono text-body-sm">{b.id}</span>
+            {petNames(pets.map((p) => p.name))} with {b.sitter.displayName} · {formatDateTime(b.startAt, tz)} ·{" "}
+            <span className="font-mono text-body-sm">{b.id}</span>
           </>
         }
         eyebrow="Booking"
@@ -148,36 +172,48 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
           </div>
 
           <Card className="pb-space-lg">
-            <CardHeader icon="pets" title="Pet" />
-            <div className="px-space-lg pt-space-md flex flex-col gap-space-md">
-              <div className="flex items-center gap-space-md">
-                {b.pet.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img alt="" className="w-14 h-14 rounded-2xl object-cover" src={b.pet.photoUrl} />
-                ) : (
-                  <span className="w-14 h-14 rounded-2xl bg-surface-container-low text-secondary flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl">pets</span>
-                  </span>
-                )}
-                <div className="flex flex-col">
-                  <span className="font-title-md text-title-md text-on-surface">{b.pet.name}</span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    {[petKindLabel(b.pet), b.pet.breed, b.pet.ageYears != null && `${b.pet.ageYears} yrs`, b.pet.size && b.pet.size.toLowerCase(), b.pet.sex && b.pet.sex.toLowerCase()]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
+            <CardHeader icon="pets" title={pets.length > 1 ? `${pets.length} pets` : "Pet"} />
+            <div className="px-space-lg pt-space-md flex flex-col gap-space-lg">
+              {pets.map((pet) => (
+                <div className="flex flex-col gap-space-md" key={pet.id}>
+                  <div className="flex items-center gap-space-md">
+                    {pet.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt="" className="w-14 h-14 rounded-2xl object-cover" src={pet.photoUrl} />
+                    ) : (
+                      <span className="w-14 h-14 rounded-2xl bg-surface-container-low text-secondary flex items-center justify-center">
+                        <span className="material-symbols-outlined text-3xl">pets</span>
+                      </span>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="font-title-md text-title-md text-on-surface">{pet.name}</span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        {[
+                          petKindLabel(b.pet),
+                          pet.breed,
+                          pet.ageYears != null && `${pet.ageYears} yrs`,
+                          pet.size && pet.size.toLowerCase(),
+                          pet.sex && pet.sex.toLowerCase(),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-space-xs">
+                    {pet.neutered && <StatusChip tone="neutral">Spayed / neutered</StatusChip>}
+                    <StatusChip tone={pet.rabiesVaccinated ? "success" : "warning"}>
+                      {pet.rabiesVaccinated ? "Rabies vaccinated" : "Rabies vaccine not on file"}
+                    </StatusChip>
+                    {pet.microchip && <StatusChip tone="neutral">Microchip {pet.microchip}</StatusChip>}
+                    {pet.traits.map((t) => (
+                      <StatusChip key={t.id} icon={t.icon ?? undefined} tone={TRAIT_TONES[t.tone] ?? "neutral"}>
+                        {t.label}
+                      </StatusChip>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-space-xs">
-                {b.pet.neutered && <StatusChip tone="neutral">Spayed / neutered</StatusChip>}
-                <StatusChip tone={b.pet.rabiesVaccinated ? "success" : "warning"}>{b.pet.rabiesVaccinated ? "Rabies vaccinated" : "Rabies vaccine not on file"}</StatusChip>
-                {b.pet.microchip && <StatusChip tone="neutral">Microchip {b.pet.microchip}</StatusChip>}
-                {b.pet.traits.map((t) => (
-                  <StatusChip key={t.id} icon={t.icon ?? undefined} tone={TRAIT_TONES[t.tone] ?? "neutral"}>
-                    {t.label}
-                  </StatusChip>
-                ))}
-              </div>
+              ))}
             </div>
           </Card>
 
@@ -220,7 +256,15 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
             <CardHeader icon="emergency" title="Emergency & vet" />
             <dl className="px-space-lg pt-space-md grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
               <Row label="Emergency contact">{b.emergencyName ?? "—"}</Row>
-              <Row label="Emergency phone">{b.emergencyPhone ? <a className="text-primary hover:underline" href={`tel:${b.emergencyPhone}`}>{b.emergencyPhone}</a> : "—"}</Row>
+              <Row label="Emergency phone">
+                {b.emergencyPhone ? (
+                  <a className="text-primary hover:underline" href={`tel:${b.emergencyPhone}`}>
+                    {b.emergencyPhone}
+                  </a>
+                ) : (
+                  "—"
+                )}
+              </Row>
               <Row label="Vet clinic">{b.vetClinic ?? "—"}</Row>
               <Row label="Vet phone">{b.vetPhone ?? "—"}</Row>
             </dl>
@@ -237,7 +281,10 @@ export default async function AdminBookingDetailPage({ params }: PageProps<"/adm
             <CardHeader
               action={
                 b.review ? (
-                  <Link className="font-label-md text-label-md text-primary hover:underline" href={`/admin/reviews?q=${encodeURIComponent(b.review.authorName)}&sitter=${b.sitterId}`}>
+                  <Link
+                    className="font-label-md text-label-md text-primary hover:underline"
+                    href={`/admin/reviews?q=${encodeURIComponent(b.review.authorName)}&sitter=${b.sitterId}`}
+                  >
                     Moderate
                   </Link>
                 ) : undefined

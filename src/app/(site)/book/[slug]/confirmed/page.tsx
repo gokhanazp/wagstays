@@ -10,6 +10,8 @@ import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/a
 import { SERVICE_ICONS, serviceLine } from "../_lib";
 import { getPlatformSettings } from "@/lib/settings";
 import { EarnPointsNote } from "@/components/points/EarnPointsNote";
+import { bookingPriceLines } from "@/lib/quote";
+import { bookingPets, petNames } from "@/lib/pets";
 
 export const metadata: Metadata = { title: "Booking Requested" };
 
@@ -24,7 +26,7 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
 
   const booking = await db.booking.findFirst({
     where: { id: bookingId, ownerId: user.id, sitter: { slug } },
-    include: { sitter: { include: { city: { select: { timeZone: true } } } }, service: true, pet: true },
+    include: { sitter: { include: { city: { select: { timeZone: true } } } }, service: true, pet: true, pets: { include: { pet: true } } },
   });
   if (!booking) notFound();
   const series = booking.seriesId
@@ -35,6 +37,8 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
       })
     : [];
   const stay = isStayService(booking.service.type);
+  const pets = bookingPets(booking);
+  const lines = bookingPriceLines(booking);
 
   const start = toZonedParts(booking.startAt);
   const end = toZonedParts(booking.endAt);
@@ -49,7 +53,9 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
 
   const rows = [
     { icon: SERVICE_ICONS[booking.service.type] ?? "pets", label: "Service", value: serviceLine(booking.service) },
-    { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
+    pets.length > 1
+      ? { icon: "pets", label: `${pets.length} Pets`, value: petNames(pets.map((p) => p.name)) }
+      : { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
     {
       icon: "calendar_month",
       label: "Date & Time",
@@ -127,14 +133,12 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
             {series.length > 1 && (
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">First of {series.length} weekly bookings</span>
             )}
-            <div className="flex justify-between">
-              <span>
-                {booking.quantity > 1 || stay
-                  ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(booking.service.priceCents, { exact: true })}`
-                  : "Subtotal"}
-              </span>
-              <span className="font-semibold text-on-surface">{formatMoney(booking.subtotalCents, { exact: true })}</span>
-            </div>
+            {lines.map((l, i) => (
+              <div className="flex justify-between gap-space-sm" data-price-line key={`${l.label}-${i}`}>
+                <span className="min-w-0">{l.label}</span>
+                <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents, { exact: true })}</span>
+              </div>
+            ))}
             <div className="flex justify-between">
               <span>WagShield Vet Protection</span>
               <span className="font-semibold text-on-surface">{formatMoney(booking.protectionFeeCents, { exact: true })}</span>
@@ -156,7 +160,9 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
           </div>
           <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{series.length > 1 ? "First booking" : "Total"}</span>
-            <span className="font-headline-md text-headline-md text-primary font-extrabold">{formatMoney(booking.totalCents, { exact: true })}</span>
+            <span className="font-headline-md text-headline-md text-primary font-extrabold" data-testid="confirmed-total">
+              {formatMoney(booking.totalCents, { exact: true })}
+            </span>
           </div>
           {series.length > 1 && (
             <div className="flex flex-col gap-space-sm">

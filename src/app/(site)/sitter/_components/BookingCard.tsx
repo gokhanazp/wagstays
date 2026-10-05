@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { petKindLabel } from "@/lib/pets";
+import { bookingPets, petKindLabel, petNames } from "@/lib/pets";
 import type { Prisma } from "@prisma/client";
 import { StatusChip } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
@@ -15,6 +15,7 @@ import { RateOwnerForm } from "./RateOwnerForm";
 export const bookingCardInclude = {
   owner: { select: { id: true, firstName: true, lastName: true } },
   pet: { include: { traits: true } },
+  pets: { include: { pet: { include: { traits: true } } } },
   service: { select: { type: true, durationMins: true } },
   ownerReview: { select: { id: true } },
 } satisfies Prisma.BookingInclude;
@@ -37,16 +38,25 @@ export function BookingCard({
 }) {
   const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
   const size = petSizeLabel(b.pet.size);
+  const pets = bookingPets(b);
+  const multi = pets.length > 1;
   return (
     <article className="flex flex-col gap-space-md p-space-md sm:p-space-lg rounded-2xl border border-[#EFE7DE] bg-surface-container-lowest">
       <div className="flex items-start gap-space-md">
         <PetPhoto className="w-16 h-16 rounded-2xl" name={b.pet.name} url={b.pet.photoUrl} />
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-space-xs">
-            <h3 className="font-title-md text-title-md text-on-surface">{b.pet.name}</h3>
-            <span className="font-body-sm text-body-sm text-on-surface-variant">
-              {[b.pet.species === "OTHER" && petKindLabel(b.pet), b.pet.breed, size].filter(Boolean).join(" · ")}
-            </span>
+            <h3 className="font-title-md text-title-md text-on-surface">{petNames(pets.map((p) => p.name))}</h3>
+            {multi ? (
+              <span className="inline-flex items-center gap-0.5 px-space-sm py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold" data-testid="pet-count">
+                <span className="material-symbols-outlined text-sm">pets</span>
+                {pets.length} pets
+              </span>
+            ) : (
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                {[b.pet.species === "OTHER" && petKindLabel(b.pet), b.pet.breed, size].filter(Boolean).join(" · ")}
+              </span>
+            )}
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Pet parent: <span className="text-on-surface font-semibold">{ownerShortName(b.owner)}</span>
@@ -85,13 +95,15 @@ export function BookingCard({
         {bookingWhen(b.startAt, b.endAt, tz)}
       </p>
 
-      {b.pet.traits.length > 0 && (
+      {pets.some((p) => p.traits.length > 0) && (
         <div className="flex flex-wrap gap-space-xs">
-          {b.pet.traits.map((t) => (
-            <StatusChip key={t.id} tone={t.tone === "warning" ? "danger" : t.tone === "primary" ? "primary" : "neutral"}>
-              {t.label}
-            </StatusChip>
-          ))}
+          {pets.flatMap((p) =>
+            p.traits.map((t) => (
+              <StatusChip key={t.id} tone={t.tone === "warning" ? "danger" : t.tone === "primary" ? "primary" : "neutral"}>
+                {multi ? `${p.name}: ${t.label}` : t.label}
+              </StatusChip>
+            )),
+          )}
         </div>
       )}
 

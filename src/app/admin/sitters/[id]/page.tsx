@@ -151,6 +151,11 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
                     key={s.id}
                     service={{
                       id: s.id,
+                      type: s.type,
+                      maxPetsPerBooking: s.maxPetsPerBooking,
+                      additionalPetPriceCents: s.additionalPetPriceCents,
+                      holidayPriceCents: s.holidayPriceCents,
+                      puppyPriceCents: s.puppyPriceCents,
                       label: SERVICE_LABELS[s.type as ServiceType] ?? s.type,
                       unitLabel: `${UNIT_LABELS[s.unit] ?? s.unit}${s.durationMins ? ` (${s.durationMins} min)` : ""}`,
                       price: s.priceCents / 100,
@@ -223,7 +228,11 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
                       <td className={`${TD} whitespace-nowrap`}>{formatDate(b.startAt, tz)}</td>
                       <td className={TD}>
                         {b.owner.firstName} {b.owner.lastName}
-                        <span className="text-on-surface-variant"> · {b.pet.name}</span>
+                        <span className="text-on-surface-variant">
+                          {" "}
+                          · {b.pet.name}
+                          {b.petCount > 1 ? ` +${b.petCount - 1}` : ""}
+                        </span>
                       </td>
                       <td className={`${TD} whitespace-nowrap`}>{SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type}</td>
                       <td className={`${TD} whitespace-nowrap`}>{formatMoney(b.totalCents, { exact: true })}</td>

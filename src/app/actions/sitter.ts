@@ -19,6 +19,7 @@ import {
   TAG_ICONS,
 } from "@/lib/sitter";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
+import { parseServiceAddons } from "@/lib/service-addons";
 
 // Every action re-loads the signed-in sitter (requireSitter) and only touches rows that belong to
 // that sitter's profile — ids posted by the client are never trusted on their own.
@@ -364,6 +365,9 @@ export async function updateService(_: SitterActionState, formData: FormData): P
     .safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(parsed.error);
   const d = parsed.data;
+  // Add-on rates: additional pet (+ max pets), holiday rate (≥ base price), puppy surcharge.
+  const addons = parseServiceAddons(Object.fromEntries(formData) as Record<string, FormDataEntryValue>, Math.round(d.price * 100), t);
+  if (!addons.ok) return { error: Object.values(addons.fieldErrors).flat()[0] ?? "Please check the add-on rates.", fieldErrors: addons.fieldErrors };
   if (t === "DOG_WALKING" && d.active && !(await db.sitterSpecies.findFirst({ where: { sitterId: profile.id, kind: "DOG" } }))) {
     return { error: "Dog Walking needs dogs in “Pets I care for” — add dogs on your profile first." };
   }
@@ -375,6 +379,7 @@ export async function updateService(_: SitterActionState, formData: FormData): P
     description: d.description,
     extraNote: d.extraNote,
     unit: SERVICE_UNITS[t],
+    ...addons.data,
   };
   // Look up by sitter + type so a forged service id can never reach another sitter's row.
   const existing = await db.service.findFirst({ where: { sitterId: profile.id, type: t }, select: { id: true } });

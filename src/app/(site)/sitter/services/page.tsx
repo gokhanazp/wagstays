@@ -38,6 +38,10 @@ export default async function SitterServicesPage() {
                 durationMins: s?.durationMins ?? null,
                 description: s?.description ?? "",
                 extraNote: s?.extraNote ?? "",
+                maxPetsPerBooking: s?.maxPetsPerBooking ?? 3,
+                additionalPetPriceCents: s?.additionalPetPriceCents ?? null,
+                holidayPriceCents: s?.holidayPriceCents ?? null,
+                puppyPriceCents: s?.puppyPriceCents ?? null,
               }}
               taxLabel={taxLabel}
               taxRateBps={profile.city.taxRateBps}

@@ -24,17 +24,23 @@ export type PriceBreakdown = {
   totalCents: number;
 };
 
-/** Shared by the profile booking widget, the checkout page and the booking server action. */
+/**
+ * Shared by the profile booking widget, the checkout page and the booking server action. Pass the
+ * quote's `subtotalCents` (src/lib/quote.ts — base + add-on rates); `unitPriceCents × quantity` is the
+ * plain fallback used when there is no quote.
+ */
 export function priceBooking(opts: {
-  unitPriceCents: number;
+  unitPriceCents?: number;
   quantity?: number;
+  /** base + extras from quoteBooking(); overrides unitPriceCents × quantity */
+  subtotalCents?: number;
   taxRateBps: number;
   applyWagPoints?: boolean;
   wagPointsBalanceCents?: number;
   fees?: Fees;
 }): PriceBreakdown {
   const fees = opts.fees ?? DEFAULT_FEES;
-  const subtotalCents = opts.unitPriceCents * (opts.quantity ?? 1);
+  const subtotalCents = opts.subtotalCents ?? (opts.unitPriceCents ?? 0) * (opts.quantity ?? 1);
   const protectionFeeCents = fees.wagShieldFeeCents;
   const serviceFeeCents = fees.serviceFeeCents;
   const discountCents = opts.applyWagPoints

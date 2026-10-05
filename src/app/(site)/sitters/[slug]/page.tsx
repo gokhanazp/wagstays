@@ -1,4 +1,5 @@
 import { AvailabilityCalendar } from "./_components/AvailabilityCalendar";
+import { petLimit } from "@/lib/quote";
 import { MobileBookBar } from "./_components/MobileBookBar";
 import type { Metadata } from "next";
 import { getFees } from "@/lib/settings";
@@ -108,6 +109,19 @@ function unitLabel(s: Service) {
     default:
       return `/ ${UNIT_LABELS[s.unit] ?? s.unit.toLowerCase()}`;
   }
+}
+
+/** "+$20 per extra dog · up to 3", "Holiday rate $45", "Puppies +$5" */
+function addonNotes(s: Service) {
+  const word = s.type === "DOG_WALKING" ? "dog" : "pet";
+  const out: string[] = [];
+  if (s.additionalPetPriceCents != null) {
+    const max = petLimit(s);
+    out.push(`${s.additionalPetPriceCents ? `+${formatMoney(s.additionalPetPriceCents)} per extra ${word}` : `Extra ${word}s free`} · up to ${max}`);
+  }
+  if (s.holidayPriceCents != null) out.push(`Holiday rate ${formatMoney(s.holidayPriceCents)}`);
+  if (s.puppyPriceCents != null) out.push(`Puppies +${formatMoney(s.puppyPriceCents)}`);
+  return out;
 }
 
 const HEADER_PRICE_LABEL: Record<string, string> = { WALK: "Per Walk", NIGHT: "Per Night", DAY: "Per Day", VISIT: "Per Visit" };
@@ -454,6 +468,15 @@ export default async function SitterProfilePage({ params }: Props) {
                           <div>
                             <h4 className="font-title-md text-title-md text-on-surface font-bold">{style.title}</h4>
                             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{s.description ?? style.fallback}</p>
+                            {addonNotes(s).length > 0 && (
+                              <ul className="flex flex-wrap gap-1 mt-space-xs" data-testid="service-addons">
+                                {addonNotes(s).map((n) => (
+                                  <li className="text-xs bg-surface-container-lowest px-2 py-0.5 rounded-md font-medium text-on-surface-variant" key={n}>
+                                    {n}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                           <div className="pt-2 flex items-center justify-between gap-2 border-t border-outline-variant/30">
                             <span
@@ -598,12 +621,24 @@ export default async function SitterProfilePage({ params }: Props) {
                     name: p.name,
                     breed: p.breed,
                     ageYears: p.ageYears,
+                    photoUrl: p.photoUrl,
                     icon: PET_KIND_META[petKindOf(p)].icon,
                     isDog: petKindOf(p) === "DOG",
                     blocked: petBlockReason(acceptance, p),
                   })) ?? null
                 }
-                services={services.map((s) => ({ id: s.id, type: s.type, priceCents: s.priceCents, unit: s.unit, durationMins: s.durationMins }))}
+                services={services.map((s) => ({
+                  id: s.id,
+                  type: s.type,
+                  priceCents: s.priceCents,
+                  unit: s.unit,
+                  durationMins: s.durationMins,
+                  maxPetsPerBooking: s.maxPetsPerBooking,
+                  additionalPetPriceCents: s.additionalPetPriceCents,
+                  holidayPriceCents: s.holidayPriceCents,
+                  puppyPriceCents: s.puppyPriceCents,
+                }))}
+                provinceCode={sitter.city.provinceCode}
                 slug={sitter.slug}
                 taxLabel={HST_PROVINCES.has(sitter.city.provinceCode) ? "HST" : "Sales Tax"}
                 taxRateBps={sitter.city.taxRateBps}
