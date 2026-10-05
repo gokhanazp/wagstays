@@ -1,51 +1,44 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localeAlternates } from "@/lib/seo/site";
 import { getFees } from "@/lib/settings";
 import { Link } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getActiveCities, getActiveCity } from "@/lib/queries";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatRating } from "@/lib/format";
 import { ApplicationForm } from "./_components/ApplicationForm";
 import { EarningsEstimator, FaqAccordion } from "./_components/SidebarWidgets";
 
-export const metadata: Metadata = {
-  title: "Become a Sitter",
-  description: "Join WagStays' verified sitter network. Set your own hours, pets and rates — and earn up to $3,500 a month.",
-  alternates: { canonical: "/become-a-sitter" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [t, locale] = await Promise.all([getTranslations("apply.meta"), getLocale()]);
+  return { title: t("title"), description: t("description"), alternates: localeAlternates("/become-a-sitter", locale) };
+}
 
 const FILL = { fontVariationSettings: "'FILL' 1" };
 
 export default async function BecomeASitterPage() {
   const { vetCoverageCents } = await getFees();
   const [user, city, cities] = await Promise.all([getCurrentUser(), getActiveCity(), getActiveCities()]);
-  const coverage = formatMoney(vetCoverageCents);
+  const [t, locale] = await Promise.all([getTranslations("apply"), getLocale()]);
+  const coverage = formatMoney(vetCoverageCents, { locale });
 
   const trustChips = [
-    { icon: "verified", color: "text-primary", label: "100% Free" },
-    { icon: "health_and_safety", color: "text-secondary", label: `${coverage} Coverage` },
-    { icon: "payments", color: "text-primary", label: "Weekly Payouts" },
-    { icon: "headset_mic", color: "text-tertiary-container", label: "24/7 Support" },
+    { icon: "verified", color: "text-primary", label: t("landing.chips.free") },
+    { icon: "health_and_safety", color: "text-secondary", label: t("landing.chips.coverage", { amount: coverage }) },
+    { icon: "payments", color: "text-primary", label: t("landing.chips.payouts") },
+    { icon: "headset_mic", color: "text-tertiary-container", label: t("landing.chips.support") },
   ];
 
   const approvalSteps = [
-    { box: "bg-primary text-on-primary", title: "Online Form & Document Review", text: "Our safety team verifies your details within 12 hours." },
-    { box: "bg-primary-fixed text-primary", title: "15-Minute Video Meet & Greet", text: "We chat about your love for animals and how you'd handle emergencies." },
-    { box: "bg-secondary-fixed text-secondary", title: "Your Profile Goes Live & First Bookings!", text: "Start getting requests from pet families in your neighbourhood." },
+    { box: "bg-primary text-on-primary", title: t("sidebar.approval.review.title"), text: t("sidebar.approval.review.text") },
+    { box: "bg-primary-fixed text-primary", title: t("sidebar.approval.meet.title"), text: t("sidebar.approval.meet.text") },
+    { box: "bg-secondary-fixed text-secondary", title: t("sidebar.approval.live.title"), text: t("sidebar.approval.live.text") },
   ];
 
   const faqs = [
-    {
-      q: "Can I set my own rates?",
-      a: "Absolutely! The amounts in the form are just your area's market averages. Enter any rate you like and update it whenever you want.",
-    },
-    {
-      q: "When do I get paid?",
-      a: "Earnings are paid by direct deposit the business day after each completed booking — or, if you prefer, in one weekly payout every Tuesday.",
-    },
-    {
-      q: "What if something goes wrong?",
-      a: `Our 24/7 on-call emergency vet line and up to ${coverage} in WagShield vet care coverage per booking have your back. You're never on your own.`,
-    },
+    { q: t("sidebar.faq.rates.q"), a: t("sidebar.faq.rates.a") },
+    { q: t("sidebar.faq.paid.q"), a: t("sidebar.faq.paid.a") },
+    { q: t("sidebar.faq.wrong.q"), a: t("sidebar.faq.wrong.a", { coverage }) },
   ];
 
   const sidebar = (
@@ -57,25 +50,21 @@ export default async function BecomeASitterPage() {
             <span className="material-symbols-outlined text-secondary" style={FILL}>
               calculate
             </span>
-            <h3 className="font-title-md text-title-md text-on-surface">Estimated Monthly Earnings</h3>
+            <h3 className="font-title-md text-title-md text-on-surface">{t("sidebar.earningsTitle")}</h3>
           </div>
           <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed font-label-sm text-label-sm text-primary font-bold">
-            Live
+            {t("sidebar.live")}
           </span>
         </div>
         <EarningsEstimator />
         <div className="flex flex-col gap-2 pt-2">
           <div className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
             <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-            <span>
-              Industry-low commission: <strong>just 15%</strong>
-            </span>
+            <span>{t.rich("sidebar.commission", { b: (c) => <strong>{c}</strong> })}</span>
           </div>
           <div className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
             <span className="material-symbols-outlined text-primary text-base">check_circle</span>
-            <span>
-              Every booking includes <strong>{coverage} WagShield vet care</strong>
-            </span>
+            <span>{t.rich("sidebar.vetCare", { coverage, b: (c) => <strong>{c}</strong> })}</span>
           </div>
         </div>
       </div>
@@ -85,7 +74,7 @@ export default async function BecomeASitterPage() {
           <span className="material-symbols-outlined text-primary" style={FILL}>
             timeline
           </span>
-          How Approval Works
+          {t("sidebar.approvalTitle")}
         </h3>
         <div className="flex flex-col gap-space-md relative pl-2">
           {approvalSteps.map((s, i) => (
@@ -109,7 +98,7 @@ export default async function BecomeASitterPage() {
           <span className="material-symbols-outlined text-tertiary" style={FILL}>
             quiz
           </span>
-          Frequently Asked Questions
+          {t("sidebar.faqTitle")}
         </h3>
         <FaqAccordion items={faqs} />
       </div>
@@ -118,13 +107,13 @@ export default async function BecomeASitterPage() {
         <div className="flex items-center gap-3 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element -- keeps the design's fixed avatar sizing */}
           <img
-            alt="WagStays sitter support specialist"
+            alt={t("sidebar.support.alt")}
             className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-fixed shrink-0"
             src="/images/img-26.jpg"
           />
           <div>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">Have questions?</span>
-            <h4 className="font-label-lg text-label-lg text-on-surface">Sitter Support Team</h4>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">{t("sidebar.support.question")}</span>
+            <h4 className="font-label-lg text-label-lg text-on-surface">{t("sidebar.support.team")}</h4>
           </div>
         </div>
         <a
@@ -132,7 +121,7 @@ export default async function BecomeASitterPage() {
           href="mailto:sitters@wagstays.ca?subject=Sitter%20application%20question"
         >
           <span className="material-symbols-outlined text-sm">chat</span>
-          Chat with us
+          {t("sidebar.support.chat")}
         </a>
       </div>
     </aside>
@@ -147,20 +136,20 @@ export default async function BecomeASitterPage() {
           <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin pt-space-md pb-space-xl">
             {/* Breadcrumb */}
             <nav
-              aria-label="Breadcrumb"
+              aria-label={t("breadcrumb.aria")}
               className="hidden md:flex flex-wrap items-center gap-space-xs text-on-surface-variant font-label-md text-label-md mb-space-md"
             >
               <Link className="hover:text-primary transition-colors flex items-center gap-1" href="/">
                 <span className="material-symbols-outlined text-sm">home</span>
-                Home
+                {t("breadcrumb.home")}
               </Link>
               <span className="text-outline-variant">/</span>
               <Link className="hover:text-primary transition-colors" href="/become-a-sitter">
-                Join Our Pack
+                {t("breadcrumb.join")}
               </Link>
               <span className="text-outline-variant">/</span>
               <span aria-current="page" className="text-primary font-semibold">
-                Sitter Application
+                {t("breadcrumb.application")}
               </span>
             </nav>
             {/* Page Header Hero Banner */}
@@ -171,14 +160,13 @@ export default async function BecomeASitterPage() {
                     <span className="material-symbols-outlined text-base" style={FILL}>
                       pets
                     </span>
-                    <span>WagStays Verified Sitter Network</span>
+                    <span>{t("landing.badge")}</span>
                   </div>
                   <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface tracking-tight md:tracking-tight">
-                    Earn <span className="text-secondary">up to $3,500 a month</span> doing what you love 🐾
+                    {t.rich("landing.title", { hl: (c) => <span className="text-secondary">{c}</span> })}
                   </h1>
                   <p className="font-body-md text-body-md sm:font-body-lg sm:text-body-lg text-on-surface-variant leading-relaxed sm:leading-relaxed">
-                    Join {city.name}&apos;s most trusted pet care community. Choose your own hours, the pets you
-                    welcome and your rates — all on your terms.
+                    {t("landing.subtitle", { city: city.name })}
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-space-xs">
                     {trustChips.map((c) => (
@@ -197,21 +185,21 @@ export default async function BecomeASitterPage() {
                 <div className="hidden lg:flex items-center gap-space-md bg-surface-container-lowest/90 backdrop-blur-md p-space-md rounded-2xl shadow-md min-w-[280px]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- keeps the design's fixed avatar sizing */}
                   <img
-                    alt="Megan R., a recently joined WagStays sitter, hugging a golden retriever and a ginger cat"
+                    alt={t("landing.newest.alt")}
                     className="w-16 h-16 rounded-full object-cover shadow-sm ring-4 ring-primary-fixed"
                     src="/images/img-23.jpg"
                   />
                   <div className="flex flex-col">
                     <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                      Newest Sitter
+                      {t("landing.newest.label")}
                     </span>
                     <span className="font-title-md text-title-md text-on-surface">Megan R. (Leslieville)</span>
                     <div className="flex items-center gap-1 text-tertiary font-label-md text-label-md mt-0.5">
                       <span className="material-symbols-outlined text-sm" style={FILL}>
                         star
                       </span>
-                      <span>5.0</span>
-                      <span className="text-on-surface-variant font-normal">(18 bookings)</span>
+                      <span>{formatRating(5, locale)}</span>
+                      <span className="text-on-surface-variant font-normal">{t("landing.newest.bookings", { count: 18 })}</span>
                     </div>
                   </div>
                 </div>

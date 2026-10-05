@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PET_KIND_META, petBlockReason, petKindLabel, petKindOf } from "@/lib/pets";
 import { getFees, getPlatformSettings } from "@/lib/settings";
 import { notFound, redirect } from "next/navigation";
@@ -9,7 +9,6 @@ import {
   DEFAULT_WEEKS,
   MAX_WEEKS,
   MIN_WEEKS,
-  WEEKDAY_LABELS,
   addDays,
   canRecur,
   checkSeries,
@@ -29,17 +28,21 @@ import {
   todayIn,
   visitMinutes,
   visitSlots,
+  weekdayLabel,
   weekdayOf,
 } from "@/lib/availability-core";
 import { formatLongDate } from "@/lib/booking-time";
 import { CheckoutForm } from "./_components/CheckoutForm";
 import { ReadinessChecklist } from "./_components/ReadinessChecklist";
 import { getOwnerReadiness } from "@/lib/owner-readiness";
-import { durationLabel, serviceLine } from "./_lib";
-import { petCountBlockReason, petLimit } from "@/lib/quote";
+import { durationLabel, petCountNote, serviceLine } from "./_lib";
+import { petLimit } from "@/lib/quote";
 import { localizedPath } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Booking & Care Instructions" };
+export async function generateMetadata() {
+  const t = await getTranslations("booking.checkout");
+  return { title: t("metaTitle") };
+}
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const flag = (v: string | string[] | undefined) => ["1", "true", "on", "yes"].includes(one(v) ?? "");
@@ -56,10 +59,12 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
     redirect(await localizedPath(`/login?next=${encodeURIComponent(current)}`));
   }
 
+  const locale = await getLocale();
+  const t = await getTranslations("booking.checkout");
   const sitter = await getSitterBySlug(slug);
   const fees = await getFees();
   if (!sitter || sitter.status !== "ACTIVE" || sitter.services.length === 0) notFound();
-  const [pets, readiness] = await Promise.all([getOwnerPets(user.id), getOwnerReadiness(user.id)]);
+  const [pets, readiness] = await Promise.all([getOwnerPets(user.id), getOwnerReadiness(user.id, locale)]);
 
   const service = sitter.services.find((s) => s.id === one(sp.service)) ?? sitter.services.find((s) => s.type === "DOG_WALKING") ?? sitter.services[0];
   const acceptance = {
@@ -67,7 +72,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
     firstName: sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0],
     kinds: sitter.species.map((s) => s.kind),
   };
-  const blockedFor = (p: (typeof pets)[number]) => petBlockReason(acceptance, p, service.type);
+  const blockedFor = (p: (typeof pets)[number]) => petBlockReason(acceptance, p, service.type, locale);
   // Pets from the widget (?pets=id,id) plus a pet just added from here (?pet=id, also the legacy single param).
   const limit = petLimit(service);
   const wanted = [...(one(sp.pets) ?? "").split(","), one(sp.pet) ?? ""].map((x) => x.trim()).filter((id) => pets.some((p) => p.id === id));
@@ -87,7 +92,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
     isIsoDay(rawDate) && rawDate >= today ? rawDate : (nextBookableDay(snap, addDays(today, 1), service.type, service.durationMins, nowMs, 120) ?? addDays(today, 1));
   const rawEnd = one(sp.end);
   const endDate = stay ? (isIsoDay(rawEnd) && rawEnd >= date ? rawEnd : service.type === "BOARDING" ? addDays(date, 1) : date) : null;
-  const slots = stay ? dropOffSlots(snap, date, nowMs) : visitSlots(snap, date, visitMinutes(service.type, service.durationMins), nowMs);
+  const slots = stay ? dropOffSlots(snap, date, nowMs, locale) : visitSlots(snap, date, visitMinutes(service.type, service.durationMins), nowMs, null, locale);
   const minute = parseSlot(one(sp.slot)) ?? slots.find((s) => s.available)?.minute ?? 9 * 60;
   const recurring = flag(sp.recurring) && canRecur(service.type);
   const weeksRaw = Number(one(sp.weeks));
@@ -95,14 +100,14 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
   const lastDate = addDays(endDate ?? date, 7 * (weeks - 1));
   const planSnap = lastDate > addDays(today, 180) ? ((await loadSnapshot(sitter.id, today, lastDate)) ?? snap) : snap;
   const plan = { type: service.type, date, endDate, minute, durationMins: service.durationMins };
-  const rows = checkSeries(planSnap, { ...plan, petCount: petIds.length || 1 }, weeks, nowMs);
+  const rows = checkSeries(planSnap, { ...plan, petCount: petIds.length || 1 }, weeks, nowMs, locale);
   // Conflicts for every pet count the owner can pick here (stays need one free place per pet).
   const conflictsByCount = Object.fromEntries(
     Array.from({ length: limit }, (_, i) => i + 1).map((n) => [
       n,
-      (n === (petIds.length || 1) ? rows : checkSeries(planSnap, { ...plan, petCount: n }, weeks, nowMs))
+      (n === (petIds.length || 1) ? rows : checkSeries(planSnap, { ...plan, petCount: n }, weeks, nowMs, locale))
         .filter((r) => !r.check.ok)
-        .map((r) => ({ date: formatDayLong(r.req.date), error: r.check.ok ? "" : r.check.error })),
+        .map((r) => ({ date: formatDayLong(r.req.date, locale), error: r.check.ok ? "" : r.check.error })),
     ]),
   );
   // Local dates priced per occurrence (nights / days / visits) — holiday rates depend on them.
@@ -117,14 +122,17 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
   );
   const first = rows[0].check;
   const quantity = first.ok ? first.quantity : stay ? Math.max(1, daysBetween(date, endDate!) + (service.type === "DAY_CARE" ? 1 : 0)) : 1;
-  const duration = durationLabel(service.durationMins);
+  const duration = durationLabel(service.durationMins, locale);
   const visitLen = visitMinutes(service.type, service.durationMins);
+  const range = formatMinuteRange(minute, minute + visitLen, locale);
   const timeLabel = stay
     ? service.type === "BOARDING"
-      ? `Drop-off ${formatMinute(minute)} · Pick-up ${formatMinute(minute)}`
-      : `Drop-off ${formatMinute(minute)} · ${quantityLabel(service.type, quantity)}`
-    : `${formatMinuteRange(minute, minute + visitLen)}${duration ? ` (${duration})` : ""}`;
-  const dateLabel = stay ? `${formatDayLong(date)} → ${formatDayLong(endDate!)}` : formatLongDate(date);
+      ? t("schedule.dropOffPickUp", { time: formatMinute(minute, locale) })
+      : t("schedule.dropOffQty", { time: formatMinute(minute, locale), qty: quantityLabel(service.type, quantity, locale) })
+    : duration
+      ? t("schedule.visitDuration", { range, duration })
+      : range;
+  const dateLabel = stay ? t("schedule.dateRange", { from: formatDayLong(date, locale), to: formatDayLong(endDate!, locale) }) : formatLongDate(date, locale);
 
   // "Add a new pet" returns here (the pet form appends pet=<newId>).
   const backQs = new URLSearchParams();
@@ -140,29 +148,29 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
           <div className="max-w-[1240px] mx-auto px-margin-mobile md:px-margin">
             <div className="flex flex-col md:flex-row items-center justify-between gap-space-md">
               <div className="text-center md:text-left">
-                <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Secure Booking</span>
-                <h1 className="font-headline-md text-headline-md text-on-surface">Booking &amp; Care Instructions</h1>
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">{t("header.secure")}</span>
+                <h1 className="font-headline-md text-headline-md text-on-surface">{t("header.title")}</h1>
               </div>
               <div className="flex items-center gap-space-sm bg-surface-container px-space-md py-space-sm rounded-full">
                 <div className="flex items-center gap-space-xs text-primary">
                   <div className="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md">
                     <span className="material-symbols-outlined text-sm">done</span>
                   </div>
-                  <span className="font-label-md text-label-md hidden sm:inline font-semibold">Date &amp; Time</span>
+                  <span className="font-label-md text-label-md hidden sm:inline font-semibold">{t("header.stepDate")}</span>
                 </div>
                 <div className="w-6 h-0.5 bg-primary/40 rounded-full" />
                 <div className="flex items-center gap-space-xs text-secondary">
                   <div className="w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-label-md text-label-md font-bold">
                     2
                   </div>
-                  <span className="font-label-md text-label-md font-bold">Pets &amp; Instructions</span>
+                  <span className="font-label-md text-label-md font-bold">{t("header.stepPets")}</span>
                 </div>
                 <div className="w-6 h-0.5 bg-outline-variant/60 rounded-full" />
                 <div className="flex items-center gap-space-xs text-on-surface-variant/70">
                   <div className="w-7 h-7 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-label-md text-label-md">
                     3
                   </div>
-                  <span className="font-label-md text-label-md hidden sm:inline">Payment</span>
+                  <span className="font-label-md text-label-md hidden sm:inline">{t("header.stepPayment")}</span>
                 </div>
               </div>
             </div>
@@ -190,13 +198,13 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
             unitPriceCents: service.priceCents,
             unit: service.unit,
             durationMins: service.durationMins,
-            line: serviceLine(service),
+            line: serviceLine(service, locale),
             maxPetsPerBooking: service.maxPetsPerBooking,
             additionalPetPriceCents: service.additionalPetPriceCents,
             holidayPriceCents: service.holidayPriceCents,
             puppyPriceCents: service.puppyPriceCents,
             petLimit: limit,
-            oneNote: petCountBlockReason(service, 2, acceptance.firstName),
+            oneNote: petCountNote(service, 2, acceptance.firstName, locale),
           }}
           provinceCode={sitter.city.provinceCode}
           pets={pets.map((p) => ({
@@ -204,7 +212,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
             name: p.name,
             species: p.species,
             // other pets: lead with what they are ("Rabbit · Holland Lop")
-            breed: p.species === "OTHER" ? [petKindLabel(p), p.breed].filter(Boolean).join(" · ") : p.breed,
+            breed: p.species === "OTHER" ? [petKindLabel(p, locale), p.breed].filter(Boolean).join(" · ") : p.breed,
             ageYears: p.ageYears,
             sex: p.sex,
             neutered: p.neutered,
@@ -222,12 +230,14 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[lo
             slot: minuteToHHMM(minute),
             dateLabel,
             timeLabel,
-            cancelLabel: `${formatDay(date)}, ${formatMinute(minute)}`,
+            cancelLabel: t("schedule.cancelAt", { date: formatDay(date, locale), time: formatMinute(minute, locale) }),
             recurring,
             weeks,
-            seriesLabel: recurring ? `Every ${WEEKDAY_LABELS[weekdayOf(date)]} · ${weeks} weeks (until ${formatDay(rows[rows.length - 1].req.date)})` : null,
+            seriesLabel: recurring
+              ? t("schedule.series", { weekday: weekdayLabel(weekdayOf(date), locale), weeks, date: formatDay(rows[rows.length - 1].req.date, locale) })
+              : null,
             quantity,
-            quantityLabel: quantityLabel(service.type, quantity),
+            quantityLabel: quantityLabel(service.type, quantity, locale),
             meet: flag(sp.meet),
             changeHref: `/sitters/${sitter.slug}#book`,
             conflictsByCount,

@@ -11,6 +11,9 @@ import { getPlatformSettings } from "@/lib/settings";
 import { REF_COOKIE, findReferrer, generateReferralCode } from "@/lib/referrals";
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/i18n/server";
+import { getTranslations } from "next-intl/server";
+
+type T = Awaited<ReturnType<typeof getTranslations<"auth.errors">>>;
 
 export type AuthState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined>; checkEmail?: string; ok?: boolean; unconfirmedEmail?: string }
@@ -21,22 +24,26 @@ const safeNext = (v: FormDataEntryValue | null) => {
   return s.startsWith("/") && !s.startsWith("//") ? s : "/";
 };
 
-const SignupSchema = z.object({
-  firstName: z.string().trim().min(1, "Please enter your first name."),
-  lastName: z.string().trim().min(1, "Please enter your last name."),
-  email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")),
-  password: z.string().min(8, "Use at least 8 characters."),
-  role: z.enum(["OWNER", "SITTER"]).default("OWNER"),
-});
+const emailField = (t: T) => z.string().trim().toLowerCase().pipe(z.email(t("email")));
+
+const SignupSchema = (t: T) =>
+  z.object({
+    firstName: z.string().trim().min(1, t("firstName")),
+    lastName: z.string().trim().min(1, t("lastName")),
+    email: emailField(t),
+    password: z.string().min(8, t("passwordMin")),
+    role: z.enum(["OWNER", "SITTER"]).default("OWNER"),
+  });
 
 export async function signup(_: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = SignupSchema.safeParse(Object.fromEntries(formData));
+  const t = await getTranslations("auth.errors");
+  const parsed = SignupSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { email, password, firstName, lastName, role } = parsed.data;
   const next = safeNext(formData.get("next"));
 
   if (await db.user.findUnique({ where: { email } })) {
-    return { fieldErrors: { email: ["An account with this email already exists."] } };
+    return { fieldErrors: { email: [t("emailExists")] } };
   }
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
@@ -47,10 +54,10 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
       emailRedirectTo: `${await getOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
-  if (error || !data.user) return { error: error?.message ?? "We couldn't create your account. Please try again." };
+  if (error || !data.user) return { error: error?.message ?? t("createFailed") };
   // With email confirmation on, Supabase returns a user with no identities for an existing address.
   if (data.user.identities?.length === 0) {
-    return { fieldErrors: { email: ["An account with this email already exists."] } };
+    return { fieldErrors: { email: [t("emailExists")] } };
   }
 
   // Role is assigned here (server-side), never from user-editable auth metadata.
@@ -68,23 +75,25 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
   redirect(await localizedPath(next));
 }
 
-const LoginSchema = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")),
-  password: z.string().min(1, "Please enter your password."),
-});
+const LoginSchema = (t: T) =>
+  z.object({
+    email: emailField(t),
+    password: z.string().min(1, t("passwordRequired")),
+  });
 
 export async function login(_: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = LoginSchema.safeParse(Object.fromEntries(formData));
+  const t = await getTranslations("auth.errors");
+  const parsed = LoginSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     if (error.code === "email_not_confirmed") {
-      return { error: "Please confirm your email first — check your inbox for the link.", unconfirmedEmail: parsed.data.email };
+      return { error: t("unconfirmed"), unconfirmedEmail: parsed.data.email };
     }
-    if (error.code === "user_banned") return { error: "This account is suspended. Please contact support@wagstays.ca." };
-    return { error: "That email and password don't match our records." };
+    if (error.code === "user_banned") return { error: t("suspended") };
+    return { error: t("badCredentials") };
   }
   const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
   redirect(await localizedPath(account?.suspended ? "/suspended" : safeNext(formData.get("next"))));
@@ -95,11 +104,11 @@ export async function logout() {
   redirect(await localizedPath("/"));
 }
 
-const ForgotSchema = z.object({ email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")) });
+const ForgotSchema = (t: T) => z.object({ email: emailField(t) });
 
 /** Sends Supabase's password-reset email. Always reports success so addresses can't be probed. */
 export async function requestPasswordReset(_: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = ForgotSchema.safeParse(Object.fromEntries(formData));
+  const parsed = ForgotSchema(await getTranslations("auth.errors")).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
@@ -110,7 +119,8 @@ export async function requestPasswordReset(_: AuthState, formData: FormData): Pr
 
 /** Re-sends the sign-up confirmation email (e.g. when the first link expired or pointed at the wrong site). */
 export async function resendConfirmation(_: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = ForgotSchema.safeParse(Object.fromEntries(formData));
+  const t = await getTranslations("auth.errors");
+  const parsed = ForgotSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resend({
@@ -118,6 +128,6 @@ export async function resendConfirmation(_: AuthState, formData: FormData): Prom
     email: parsed.data.email,
     options: { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/` },
   });
-  if (error?.code === "over_email_send_rate_limit") return { error: "Too many emails sent — please wait a few minutes and try again." };
+  if (error?.code === "over_email_send_rate_limit") return { error: t("rateLimited") };
   return { checkEmail: parsed.data.email };
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { intlLocale } from "@/i18n/routing";
 import { useEffect, useState, useTransition } from "react";
 import { removePushDevice, sendTestPush, type PushDevice } from "@/app/actions/push";
 import { BTN, Card, CardHeader } from "@/components/ui";
@@ -12,6 +14,10 @@ type Flash = { ok: boolean; text: string } | null;
 /** Account Settings → Notifications: enable/disable on this device, device list, test notification. */
 export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; devices: PushDevice[] }) {
   const router = useRouter();
+  const t = useTranslations("account.notifications");
+  const tc = useTranslations("common.actions");
+  const tp = useTranslations("common.push");
+  const locale = useLocale();
   const [env, setEnv] = useState<Env>("loading");
   const [endpoint, setEndpoint] = useState<string | null>(null);
   const [flash, setFlash] = useState<Flash>(null);
@@ -45,12 +51,17 @@ export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; dev
     if (on) {
       await disablePush().catch(() => {});
       setEndpoint(null);
-      setFlash({ ok: true, text: "Notifications are off for this device." });
+      setFlash({ ok: true, text: t("offFlash") });
     } else {
-      const res = await enablePush(vapidKey);
+      const res = await enablePush(vapidKey, {
+      unsupported: tp("unsupported"),
+      blocked: tp("blocked"),
+      notGranted: tp("notGranted"),
+      failed: tp("failed"),
+    });
       if (res.ok) {
         setEndpoint((await currentSubscription())?.endpoint ?? null);
-        setFlash({ ok: true, text: "Notifications are on for this device." });
+        setFlash({ ok: true, text: t("onFlash") });
       } else {
         if (Notification.permission === "denied") setEnv("blocked");
         setFlash({ ok: false, text: res.error });
@@ -63,7 +74,7 @@ export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; dev
   const test = () =>
     startTransition(async () => {
       const res = await sendTestPush();
-      setFlash(res.ok ? { ok: true, text: res.message ?? "Test sent." } : { ok: false, text: res.error });
+      setFlash(res.ok ? { ok: true, text: res.message ?? t("testSent") } : { ok: false, text: res.error });
     });
 
   const remove = (id: string) =>
@@ -74,50 +85,49 @@ export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; dev
         await sub?.unsubscribe().catch(() => {});
         setEndpoint(null);
       }
-      setFlash(res.ok ? { ok: true, text: res.message ?? "Removed." } : { ok: false, text: res.error });
+      setFlash(res.ok ? { ok: true, text: res.message ?? t("removed") } : { ok: false, text: res.error });
       router.refresh();
     });
 
   return (
     <Card className="pb-space-lg">
-      <CardHeader icon="notifications" title="Notifications" />
+      <CardHeader icon="notifications" title={t("title")} />
       <div className="px-space-lg pt-space-md flex flex-col gap-space-md" data-testid="notifications-card">
-        <p className="font-body-md text-body-md text-on-surface-variant">
-          Get a push notification for new booking requests, confirmations, cancellations and messages.
-        </p>
+        <p className="font-body-md text-body-md text-on-surface-variant">{t("intro")}</p>
 
         {env === "ios-home-screen" && (
           <Notice icon="add_to_home_screen">
-            On iPhone and iPad, notifications work once WagStays is on your Home Screen: tap{" "}
-            <span className="material-symbols-outlined text-base align-text-bottom">ios_share</span> <b>Share</b> → <b>Add to Home Screen</b>, then open WagStays
-            from there and come back to this page.
+            {t.rich("iosHomeScreen", {
+              icon: () => <span className="material-symbols-outlined text-base align-text-bottom">ios_share</span>,
+              b: (c) => <b>{c}</b>,
+            })}
           </Notice>
         )}
         {env === "unsupported" && (
           <Notice icon="info">
-            {isIOS() ? "Update to iOS 16.4 or later to get notifications." : "This browser doesn't support push notifications. Try Chrome, Edge, Firefox or Safari."}
+            {isIOS() ? t("updateIos") : t("unsupported")}
           </Notice>
         )}
         {env === "blocked" && (
-          <Notice icon="notifications_off">Notifications are blocked for WagStays in this browser. Allow them in your browser&apos;s site settings, then try again.</Notice>
+          <Notice icon="notifications_off">{t("blocked")}</Notice>
         )}
 
         {(env === "ready" || env === "blocked") && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm p-space-md rounded-xl bg-surface-container-low">
             <div className="flex items-center gap-space-sm min-w-0">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${on ? "bg-primary" : "bg-outline-variant"}`} />
-              <span className="font-label-lg text-label-lg text-on-surface">{on ? "On for this device" : "Off for this device"}</span>
+              <span className="font-label-lg text-label-lg text-on-surface">{on ? t("onDevice") : t("offDevice")}</span>
             </div>
             <button className={on ? BTN.ghost : BTN.sage} disabled={busy || env === "blocked"} onClick={toggle} type="button">
               <span className={`material-symbols-outlined text-xl ${busy ? "animate-spin" : ""}`}>{busy ? "autorenew" : on ? "notifications_off" : "notifications_active"}</span>
-              {on ? "Turn off" : "Turn on"}
+              {on ? t("turnOff") : t("turnOn")}
             </button>
           </div>
         )}
 
         {devices.length > 0 && (
           <div className="flex flex-col gap-space-xs">
-            <span className="font-label-md text-label-md uppercase tracking-wide text-on-surface-variant">Your devices</span>
+            <span className="font-label-md text-label-md uppercase tracking-wide text-on-surface-variant">{t("devices")}</span>
             <ul className="flex flex-col divide-y divide-[#EFE7DE]">
               {devices.map((d) => (
                 <li className="flex items-center justify-between gap-space-sm py-space-sm" key={d.id}>
@@ -126,16 +136,16 @@ export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; dev
                     <div className="min-w-0">
                       <div className="font-label-lg text-label-lg text-on-surface truncate">
                         {d.label}
-                        {thisDevice?.id === d.id && <span className="ml-space-xs font-label-sm text-label-sm text-primary">· This device</span>}
+                        {thisDevice?.id === d.id && <span className="ml-space-xs font-label-sm text-label-sm text-primary">{t("thisDevice")}</span>}
                       </div>
                       <div className="font-body-sm text-body-sm text-on-surface-variant">
-                        Added {new Date(d.createdAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
+                        {t("added", { date: new Date(d.createdAt).toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric", year: "numeric" }) })}
                       </div>
                     </div>
                   </div>
-                  <button aria-label={`Remove ${d.label}`} className={`${BTN.small} text-on-surface-variant hover:bg-surface-container-low`} disabled={pending} onClick={() => remove(d.id)} type="button">
+                  <button aria-label={t("remove", { label: d.label })} className={`${BTN.small} text-on-surface-variant hover:bg-surface-container-low`} disabled={pending} onClick={() => remove(d.id)} type="button">
                     <span className="material-symbols-outlined text-base">delete</span>
-                    <span className="hidden sm:inline">Remove</span>
+                    <span className="hidden sm:inline">{tc("remove")}</span>
                   </button>
                 </li>
               ))}
@@ -143,7 +153,7 @@ export function NotificationsCard({ vapidKey, devices }: { vapidKey: string; dev
             <div>
               <button className={BTN.secondary} disabled={pending} onClick={test} type="button">
                 <span className="material-symbols-outlined text-xl">send</span>
-                Send a test notification
+                {t("sendTest")}
               </button>
             </div>
           </div>

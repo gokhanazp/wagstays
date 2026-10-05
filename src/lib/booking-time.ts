@@ -1,5 +1,6 @@
 import type { TimeSlot } from "./booking-slots";
 
+import { intlLocale } from "@/i18n/routing";
 import { DEFAULT_TIME_ZONE } from "./constants";
 
 // Bookings are in the city's local time (City.timeZone); Toronto is the only active city for now.
@@ -61,28 +62,30 @@ export function zonedDateTime(iso: string, hhmm: string) {
   return new Date(ts);
 }
 
-/** "Saturday, Oct 18, 2026" */
-export function formatLongDate(iso: string) {
+/** "Saturday, Oct 18, 2026" (fr: "samedi 18 oct. 2026") */
+export function formatLongDate(iso: string, locale = "en") {
   const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "long", month: "short", day: "numeric", year: "numeric" }).format(
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : intlLocale(locale), { timeZone: "UTC", weekday: "long", month: "short", day: "numeric", year: "numeric" }).format(
     new Date(Date.UTC(y, m - 1, d, 12)),
   );
 }
 
-/** "Oct 18" */
-export function formatShortDate(iso: string) {
+/** "Oct 18" (fr: "18 oct.") */
+export function formatShortDate(iso: string, locale = "en") {
   const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(Date.UTC(y, m - 1, d, 12)));
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : intlLocale(locale), { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(Date.UTC(y, m - 1, d, 12)));
 }
 
-/** "09:00" -> "9:00 AM" */
-export function formatClock(hhmm: string) {
+/** "09:00" -> "9:00 AM" (fr: "9 h", "17 h 30") */
+export function formatClock(hhmm: string, locale = "en") {
   const [h, m] = hhmm.split(":").map(Number);
+  if (locale !== "en") return `${h} h${m ? ` ${String(m).padStart(2, "0")}` : ""}`;
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
-/** "9:00 – 10:00 AM (Morning)" -> "9:00 – 10:00 AM" */
-export function slotRange(slot: TimeSlot) {
+/** "9:00 – 10:00 AM (Morning)" -> "9:00 – 10:00 AM" (fr: "9 h – 10 h") */
+export function slotRange(slot: TimeSlot, locale = "en") {
+  if (locale !== "en") return `${formatClock(slot.start, locale)} – ${formatClock(slot.end, locale)}`;
   return slot.label.replace(/\s*\(.*\)\s*$/, "");
 }
 

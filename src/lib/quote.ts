@@ -5,6 +5,7 @@
 
 import { formatDay, quantityLabel } from "./availability-core";
 import { formatMoney } from "./format";
+import { bookingT } from "./booking-messages";
 
 export type PriceLine = {
   label: string;
@@ -53,13 +54,14 @@ export function petCountBlockReason(
   service: Pick<QuoteService, "type" | "maxPetsPerBooking" | "additionalPetPriceCents">,
   count: number,
   firstName: string,
+  locale = "en",
 ): string | null {
   if (count <= 1) return null;
-  if (service.additionalPetPriceCents == null) return `${firstName} takes one pet per booking for this service`;
+  const t = bookingT(locale);
+  const name = firstName;
+  if (service.additionalPetPriceCents == null) return t("petCount.oneOnly", { name });
   const max = petLimit(service);
-  if (count > max) {
-    return service.type === "DOG_WALKING" ? `${firstName} walks at most ${max} dogs at a time` : `${firstName} takes at most ${max} pets per booking for this service`;
-  }
+  if (count > max) return service.type === "DOG_WALKING" ? t("petCount.walksMax", { name, max }) : t("petCount.takesMax", { name, max });
   return null;
 }
 

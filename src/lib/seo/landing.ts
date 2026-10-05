@@ -1,11 +1,16 @@
 import "server-only";
 import type { Metadata } from "next";
+import { createTranslator } from "next-intl";
 import { cache } from "react";
+import { intlLocale } from "@/i18n/routing";
 import { db } from "@/lib/db";
 import { distanceKm, formatMoney, formatRating } from "@/lib/format";
 import { defaultHoodOf, getActiveCities } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
 import type { ServiceType } from "@/lib/constants";
+import { localeAlternates } from "@/lib/seo/site";
+import en from "../../../messages/en/landing.json";
+import fr from "../../../messages/fr/landing.json";
 
 /** Sitters whose home is within this distance of a neighbourhood are listed as "nearby" on its landing page. */
 export const NEARBY_KM = 5;
@@ -153,77 +158,107 @@ export function buildLanding(data: CityData, hood: Hood | null, service?: Servic
 export type Landing = ReturnType<typeof buildLanding>;
 
 // ---------- Copy ----------
+// User-facing copy comes from messages/{en,fr}/landing.json; every function takes an optional `locale` (English default).
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const tr = (locale = "en") =>
+  createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { landing: locale === "fr" ? fr : en }, namespace: "landing" });
+type Tr = ReturnType<typeof tr>;
 
-function listJoin(items: string[]) {
+function listJoin(t: Tr, items: string[]) {
   if (items.length <= 1) return items.join("");
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+  return t("copy.listJoin", { rest: items.slice(0, -1).join(", "), last: items[items.length - 1] });
 }
 
-export function priceText(p: PriceRange) {
-  return p.min === p.max ? `${formatMoney(p.min)} per ${p.unit}` : `${formatMoney(p.min)}–${formatMoney(p.max)} per ${p.unit}`;
+const serviceLabel = (t: Tr, p: Pick<PriceRange, "type">) => t(`services.${p.type}.label`);
+const serviceUnit = (t: Tr, p: Pick<PriceRange, "type">) => t(`services.${p.type}.unit`);
+
+export function priceText(p: PriceRange, locale = "en") {
+  const t = tr(locale);
+  const unit = serviceUnit(t, p);
+  return p.min === p.max
+    ? t("copy.priceOne", { price: formatMoney(p.min, { locale }), unit })
+    : t("copy.priceRange", { min: formatMoney(p.min, { locale }), max: formatMoney(p.max, { locale }), unit });
 }
 
-export function landingNoun(l: Pick<Landing, "service">) {
-  return l.service === "DOG_WALKING" ? { one: "dog walker", many: "dog walkers", title: "Dog Walkers" } : { one: "pet sitter", many: "pet sitters", title: "Pet Sitters" };
+/** Translated label and unit of a price row ("dog walks" / "walk"). */
+export function priceLabel(p: Pick<PriceRange, "type">, locale = "en") {
+  const t = tr(locale);
+  return { label: serviceLabel(t, p), unit: serviceUnit(t, p) };
+}
+
+export function landingNoun(l: Pick<Landing, "service">, locale = "en") {
+  const t = tr(locale);
+  const k = l.service === "DOG_WALKING" ? "walker" : "sitter";
+  return { one: t(`noun.${k}.one`), many: t(`noun.${k}.many`), title: t(`noun.${k}.title`), manyCap: t(`noun.${k}.manyCap`) };
 }
 
 export function landingPlace(l: Pick<Landing, "city" | "hood">) {
   return l.hood ? `${l.hood.name}, ${l.city.name}` : `${l.city.name}, ${l.city.provinceCode}`;
 }
 
-export function landingTitle(l: Landing) {
-  return `Trusted ${landingNoun(l).title} in ${landingPlace(l)}`;
+export function landingTitle(l: Landing, locale = "en") {
+  return tr(locale)("copy.title", { nounTitle: landingNoun(l, locale).title, place: landingPlace(l) });
 }
 
 /** Short unique intro paragraph built from the neighbourhood's own numbers. */
-export function landingIntro(l: Landing): string[] {
-  const noun = landingNoun(l);
+export function landingIntro(l: Landing, locale = "en"): string[] {
+  const t = tr(locale);
+  const { one, many } = landingNoun(l, locale);
   const where = l.hood?.name ?? l.city.name;
   const out: string[] = [];
 
   if (!l.hood) {
     out.push(
-      `WagStays connects ${l.city.name} pet parents with ${plural(l.servingCount, `verified ${noun.one}`, `verified ${noun.many}`)} across ${plural(
-        l.city.neighbourhoods.length,
-        "neighbourhood",
-      )}, from ${listJoin(l.city.neighbourhoods.slice(0, 3).map((n) => n.name))} and beyond.`,
+      t("copy.introCity", {
+        city: l.city.name,
+        count: l.servingCount,
+        one,
+        many,
+        hoods: l.city.neighbourhoods.length,
+        list: listJoin(t, l.city.neighbourhoods.slice(0, 3).map((n) => n.name)),
+      }),
     );
   } else if (l.localCount > 0) {
-    const more = l.nearbyCount
-      ? ` and ${l.nearbyCount} more within ${NEARBY_KM} km${l.nearbyHoodNames.length ? ` in ${listJoin(l.nearbyHoodNames)}` : ""}`
-      : "";
-    out.push(`Looking for a ${noun.one} in ${where}? WagStays has ${plural(l.localCount, `verified ${noun.one}`, `verified ${noun.many}`)} based right in ${where}${more}.`);
-  } else if (l.nearbyCount > 0) {
+    const names = listJoin(t, l.nearbyHoodNames);
     out.push(
-      `No ${noun.many} are based in ${where} just yet, but ${plural(l.nearbyCount, `verified ${noun.one}`, `verified ${noun.many}`)} within ${NEARBY_KM} km${
-        l.nearbyHoodNames.length ? ` (${listJoin(l.nearbyHoodNames)})` : ""
-      } can help.`,
+      // nearby sitters always have a neighbourhood, so `names` is set whenever nearbyCount is
+      l.nearbyCount && names
+        ? t("copy.introLocalNearby", { one, many, where, count: l.localCount, nearby: l.nearbyCount, km: NEARBY_KM, names })
+        : t("copy.introLocal", { one, many, where, count: l.localCount }),
     );
+  } else if (l.nearbyCount > 0) {
+    out.push(t("copy.introNearby", { one, many, where, count: l.nearbyCount, km: NEARBY_KM, names: listJoin(t, l.nearbyHoodNames) }));
   } else {
-    out.push(`We're still growing our ${noun.one} community in ${where}. Here are the closest WagStays sitters in ${l.city.name}.`);
+    out.push(t("copy.introGrowing", { one, where, city: l.city.name }));
   }
 
-  const facts: string[] = [];
-  if (l.avgRating !== null) facts.push(`rated ${formatRating(l.avgRating)} out of 5 on average across ${l.reviewTotal.toLocaleString("en-CA")} reviews`);
-  if (l.prices.length) {
-    facts.push(
-      `with ${listJoin(l.prices.slice(0, 2).map((p) => `${p.label} from ${formatMoney(p.min)} per ${p.unit}`))} (before tax)`,
-    );
-  }
-  if (facts.length) out.push(`They're ${facts.join(", ")}.`);
-  if (l.parks.length) out.push(`Favourite local walking spots include ${listJoin(l.parks)}.`);
+  const rating = l.avgRating !== null ? formatRating(l.avgRating, locale) : null;
+  const reviews = l.reviewTotal.toLocaleString(intlLocale(locale));
+  const prices = l.prices.length
+    ? listJoin(
+        t,
+        l.prices.slice(0, 2).map((p) => t("copy.factsPrice", { label: serviceLabel(t, p), price: formatMoney(p.min, { locale }), unit: serviceUnit(t, p) })),
+      )
+    : null;
+  if (rating && prices) out.push(t("copy.factsBoth", { rating, reviews, prices }));
+  else if (rating) out.push(t("copy.factsRating", { rating, reviews }));
+  else if (prices) out.push(t("copy.factsPrices", { prices }));
+  if (l.parks.length) out.push(t("copy.parks", { parks: listJoin(t, l.parks) }));
   return [out.join(" ")];
 }
 
-export function landingDescription(l: Landing) {
-  const noun = landingNoun(l);
+export function landingDescription(l: Landing, locale = "en") {
+  const t = tr(locale);
+  const { one, many } = landingNoun(l, locale);
   const n = l.servingCount || l.cards.length;
-  const parts = [`Compare ${plural(n, `trusted ${noun.one}`, `trusted ${noun.many}`)} ${l.hood ? "in and around" : "in"} ${landingPlace(l)}.`];
-  if (l.avgRating !== null) parts.push(`Rated ${formatRating(l.avgRating)}/5 from ${l.reviewTotal.toLocaleString("en-CA")} reviews.`);
-  if (l.prices[0]) parts.push(`${l.prices[0].label[0].toUpperCase()}${l.prices[0].label.slice(1)} from ${formatMoney(l.prices[0].min)}.`);
-  parts.push("Verified sitters and vet care coverage on every booking.");
+  const place = landingPlace(l);
+  const parts = [l.hood ? t("copy.descHood", { count: n, one, many, place }) : t("copy.descCity", { count: n, one, many, place })];
+  if (l.avgRating !== null) parts.push(t("copy.descRating", { rating: formatRating(l.avgRating, locale), reviews: l.reviewTotal.toLocaleString(intlLocale(locale)) }));
+  if (l.prices[0]) {
+    const label = serviceLabel(t, l.prices[0]);
+    parts.push(t("copy.descFrom", { label: `${label[0].toUpperCase()}${label.slice(1)}`, price: formatMoney(l.prices[0].min, { locale }) }));
+  }
+  parts.push(t("copy.descTrust"));
   return parts.join(" ");
 }
 
@@ -233,57 +268,61 @@ export function landingPath(l: Pick<Landing, "city" | "hood" | "service">, hoodS
   return hoodSlug ? `${base}/${l.city.slug}/${hoodSlug}` : `${base}/${l.city.slug}`;
 }
 
-export function landingMetadata(l: Landing | null): Metadata {
-  if (!l) return { title: "Page not found" };
-  const title = landingTitle(l);
-  const description = landingDescription(l);
-  const url = landingPath(l);
+export function landingMetadata(l: Landing | null, locale = "en"): Metadata {
+  if (!l) return { title: tr(locale)("copy.notFound") };
+  const title = landingTitle(l, locale);
+  const description = landingDescription(l, locale);
+  const alternates = localeAlternates(landingPath(l), locale);
+  const url = alternates.canonical;
   const images = [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: title }];
   return {
     title,
     description,
-    alternates: { canonical: url },
-    openGraph: { type: "website", siteName: "WagStays", locale: "en_CA", title, description, url, images },
+    alternates,
+    openGraph: { type: "website", siteName: "WagStays", locale: locale === "fr" ? "fr_CA" : "en_CA", title, description, url, images },
     twitter: { card: "summary_large_image", title, description, images: ["/opengraph-image.png"] },
   };
 }
 
 export type Faq = { q: string; a: string };
 
-export function landingFaqs(l: Landing, vetCoverageCents: number): Faq[] {
-  const noun = landingNoun(l);
+export function landingFaqs(l: Landing, vetCoverageCents: number, locale = "en"): Faq[] {
+  const t = tr(locale);
+  const { one, many, manyCap } = landingNoun(l, locale);
   const where = l.hood?.name ?? l.city.name;
   const faqs: Faq[] = [];
   if (l.prices.length) {
     faqs.push({
-      q: `How much does a ${noun.one} cost in ${where}?`,
-      a: `${noun.many[0].toUpperCase()}${noun.many.slice(1)} serving ${where} on WagStays charge ${listJoin(
-        l.prices.map((p) => (l.prices.length > 1 ? `${priceText(p)} for ${p.label}` : priceText(p))),
-      )}. Prices are set by each sitter and shown before HST.`,
+      q: t("faq.costQ", { one, where }),
+      a: t("faq.costA", {
+        manyCap,
+        where,
+        list: listJoin(
+          t,
+          l.prices.map((p) => (l.prices.length > 1 ? t("faq.costItem", { price: priceText(p, locale), label: serviceLabel(t, p) }) : priceText(p, locale))),
+        ),
+      }),
     });
   }
   if (l.service === "DOG_WALKING" && l.walkMins) {
+    const { min, max } = l.walkMins;
     faqs.push({
-      q: `How long is a dog walk in ${where}?`,
-      a: `Walks booked through WagStays in ${where} last ${
-        l.walkMins.min === l.walkMins.max ? `${l.walkMins.min} minutes` : `${l.walkMins.min} to ${l.walkMins.max} minutes`
-      }, depending on the walker. You can book one-off walks or a weekly recurring schedule.`,
+      q: t("faq.walkQ", { where }),
+      a: t("faq.walkA", { where, duration: min === max ? t("faq.walkMinutes", { min }) : t("faq.walkMinutesRange", { min, max }) }),
     });
   }
   const shown = l.servingCount || l.cards.length;
   faqs.push({
-    q: `Are WagStays ${noun.many} in ${where} verified?`,
-    a: `Every sitter is reviewed by the WagStays team before their profile goes live. Of the ${plural(shown, noun.one, noun.many)} serving ${where}, ${l.idVerified} ${
-      l.idVerified === 1 ? "has" : "have"
-    } a verified government ID and ${l.backgroundChecked} ${l.backgroundChecked === 1 ? "has" : "have"} a clear police vulnerable sector check — look for the badges on each profile.`,
+    q: t("faq.verifiedQ", { many, where }),
+    a: t("faq.verifiedA", { shown, one, many, where, id: l.idVerified, bg: l.backgroundChecked }),
   });
   faqs.push({
-    q: "Is my pet covered if something goes wrong?",
-    a: `Yes. Every booking includes WagShield protection with up to ${formatMoney(vetCoverageCents)} in emergency vet care coverage.`,
+    q: t("faq.coveredQ"),
+    a: t("faq.coveredA", { amount: formatMoney(vetCoverageCents, { locale }) }),
   });
   faqs.push({
-    q: `Can I meet a ${noun.one} before booking?`,
-    a: "Yes. You can request a free Meet & Greet when you send a booking request, and you can message any sitter before you book.",
+    q: t("faq.meetQ", { one }),
+    a: t("faq.meetA"),
   });
   return faqs;
 }

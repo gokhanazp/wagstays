@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { bookingPets, petNames } from "@/lib/pets";
 import { Link } from "@/i18n/navigation";
 import { BTN, Card, CardHeader, EmptyState, PageHeader, StatCard, formatDate } from "@/components/ui";
@@ -10,17 +11,21 @@ import { BookingCard, bookingCardInclude } from "./_components/BookingCard";
 import { PetPhoto } from "./_components/PetPhoto";
 import { ReviewReply } from "./_components/ReviewReply";
 import { canEditReply } from "@/lib/review-rules";
-import { bookingWhen, ownerShortName, SERVICE_ICONS, serviceLabel, startOfMonthInZone } from "./_lib";
+import { bookingWhen, ownerShortName, SERVICE_ICONS, serviceKey, startOfMonthInZone } from "./_lib";
 
-export const metadata: Metadata = { title: "Sitter Dashboard | WagStays" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("sitter.meta");
+  return { title: `${t("overview")}` };
+}
 
 function greeting(tz: string) {
   const h = +new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" }).format(new Date());
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
 }
 
 export default async function SitterOverviewPage() {
   const { user, profile } = await requireSitter();
+  const [t, tc, locale] = await Promise.all([getTranslations("sitter"), getTranslations("common"), getLocale()]);
   const tz = profile.city.timeZone;
   const now = new Date();
   const weekAhead = new Date(now.getTime() + 7 * 86_400_000);
@@ -46,13 +51,13 @@ export default async function SitterOverviewPage() {
   ]);
 
   const checklist = [
-    { done: !!profile.avatarUrl, label: "Profile photo", href: "/sitter/profile#photos" },
-    { done: (profile.about ?? "").trim().length >= 150, label: "About you (150+ characters)", href: "/sitter/profile#about" },
-    { done: photoCount >= 3, label: `At least 3 gallery photos (${photoCount}/3)`, href: "/sitter/profile#gallery" },
-    { done: activeServices >= 1, label: "At least one active service", href: "/sitter/services" },
-    { done: profile.idVerified, label: "Government ID verified", href: "/sitter/profile#verification", admin: true },
-    { done: profile.backgroundChecked, label: "Police Vulnerable Sector Check", href: "/sitter/profile#verification", admin: true },
-    { done: profile.firstAidCertified, label: "Pet First Aid & CPR", href: "/sitter/profile#verification", admin: true },
+    { done: !!profile.avatarUrl, label: t("overview.checklist.photo"), href: "/sitter/profile#photos" },
+    { done: (profile.about ?? "").trim().length >= 150, label: t("overview.checklist.about"), href: "/sitter/profile#about" },
+    { done: photoCount >= 3, label: t("overview.checklist.gallery", { count: photoCount }), href: "/sitter/profile#gallery" },
+    { done: activeServices >= 1, label: t("overview.checklist.service"), href: "/sitter/services" },
+    { done: profile.idVerified, label: t("badges.idVerified"), href: "/sitter/profile#verification", admin: true },
+    { done: profile.backgroundChecked, label: t("badges.backgroundChecked"), href: "/sitter/profile#verification", admin: true },
+    { done: profile.firstAidCertified, label: t("badges.firstAid"), href: "/sitter/profile#verification", admin: true },
   ];
   const doneCount = checklist.filter((c) => c.done).length;
   const pct = Math.round((doneCount / checklist.length) * 100);
@@ -62,16 +67,16 @@ export default async function SitterOverviewPage() {
       <PageHeader
         actions={
           <Link className={BTN.secondary} href={`/sitters/${profile.slug}`}>
-            <span className="material-symbols-outlined text-lg">visibility</span>View public profile
+            <span className="material-symbols-outlined text-lg">visibility</span>{t("viewPublicProfile")}
           </Link>
         }
         description={
           pending.length
-            ? `You have ${pending.length} request${pending.length === 1 ? "" : "s"} waiting. Owners love a quick reply — your average is ${profile.responseTimeMins} min.`
-            : "You're all caught up. Here's how your week is looking."
+            ? t("overview.pendingDescription", { count: pending.length, mins: profile.responseTimeMins })
+            : t("overview.caughtUp")
         }
-        eyebrow="Sitter Dashboard"
-        title={`${greeting(tz)}, ${user.firstName}!`}
+        eyebrow={t("eyebrow")}
+        title={t(`overview.greeting.${greeting(tz)}`, { name: user.firstName })}
       />
 
       <Card className="p-space-lg flex flex-col gap-space-sm">
@@ -79,22 +84,22 @@ export default async function SitterOverviewPage() {
       </Card>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-space-md [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
-        <StatCard hint="Waiting for your reply" icon="mark_email_unread" label="Pending requests" tone="tertiary" value={pending.length} />
-        <StatCard hint="Confirmed, next 7 days" icon="event_upcoming" label="Upcoming this week" value={upcomingWeek} />
-        <StatCard hint="All time" icon="task_alt" label="Completed" tone="primary" value={profile.completedBookings} />
+        <StatCard hint={t("overview.stats.pendingHint")} icon="mark_email_unread" label={t("overview.stats.pending")} tone="tertiary" value={pending.length} />
+        <StatCard hint={t("overview.stats.upcomingHint")} icon="event_upcoming" label={t("overview.stats.upcoming")} value={upcomingWeek} />
+        <StatCard hint={t("overview.stats.completedHint")} icon="task_alt" label={t("overview.stats.completed")} tone="primary" value={profile.completedBookings} />
         <StatCard
-          hint={`${earnings._count} completed this month`}
+          hint={t("overview.stats.earnedHint", { count: earnings._count })}
           icon="payments"
-          label="Earned this month"
+          label={t("overview.stats.earned")}
           tone="secondary"
-          value={formatMoney(earnings._sum.subtotalCents ?? 0)}
+          value={formatMoney(earnings._sum.subtotalCents ?? 0, { locale })}
         />
         <StatCard
-          hint={`${profile.reviewCount} reviews`}
+          hint={t("overview.stats.ratingHint", { count: profile.reviewCount })}
           icon="star"
-          label="Rating"
+          label={t("overview.stats.rating")}
           tone="tertiary"
-          value={profile.reviewCount ? formatRating(profile.rating) : "—"}
+          value={profile.reviewCount ? formatRating(profile.rating, locale) : "—"}
         />
       </div>
 
@@ -104,17 +109,17 @@ export default async function SitterOverviewPage() {
             <CardHeader
               action={
                 <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/sitter/bookings">
-                  All requests
+                  {t("overview.allRequests")}
                 </Link>
               }
               icon="mark_email_unread"
-              title="Needs your response"
+              title={t("needsResponse")}
             />
             <div className="flex flex-col gap-space-md p-space-lg">
               {pending.length ? (
                 pending.slice(0, 5).map((b) => <BookingCard booking={b} key={b.id} tz={tz} withActions />)
               ) : (
-                <EmptyState icon="inbox" text="New booking requests from pet parents will show up here." title="No pending requests" />
+                <EmptyState icon="inbox" text={t("overview.noPendingText")} title={t("overview.noPendingTitle")} />
               )}
             </div>
           </Card>
@@ -123,11 +128,11 @@ export default async function SitterOverviewPage() {
             <CardHeader
               action={
                 <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/sitter/bookings?tab=upcoming">
-                  See all
+                  {t("overview.seeAll")}
                 </Link>
               }
               icon="event_available"
-              title="Coming up"
+              title={t("overview.comingUp")}
             />
             <div className="flex flex-col p-space-lg pt-space-md">
               {upcoming.length ? (
@@ -140,19 +145,19 @@ export default async function SitterOverviewPage() {
                     <PetPhoto className="w-11 h-11 rounded-full" name={b.pet.name} url={b.pet.photoUrl} />
                     <span className="flex flex-col min-w-0 flex-1">
                       <span className="font-label-lg text-label-lg text-on-surface truncate">
-                        {petNames(bookingPets(b).map((p) => p.name))} · {ownerShortName(b.owner)}
+                        {petNames(bookingPets(b).map((p) => p.name), locale)} · {ownerShortName(b.owner)}
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant truncate">{bookingWhen(b.startAt, b.endAt, tz)}</span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant truncate">{bookingWhen(b.startAt, b.endAt, tz, locale)}</span>
                     </span>
                     <span className="hidden sm:inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
                       <span className="material-symbols-outlined text-lg">{SERVICE_ICONS[b.service.type]}</span>
-                      {serviceLabel(b.service.type)}
+                      {tc(serviceKey(b.service.type))}
                     </span>
-                    <span className="font-label-lg text-label-lg text-primary">{formatMoney(b.subtotalCents)}</span>
+                    <span className="font-label-lg text-label-lg text-primary">{formatMoney(b.subtotalCents, { locale })}</span>
                   </Link>
                 ))
               ) : (
-                <EmptyState icon="event" text="Confirmed bookings will appear here." title="Nothing booked yet" />
+                <EmptyState icon="event" text={t("overview.nothingBookedText")} title={t("overview.nothingBookedTitle")} />
               )}
             </div>
           </Card>
@@ -160,13 +165,11 @@ export default async function SitterOverviewPage() {
 
         <div className="flex flex-col gap-space-lg min-w-0">
           <Card className="pb-space-lg">
-            <CardHeader icon="checklist" title="Profile strength" />
+            <CardHeader icon="checklist" title={t("overview.strength")} />
             <div className="px-space-lg pt-space-md flex flex-col gap-space-md">
               <div className="flex flex-col gap-space-xs">
                 <div className="flex justify-between font-label-md text-label-md text-on-surface-variant">
-                  <span>
-                    {doneCount} of {checklist.length} complete
-                  </span>
+                  <span>{t("overview.strengthProgress", { done: doneCount, total: checklist.length })}</span>
                   <span>{pct}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
@@ -181,7 +184,7 @@ export default async function SitterOverviewPage() {
                         {c.done ? "check_circle" : "radio_button_unchecked"}
                       </span>
                       <span className={`flex-1 font-body-sm text-body-sm ${c.done ? "text-on-surface" : "text-on-surface-variant"}`}>{c.label}</span>
-                      {c.admin && !c.done && <span className="font-label-sm text-label-sm text-on-surface-variant">by WagStays</span>}
+                      {c.admin && !c.done && <span className="font-label-sm text-label-sm text-on-surface-variant">{t("overview.byWagStays")}</span>}
                     </Link>
                   </li>
                 ))}
@@ -193,11 +196,11 @@ export default async function SitterOverviewPage() {
             <CardHeader
               action={
                 <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/sitter/reviews">
-                  All reviews
+                  {t("overview.allReviews")}
                 </Link>
               }
               icon="reviews"
-              title="Latest reviews"
+              title={t("overview.latestReviews")}
             />
             <div className="px-space-lg pt-space-md flex flex-col gap-space-md">
               {reviews.length ? (
@@ -213,15 +216,15 @@ export default async function SitterOverviewPage() {
                       </span>
                     </div>
                     <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-3">{r.body}</p>
-                    <span className="font-label-sm text-label-sm text-outline" title={formatDate(r.createdAt, tz)}>
-                      {timeAgo(r.createdAt)}
+                    <span className="font-label-sm text-label-sm text-outline" title={formatDate(r.createdAt, tz, locale)}>
+                      {timeAgo(r.createdAt, undefined, locale)}
                     </span>
                     <div className="pt-space-xs">
                       <ReviewReply
                         canEdit={canEditReply(r.sitterRepliedAt)}
                         compact
                         hidden={r.hidden}
-                        repliedAgo={r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt) : null}
+                        repliedAgo={r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt, undefined, locale) : null}
                         reply={r.sitterReply}
                         reviewId={r.id}
                       />
@@ -229,7 +232,7 @@ export default async function SitterOverviewPage() {
                   </div>
                 ))
               ) : (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Reviews from completed bookings will appear here.</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">{t("overview.noReviews")}</p>
               )}
             </div>
           </Card>

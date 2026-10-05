@@ -1,6 +1,8 @@
 import { SERVICE_SLUGS, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
-import { PET_KIND_META, type PetKind } from "@/lib/pets";
+import type { useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/routing";
+import type { PetKind } from "@/lib/pets";
 
 /**
  * The date range (`from` / `to`, YYYY-MM-DD). It filters results by sitter availability on the server
@@ -53,41 +55,35 @@ export const SERVICE_ICONS: Record<ServiceType, string> = {
   DROP_IN: "home",
 };
 
-export const UNIT_LONG: Record<string, string> = { WALK: "hour", NIGHT: "night", DAY: "day", VISIT: "visit" };
-export const UNIT_SHORT: Record<string, string> = { WALK: "hr", NIGHT: "night", DAY: "day", VISIT: "visit" };
+type SearchT = ReturnType<typeof useTranslations<"search">>;
+type CommonT = ReturnType<typeof useTranslations<"common">>;
 
-export const RATE_LABEL: Record<ServiceType, string> = {
-  DOG_WALKING: "Hourly Rate",
-  BOARDING: "Nightly Rate",
-  DAY_CARE: "Daily Rate",
-  DROP_IN: "Per-Visit Rate",
-};
-
-const fmtDate = (iso: string, withYear: boolean) => {
+const fmtDate = (iso: string, withYear: boolean, locale: string) => {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-CA", { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) });
+  return d.toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) });
 };
 
 /** "Oct 18 – Oct 22, 2026" */
-export function formatDateRange(from?: string, to?: string) {
-  if (from && to) return `${fmtDate(from, false)} – ${fmtDate(to, true)}`;
-  if (from) return `From ${fmtDate(from, true)}`;
-  if (to) return `Until ${fmtDate(to, true)}`;
-  return "Add dates";
+export function formatDateRange(from: string | undefined, to: string | undefined, t: SearchT, locale: string) {
+  if (from && to) return t("dates.range", { from: fmtDate(from, false, locale), to: fmtDate(to, true, locale) });
+  if (from) return t("dates.from", { date: fmtDate(from, true, locale) });
+  if (to) return t("dates.until", { date: fmtDate(to, true, locale) });
+  return t("dates.add");
 }
 
 /** Top-bar "Pet type" summary: "Any Pet", "Cat", "Dog · Small", "Cat + Rabbit". */
-export function petTypeLabel(pets: PetKind[], sizes: PetSize[], labels: Record<PetSize, { label: string }>) {
+export function petTypeLabel(pets: PetKind[], sizes: PetSize[], t: SearchT, tc: CommonT) {
   const dogSizes = sizes.length && (!pets.length || pets.includes("DOG"));
-  if (!pets.length) return dogSizes ? petLabel(sizes, labels) : "Any Pet";
-  if (pets.length === 1 && pets[0] === "DOG") return petLabel(sizes, labels);
-  const kinds = pets.length > 2 ? `${pets.length} pet types` : pets.map((k) => (k === "OTHER" ? "Other" : PET_KIND_META[k].label)).join(" + ");
+  if (!pets.length) return dogSizes ? petLabel(sizes, t) : t("pets.anyPet");
+  if (pets.length === 1 && pets[0] === "DOG") return petLabel(sizes, t);
+  const kinds =
+    pets.length > 2 ? t("pets.types", { count: pets.length }) : pets.map((k) => (k === "OTHER" ? t("pets.other") : tc(`enums.petKind.${k}`))).join(" + ");
   return kinds;
 }
 
-export function petLabel(sizes: PetSize[], labels: Record<PetSize, { label: string }>) {
-  if (sizes.length === 0) return "Any Dog Size";
-  if (sizes.length === 1) return `1 ${labels[sizes[0]].label} Dog`;
-  return sizes.map((s) => labels[s].label).join(" + ") + " Dogs";
+export function petLabel(sizes: PetSize[], t: SearchT) {
+  if (sizes.length === 0) return t("pets.anyDogSize");
+  if (sizes.length === 1) return t("pets.oneDog", { dog: t(`pets.sizedDog.${sizes[0]}`) });
+  return t("pets.dogs", { sizes: sizes.map((s) => t(`pets.sizePlural.${s}`)).join(" + ") });
 }

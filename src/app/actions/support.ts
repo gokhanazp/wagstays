@@ -1,6 +1,8 @@
 "use server";
 
 import { randomInt } from "node:crypto";
+import { getLocale, getTranslations } from "next-intl/server";
+import { intlLocale } from "@/i18n/routing";
 import { revalidatePath } from "@/i18n/revalidate";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -26,9 +28,18 @@ const body = z
   .min(2, "Please write a message.")
   .max(BODY_MAX, `Please keep messages under ${BODY_MAX.toLocaleString("en-CA")} characters.`);
 
-function fail(err: z.ZodError): SupportFormState {
+// User-side messages are translated (account.errors); the admin side below stays English.
+type T = Awaited<ReturnType<typeof getTranslations<"account.errors">>>;
+const userBody = (t: T, locale: string) =>
+  z
+    .string(t("support.writeMessage"))
+    .trim()
+    .min(2, t("support.writeMessage"))
+    .max(BODY_MAX, t("support.messageLength", { max: BODY_MAX.toLocaleString(intlLocale(locale)) }));
+
+function fail(err: z.ZodError, fallback = "Please check the form."): SupportFormState {
   const fieldErrors = z.flattenError(err).fieldErrors as Record<string, string[] | undefined>;
-  return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
+  return { error: Object.values(fieldErrors).flat()[0] ?? fallback, fieldErrors };
 }
 
 async function currentUser() {
@@ -56,28 +67,30 @@ const newReference = () => `T-${randomInt(10000, 100000)}`;
 // User side
 // ---------------------------------------------------------------------------------------------
 
-const CreateSchema = z.object({
-  category: z.enum(TICKET_CATEGORIES, "Please choose what this is about."),
-  subject: z.string("Please add a subject.").trim().min(4, "Please add a short subject (at least 4 characters).").max(SUBJECT_MAX, `Please keep the subject under ${SUBJECT_MAX} characters.`),
-  body: body.min(10, "Please describe what happened (at least 10 characters)."),
-  bookingId: z
-    .string()
-    .trim()
-    .max(64)
-    .optional()
-    .transform((v) => v || null),
-});
+const createSchema = (t: T, locale: string) =>
+  z.object({
+    category: z.enum(TICKET_CATEGORIES, t("support.category")),
+    subject: z.string(t("support.subject")).trim().min(4, t("support.subjectMin")).max(SUBJECT_MAX, t("support.subjectMax", { max: SUBJECT_MAX })),
+    body: userBody(t, locale).min(10, t("support.bodyMin")),
+    bookingId: z
+      .string()
+      .trim()
+      .max(64)
+      .optional()
+      .transform((v) => v || null),
+  });
 
 export async function createTicket(_: SupportFormState, formData: FormData): Promise<SupportFormState> {
+  const t = await getTranslations("account.errors");
   const user = await currentUser();
-  if (!user) return { error: "Please sign in again to contact support." };
-  const parsed = CreateSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  if (!user) return { error: t("support.signInContact") };
+  const parsed = createSchema(t, await getLocale()).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fail(parsed.error, t("checkForm"));
   const { category, subject, bookingId } = parsed.data;
 
   if (bookingId) {
     const mine = await db.booking.count({ where: { AND: [{ id: bookingId }, myBookingWhere(user.id)] } });
-    if (!mine) return { error: "Please choose one of your own bookings.", fieldErrors: { bookingId: ["Please choose one of your own bookings."] } };
+    if (!mine) return { error: t("support.ownBooking"), fieldErrors: { bookingId: [t("support.ownBooking")] } };
   }
 
   // Safety reports jump the queue.
@@ -102,7 +115,7 @@ export async function createTicket(_: SupportFormState, formData: FormData): Pro
       if (!isUniqueViolation(e)) throw e;
     }
   }
-  if (!ticketId) return { error: "Something went wrong creating your ticket — please try again." };
+  if (!ticketId) return { error: t("support.createFailed") };
 
   revalidateTicket(ticketId);
   redirect(await localizedPath(`/account/support/${ticketId}?notice=created`));
@@ -115,13 +128,14 @@ async function ownTicket(ticketId: string, userId: string) {
 }
 
 export async function replyToTicket(ticketId: string, _: SupportFormState, formData: FormData): Promise<SupportFormState> {
+  const t = await getTranslations("account.errors");
   const user = await currentUser();
-  if (!user) return { error: "Please sign in again to reply." };
-  const parsed = z.object({ ticketId: id, body }).safeParse({ ticketId, body: formData.get("body") });
-  if (!parsed.success) return fail(parsed.error);
+  if (!user) return { error: t("support.signInReply") };
+  const parsed = z.object({ ticketId: id, body: userBody(t, await getLocale()) }).safeParse({ ticketId, body: formData.get("body") });
+  if (!parsed.success) return fail(parsed.error, t("checkForm"));
   const ticket = await ownTicket(parsed.data.ticketId, user.id);
-  if (!ticket) return NOT_FOUND;
-  if (ticket.status === "CLOSED") return { error: "This ticket is closed. Please open a new one if you still need help." };
+  if (!ticket) return { error: t("support.ticketNotFound") };
+  if (ticket.status === "CLOSED") return { error: t("support.closed") };
 
   // A reply puts the ball back in the support team's court (and re-opens a resolved ticket).
   const nextStatus: TicketStatus = ticket.status === "IN_PROGRESS" ? "IN_PROGRESS" : "OPEN";
@@ -131,23 +145,24 @@ export async function replyToTicket(ticketId: string, _: SupportFormState, formD
   ]);
   // No event: the recipient is the support team, not a user.
   revalidateTicket(ticket.id);
-  return { ok: true, message: ticket.status === "RESOLVED" ? "Reply sent — we've re-opened your ticket." : "Reply sent." };
+  return { ok: true, message: ticket.status === "RESOLVED" ? t("support.replyReopened") : t("support.replySent") };
 }
 
 export async function resolveTicketAsUser(ticketId: string): Promise<SupportFormState> {
+  const t = await getTranslations("account.errors");
   const user = await currentUser();
-  if (!user) return { error: "Please sign in again." };
+  if (!user) return { error: t("signInAgain") };
   const parsed = id.safeParse(ticketId);
-  if (!parsed.success) return NOT_FOUND;
+  if (!parsed.success) return { error: t("support.ticketNotFound") };
   const ticket = await ownTicket(parsed.data, user.id);
-  if (!ticket) return NOT_FOUND;
+  if (!ticket) return { error: t("support.ticketNotFound") };
   if (ticket.status === "RESOLVED" || ticket.status === "CLOSED") return { ok: true };
   await db.supportTicket.update({
     where: { id: ticket.id },
     data: { status: "RESOLVED", resolvedAt: new Date(), resolution: "Marked as resolved by the user." },
   });
   revalidateTicket(ticket.id);
-  return { ok: true, message: "Thanks — we've marked this ticket as resolved." };
+  return { ok: true, message: t("support.resolved") };
 }
 
 // ---------------------------------------------------------------------------------------------

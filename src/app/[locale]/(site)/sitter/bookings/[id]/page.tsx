@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { bookingPets, petKindLabel, petNames } from "@/lib/pets";
 import { bookingPriceLines } from "@/lib/quote";
+import { priceLineLabel } from "@/lib/price-details";
 import { PetChips } from "@/components/booking/PetChips";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
@@ -17,18 +19,22 @@ import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/a
 import { OwnerRatingCard } from "../../_components/OwnerRatingCard";
 import { OwnerReputation } from "../../_components/OwnerReputation";
 import { PetPhoto } from "../../_components/PetPhoto";
-import { bookingWhen, hasStarted, ownerShortName, petSizeLabel, SERVICE_ICONS, serviceLabel } from "../../_lib";
+import { bookingWhen, hasStarted, ownerShortName, petSizeKey, SERVICE_ICONS, serviceKey } from "../../_lib";
 
-export const metadata: Metadata = { title: "Booking details | WagStays" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("sitter.meta");
+  return { title: `${t("booking")}` };
+}
 
-function Row({ icon, label, value }: { icon: string; label: string; value?: React.ReactNode }) {
+async function Row({ icon, label, value }: { icon: string; label: string; value?: React.ReactNode }) {
+  const t = await getTranslations("sitter.booking");
   return (
     <div className="flex items-start gap-space-sm py-space-sm border-b border-[#EFE7DE] last:border-0">
       <span className="material-symbols-outlined text-xl text-secondary mt-0.5">{icon}</span>
       <div className="flex flex-col min-w-0">
         <span className="font-label-md text-label-md text-on-surface-variant">{label}</span>
         <span className="font-body-md text-body-md text-on-surface break-words whitespace-pre-line">
-          {value || <span className="text-outline">Not provided</span>}
+          {value || <span className="text-outline">{t("notProvided")}</span>}
         </span>
       </div>
     </div>
@@ -52,11 +58,15 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
   if (!b) notFound();
 
   const tz = profile.city.timeZone;
-  const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
+  const [tr, tc, locale] = await Promise.all([getTranslations("sitter"), getTranslations("common"), getLocale()]);
+  const statusKey = (s: string) => (s in BOOKING_STATUS_LABELS ? s : "DRAFT") as BookingStatus;
+  const status = BOOKING_STATUS_LABELS[statusKey(b.status)];
+  const statusLabel = (s: string) => tc(`enums.bookingStatus.${statusKey(s)}`);
+  const actorLabel = (a: string | null) => (a === "OWNER" || a === "SITTER" || a === "ADMIN" ? tr(`actor.${a}`) : (a ?? "").toLowerCase() || "—");
   const contactsVisible = b.status === "CONFIRMED" || b.status === "COMPLETED";
   const pet = b.pet;
   const pets = bookingPets(b);
-  const names = petNames(pets.map((p) => p.name));
+  const names = petNames(pets.map((p) => p.name), locale);
   const lines = bookingPriceLines(b);
   const allowed = allowedTransitions(b.status, "SITTER");
   const started = hasStarted(b.startAt);
@@ -69,7 +79,7 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
   return (
     <>
       <Link className="inline-flex items-center gap-1 font-label-lg text-label-lg text-on-surface-variant hover:text-primary w-fit" href="/sitter/bookings">
-        <span className="material-symbols-outlined text-lg">arrow_back</span>All bookings
+        <span className="material-symbols-outlined text-lg">arrow_back</span>{tr("booking.allBookings")}
       </Link>
 
       <Card className="p-space-lg flex flex-col gap-space-lg">
@@ -78,16 +88,20 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
           <div className="flex flex-col gap-space-xs flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-space-sm">
               <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-md md:text-headline-md text-on-surface">
-                {serviceLabel(b.service.type)} for {names}
+                {tr("booking.title", { service: tc(serviceKey(b.service.type)), pets: names })}
               </h1>
-              <StatusChip tone={status.tone}>{b.status === "PENDING" ? "Needs your response" : status.label}</StatusChip>
+              <StatusChip tone={status.tone}>{b.status === "PENDING" ? tr("needsResponse") : statusLabel(b.status)}</StatusChip>
             </div>
             <p className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
               <span className="material-symbols-outlined text-xl text-secondary">calendar_month</span>
-              {bookingWhen(b.startAt, b.endAt, tz)}
+              {bookingWhen(b.startAt, b.endAt, tz, locale)}
             </p>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Requested by <span className="font-semibold text-on-surface">{ownerShortName(b.owner)}</span> on {formatDateTime(b.createdAt, tz)}
+              {tr.rich("booking.requestedBy", {
+                name: ownerShortName(b.owner),
+                date: formatDateTime(b.createdAt, tz, locale),
+                b: (c) => <span className="font-semibold text-on-surface">{c}</span>,
+              })}
             </p>
             <OwnerReputation ownerId={b.owner.id} />
             {pets.length > 1 && (
@@ -104,37 +118,37 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
             <div className="flex flex-wrap gap-space-xs pt-space-xs">
               {pets.length > 1 && (
                 <StatusChip icon="pets" tone="primary">
-                  {pets.length} pets
+                  {tr("petCount", { count: pets.length })}
                 </StatusChip>
               )}
               <StatusChip icon={SERVICE_ICONS[b.service.type]}>
-                {serviceLabel(b.service.type)}
-                {b.service.durationMins ? ` · ${b.service.durationMins} min` : ""}
+                {tc(serviceKey(b.service.type))}
+                {b.service.durationMins ? ` · ${tr("durationMins", { mins: b.service.durationMins })}` : ""}
               </StatusChip>
               {b.meetAndGreet && (
                 <StatusChip icon="handshake" tone="primary">
-                  Meet &amp; Greet requested first
+                  {tr("booking.meetGreetRequested")}
                 </StatusChip>
               )}
-              {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity)}</StatusChip>}
+              {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity, locale)}</StatusChip>}
               {members.length > 1 ? (
                 <StatusChip icon="repeat" tone="primary">
-                  Week {position} of {members.length}
+                  {tr("booking.weekOf", { index: position, total: members.length })}
                 </StatusChip>
               ) : (
-                b.recurringWeekly && <StatusChip icon="repeat">Repeats weekly</StatusChip>
+                b.recurringWeekly && <StatusChip icon="repeat">{tr("booking.repeatsWeekly")}</StatusChip>
               )}
-              {b.gpsUpdates && <StatusChip icon="my_location">GPS updates on</StatusChip>}
+              {b.gpsUpdates && <StatusChip icon="my_location">{tr("booking.gpsOn")}</StatusChip>}
             </div>
           </div>
           <div className="flex md:flex-col items-center md:items-end justify-between gap-space-xs p-space-md rounded-2xl bg-surface-container-low md:min-w-[160px]">
-            <span className="font-label-md text-label-md text-on-surface-variant">You earn</span>
-            <span className="font-headline-md text-headline-md text-primary">{formatMoney(b.subtotalCents)}</span>
+            <span className="font-label-md text-label-md text-on-surface-variant">{tr("booking.youEarn")}</span>
+            <span className="font-headline-md text-headline-md text-primary">{formatMoney(b.subtotalCents, { locale })}</span>
             {lines.length > 1 && (
               <ul className="hidden md:flex flex-col gap-0.5 font-body-sm text-body-sm text-on-surface-variant text-right" data-testid="sitter-price-lines">
                 {lines.map((l, i) => (
                   <li key={`${l.label}-${i}`}>
-                    {l.label}: <span className="font-semibold text-on-surface">{formatMoney(l.amountCents)}</span>
+                    {priceLineLabel(l, i, locale)}: <span className="font-semibold text-on-surface">{formatMoney(l.amountCents, { locale })}</span>
                   </li>
                 ))}
               </ul>
@@ -145,11 +159,11 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
         <div className="flex flex-wrap gap-space-sm">
           <Link className={BTN.secondary} href={`/messages/new?owner=${b.owner.id}`}>
             <span className="material-symbols-outlined text-lg">chat_bubble</span>
-            Message {b.owner.firstName}
+            {tr("booking.message", { name: b.owner.firstName })}
           </Link>
           <Link className={`${BTN.ghost} text-on-surface-variant`} href={`/account/support/new?booking=${b.id}`}>
             <span className="material-symbols-outlined text-lg">flag</span>
-            Report a problem
+            {tr("booking.reportProblem")}
           </Link>
         </div>
 
@@ -161,11 +175,10 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
           <div className="flex flex-col gap-space-sm border-t border-[#EFE7DE] pt-space-lg">
             <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-space-xs">
               <span className="material-symbols-outlined text-xl text-secondary">event_repeat</span>
-              Weekly series · {members.length} weeks
+              {tr("booking.series", { count: members.length })}
             </h2>
             <ul className="flex flex-wrap gap-space-xs">
               {members.map((m, i) => {
-                const st = BOOKING_STATUS_LABELS[m.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
                 return (
                   <li key={m.id}>
                     <Link
@@ -176,9 +189,9 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
                       href={`/sitter/bookings/${m.id}`}
                     >
                       <span className="font-semibold">
-                        Week {i + 1} · {formatDayLong(zonedParts(m.startAt.getTime(), tz).iso)}
+                        {tr("booking.seriesWeek", { n: i + 1, date: formatDayLong(zonedParts(m.startAt.getTime(), tz).iso, locale) })}
                       </span>
-                      <span>{st.label}</span>
+                      <span>{statusLabel(m.status)}</span>
                     </Link>
                   </li>
                 );
@@ -190,17 +203,17 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
 
         {b.sitterNote && b.status !== "DECLINED" && (
           <p className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-low rounded-xl p-space-md">
-            <span className="font-semibold text-on-surface">Your note to the owner: </span>
+            <span className="font-semibold text-on-surface">{tr("booking.yourNote")}</span>
             {b.sitterNote}
           </p>
         )}
         {(b.status === "DECLINED" || b.status === "CANCELLED") && (
           <p className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-low rounded-xl p-space-md">
             <span className="font-semibold text-on-surface">
-              {b.status === "DECLINED" ? "Declined" : `Cancelled by ${(b.cancelledBy ?? "").toLowerCase() || "—"}`}
-              {b.cancelledAt ? ` on ${formatDateTime(b.cancelledAt, tz)}` : ""}:{" "}
+              {b.status === "DECLINED" ? tr("booking.declined") : tr("booking.cancelledBy", { who: actorLabel(b.cancelledBy) })}
+              {b.cancelledAt ? tr("booking.on", { date: formatDateTime(b.cancelledAt, tz, locale) }) : ""}:{" "}
             </span>
-            {b.cancelReason ?? "No reason given."}
+            {b.cancelReason ?? tr("booking.noReason")}
           </p>
         )}
       </Card>
@@ -209,28 +222,28 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
         <div className="flex flex-col gap-space-lg">
           {pets.map((pet) => (
             <Card className="pb-space-md" key={pet.id}>
-              <CardHeader icon="pets" title={`About ${pet.name}`} />
+              <CardHeader icon="pets" title={tr("booking.about", { name: pet.name })} />
               <div className="px-space-lg pt-space-sm flex flex-col">
                 <Row
                   icon="info"
-                  label="Pet"
+                  label={tr("booking.pet")}
                   value={[
-                    petKindLabel(pet),
+                    petKindLabel(pet, locale),
                     pet.breed,
-                    petSizeLabel(pet.size),
-                    pet.ageYears != null ? `${pet.ageYears} yrs` : null,
-                    pet.sex === "MALE" ? "Male" : pet.sex === "FEMALE" ? "Female" : null,
+                    pet.size ? tc(petSizeKey(pet.size)) : null,
+                    pet.ageYears != null ? tr("booking.age", { count: pet.ageYears }) : null,
+                    pet.sex === "MALE" ? tr("booking.male") : pet.sex === "FEMALE" ? tr("booking.female") : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 />
                 <Row
                   icon="vaccines"
-                  label="Health"
+                  label={tr("booking.health")}
                   value={[
-                    pet.neutered ? "Spayed / neutered" : "Not spayed / neutered",
-                    pet.rabiesVaccinated ? "Rabies vaccinated" : "Rabies vaccine not recorded",
-                    pet.microchip ? `Microchip ${pet.microchip}` : null,
+                    pet.neutered ? tr("booking.neutered") : tr("booking.notNeutered"),
+                    pet.rabiesVaccinated ? tr("booking.rabies") : tr("booking.noRabies"),
+                    pet.microchip ? tr("booking.microchip", { id: pet.microchip }) : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -250,25 +263,25 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
         </div>
 
         <Card className="pb-space-md">
-          <CardHeader icon="assignment" title="Care instructions" />
+          <CardHeader icon="assignment" title={tr("booking.care")} />
           <div className="px-space-lg pt-space-sm flex flex-col">
-            <Row icon="location_on" label="Meeting address" value={b.meetingAddress} />
-            <Row icon="pets" label="Leash preference" value={b.leashPreference} />
-            <Row icon="diversity_1" label="Around other animals" value={b.otherAnimalsReaction} />
-            <Row icon="restaurant" label="Feeding rules" value={b.feedingRules} />
-            <Row icon="sticky_note_2" label="Notes from the owner" value={b.notes} />
+            <Row icon="location_on" label={tr("booking.meetingAddress")} value={b.meetingAddress} />
+            <Row icon="pets" label={tr("booking.leash")} value={b.leashPreference} />
+            <Row icon="diversity_1" label={tr("booking.otherAnimals")} value={b.otherAnimalsReaction} />
+            <Row icon="restaurant" label={tr("booking.feeding")} value={b.feedingRules} />
+            <Row icon="sticky_note_2" label={tr("booking.ownerNotes")} value={b.notes} />
           </div>
         </Card>
 
         <Card className="pb-space-md lg:col-span-2">
-          <CardHeader icon="emergency" title="Emergency & vet contacts" />
+          <CardHeader icon="emergency" title={tr("booking.emergency")} />
           <div className="px-space-lg pt-space-sm">
             {contactsVisible ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-space-lg">
-                <Row icon="person" label="Emergency contact" value={b.emergencyName} />
+                <Row icon="person" label={tr("booking.emergencyContact")} value={b.emergencyName} />
                 <Row
                   icon="call"
-                  label="Emergency phone"
+                  label={tr("booking.emergencyPhone")}
                   value={
                     b.emergencyPhone && (
                       <a className="text-primary hover:underline" href={`tel:${b.emergencyPhone}`}>
@@ -277,10 +290,10 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
                     )
                   }
                 />
-                <Row icon="local_hospital" label="Vet clinic" value={b.vetClinic} />
+                <Row icon="local_hospital" label={tr("booking.vetClinic")} value={b.vetClinic} />
                 <Row
                   icon="call"
-                  label="Vet phone"
+                  label={tr("booking.vetPhone")}
                   value={
                     b.vetPhone && (
                       <a className="text-primary hover:underline" href={`tel:${b.vetPhone}`}>
@@ -294,8 +307,8 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
               <p className="flex items-start gap-space-sm p-space-md rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant">
                 <span className="material-symbols-outlined text-xl text-secondary">lock</span>
                 {b.status === "PENDING"
-                  ? "To protect the owner's privacy, emergency and vet contacts are shared once you accept this request."
-                  : "Emergency and vet contacts are only shared for confirmed bookings."}
+                  ? tr("booking.contactsPending")
+                  : tr("booking.contactsHidden")}
               </p>
             )}
           </div>
@@ -305,7 +318,7 @@ export default async function SitterBookingDetailPage({ params }: PageProps<"/[l
 
         {b.review && (
           <Card className="p-space-lg lg:col-span-2 flex flex-col gap-space-xs">
-            <span className="font-label-md text-label-md text-on-surface-variant">Review from {b.owner.firstName}</span>
+            <span className="font-label-md text-label-md text-on-surface-variant">{tr("booking.reviewFrom", { name: b.owner.firstName })}</span>
             <span className="font-title-md text-title-md text-secondary">{"★".repeat(b.review.rating)}</span>
             <p className="font-body-md text-body-md text-on-surface">{b.review.body}</p>
           </Card>

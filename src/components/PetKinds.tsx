@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
 
@@ -22,6 +23,7 @@ export function PetKindPicker({
   locked?: readonly string[];
   lockedHint?: string;
 }) {
+  const tc = useTranslations("common");
   const [inner, setInner] = useState<string[]>(() => [...(defaultValue ?? [])]);
   const selected = value ?? inner;
   const toggle = (k: PetKind, on: boolean) => {
@@ -56,7 +58,7 @@ export function PetKindPicker({
             <span aria-hidden className="material-symbols-outlined text-lg">
               {selected.includes(k) ? (isLocked ? "lock" : "check") : PET_KIND_META[k].icon}
             </span>
-            {PET_KIND_META[k].label}
+            {tc(`enums.petKind.${k}`)}
           </label>
         );
       })}
@@ -66,6 +68,7 @@ export function PetKindPicker({
 
 /** Read-only chips ("Pets I care for") with icons. */
 export function PetKindChips({ kinds, size = "md" }: { kinds: readonly string[]; size?: "sm" | "md" }) {
+  const tc = useTranslations("common");
   const list = PET_KINDS.filter((k) => kinds.includes(k));
   if (!list.length) return null;
   return (
@@ -80,7 +83,7 @@ export function PetKindChips({ kinds, size = "md" }: { kinds: readonly string[];
           <span aria-hidden className="material-symbols-outlined text-lg text-primary">
             {PET_KIND_META[k].icon}
           </span>
-          {PET_KIND_META[k].label}
+          {tc(`enums.petKind.${k}`)}
         </li>
       ))}
     </ul>
@@ -89,9 +92,11 @@ export function PetKindChips({ kinds, size = "md" }: { kinds: readonly string[];
 
 /** Subtle icon row for search cards / map preview. */
 export function PetKindIcons({ kinds, className = "" }: { kinds: readonly string[]; className?: string }) {
+  const t = useTranslations("search.petKinds");
+  const tc = useTranslations("common");
   const list = PET_KINDS.filter((k) => kinds.includes(k));
   if (!list.length) return null;
-  const label = `Cares for ${list.map((k) => PET_KIND_META[k].plural).join(", ")}`;
+  const label = t("caresFor", { kinds: list.map((k) => tc(`enums.petKindPlural.${k}`)).join(", ") });
   return (
     <span aria-label={label} className={`inline-flex items-center gap-0.5 text-on-surface-variant ${className}`} role="img" title={label}>
       {list.slice(0, 5).map((k) => (

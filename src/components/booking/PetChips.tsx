@@ -1,5 +1,7 @@
 // Pet chips (photo + name) for the pets of a booking — owner, sitter and admin booking pages.
 
+import { Link } from "@/i18n/navigation";
+
 type ChipPet = { id: string; name: string; photoUrl?: string | null; breed?: string | null; href?: string };
 
 export function PetChips({ pets, className = "" }: { pets: ChipPet[]; className?: string }) {
@@ -26,9 +28,9 @@ export function PetChips({ pets, className = "" }: { pets: ChipPet[]; className?
         return (
           <li className="max-w-full min-w-0" key={p.id}>
             {p.href ? (
-              <a className={`${cls} hover:bg-surface-container transition-colors`} href={p.href}>
+              <Link className={`${cls} hover:bg-surface-container transition-colors`} href={p.href}>
                 {body}
-              </a>
+              </Link>
             ) : (
               <span className={cls}>{body}</span>
             )}

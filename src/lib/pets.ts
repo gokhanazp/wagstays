@@ -1,4 +1,6 @@
-// Shared pet display helpers (client + server safe).
+// Shared pet display helpers (client + server safe). Optional `locale` params translate via messages/{en,fr}/booking.json.
+
+import { bookingT } from "./booking-messages";
 
 export const SPECIES_LABELS: Record<string, string> = { DOG: "Dog", CAT: "Cat", OTHER: "Other pet" };
 
@@ -32,19 +34,28 @@ export function normalizeKinds(values: Iterable<unknown>): PetKind[] {
 
 /** Popular "other" pets offered as quick picks in the pet form (labels of the non-dog/cat kinds). */
 export const OTHER_SPECIES_SUGGESTIONS = PET_KINDS.filter((k) => k !== "DOG" && k !== "CAT" && k !== "OTHER").map((k) => PET_KIND_META[k].label);
+/** OTHER_SPECIES_SUGGESTIONS in the UI language (fr: "Lapin", "Cochon d'Inde"…; kindFromText() understands both). */
+export const otherSpeciesSuggestions = (locale = "en") =>
+  PET_KINDS.filter((k) => k !== "DOG" && k !== "CAT" && k !== "OTHER").map((k) => petKindName(k, locale));
 
-// Free-text → kind. Matched on whole words after lower-casing and stripping punctuation; plurals are handled
-// by also trying each typed word without a trailing "s" / "es" / "ies".
+/** "Rabbit" / fr "Lapin" — PET_KIND_META[kind].label in the UI language. */
+export function petKindName(kind: PetKind, locale = "en") {
+  return bookingT(locale)(`pets.kind.${kind}`);
+}
+
+// Free-text → kind. Matched on whole words after lower-casing, removing accents and stripping punctuation;
+// plurals are handled by also trying each typed word without a trailing "s" / "es" / "ies" (French plurals
+// in "x" are listed). English and French names are both understood.
 const SYNONYMS: [PetKind, string[]][] = [
-  ["GUINEA_PIG", ["guinea pig", "guineapig", "cavy", "cavie", "cavies"]],
-  ["RABBIT", ["rabbit", "bunny", "bunnies", "hare", "lop"]],
-  ["HAMSTER", ["hamster", "gerbil", "mouse", "mice", "rat", "chinchilla", "degu"]],
-  ["BIRD", ["bird", "parrot", "budgie", "budgerigar", "parakeet", "cockatiel", "cockatoo", "canary", "finch", "lovebird", "conure", "macaw", "dove", "pigeon", "chicken", "hen"]],
-  ["FERRET", ["ferret"]],
-  ["REPTILE", ["reptile", "lizard", "snake", "turtle", "tortoise", "gecko", "iguana", "chameleon", "python", "boa", "bearded dragon", "dragon", "skink", "frog", "amphibian", "axolotl"]],
-  ["FISH", ["fish", "goldfish", "betta", "guppy", "koi", "aquarium", "tetra"]],
-  ["DOG", ["dog", "puppy", "puppies", "pup"]],
-  ["CAT", ["cat", "kitten", "kitty"]],
+  ["GUINEA_PIG", ["guinea pig", "guineapig", "cavy", "cavie", "cavies", "cochon d inde", "cochons d inde", "cobaye"]],
+  ["RABBIT", ["rabbit", "bunny", "bunnies", "hare", "lop", "lapin", "lievre"]],
+  ["HAMSTER", ["hamster", "gerbil", "mouse", "mice", "rat", "chinchilla", "degu", "gerbille", "souris"]],
+  ["BIRD", ["bird", "parrot", "budgie", "budgerigar", "parakeet", "cockatiel", "cockatoo", "canary", "finch", "lovebird", "conure", "macaw", "dove", "pigeon", "chicken", "hen", "oiseau", "oiseaux", "perroquet", "perruche", "canari", "poule"]],
+  ["FERRET", ["ferret", "furet"]],
+  ["REPTILE", ["reptile", "lizard", "snake", "turtle", "tortoise", "gecko", "iguana", "chameleon", "python", "boa", "bearded dragon", "dragon", "skink", "frog", "amphibian", "axolotl", "lezard", "serpent", "tortue", "grenouille", "cameleon", "iguane"]],
+  ["FISH", ["fish", "goldfish", "betta", "guppy", "koi", "aquarium", "tetra", "poisson"]],
+  ["DOG", ["dog", "puppy", "puppies", "pup", "chien", "chiot"]],
+  ["CAT", ["cat", "kitten", "kitty", "chat", "chaton"]],
 ];
 
 /** A word plus its likely singular forms ("bunnies" → bunny, "tortoises" → tortoise, "fishes" → fish). */
@@ -60,6 +71,8 @@ function forms(w: string) {
 export function kindFromText(text: string | null | undefined): PetKind {
   const words = (text ?? "")
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z\s-]/g, " ")
     .split(/[\s-]+/)
     .filter(Boolean)
@@ -80,15 +93,16 @@ export function petKindOf(pet: { species: string; speciesOther?: string | null }
   return kindFromText(pet.speciesOther);
 }
 
-/** "Dog", "Cat", or what the owner typed for other pets ("Rabbit"). */
-export function petKindLabel(pet: { species: string; speciesOther?: string | null }) {
-  if (pet.species === "OTHER") return pet.speciesOther?.trim() || SPECIES_LABELS.OTHER;
-  return SPECIES_LABELS[pet.species] ?? pet.species;
+/** "Dog", "Cat", or what the owner typed for other pets ("Rabbit"). fr: "Chien", "Chat", "Autre animal". */
+export function petKindLabel(pet: { species: string; speciesOther?: string | null }, locale = "en") {
+  const t = bookingT(locale);
+  if (pet.species === "OTHER") return pet.speciesOther?.trim() || t("pets.otherPet");
+  return pet.species === "DOG" || pet.species === "CAT" ? t(`pets.kind.${pet.species}`) : pet.species;
 }
 
-/** Plural noun for "Sarah doesn't care for rabbits". */
-export function petKindPlural(kind: PetKind) {
-  return PET_KIND_META[kind].plural;
+/** Plural noun for "Sarah doesn't care for rabbits" (fr: "lapins"). */
+export function petKindPlural(kind: PetKind, locale = "en") {
+  return bookingT(locale)(`pets.plural.${kind}`);
 }
 
 type SitterAcceptance = {
@@ -100,7 +114,7 @@ type SitterAcceptance = {
   acceptsGiant: boolean;
 };
 
-const SIZE_TEXT: Record<string, string> = { SMALL: "small", MEDIUM: "medium", LARGE: "large", GIANT: "giant" };
+const SIZES = ["SMALL", "MEDIUM", "LARGE", "GIANT"] as const;
 
 /**
  * Why `sitter` can't take `pet` ("Sarah doesn't care for rabbits"), or null when they can.
@@ -111,22 +125,25 @@ export function petBlockReason(
   sitter: SitterAcceptance,
   pet: { name?: string; species: string; speciesOther?: string | null; size?: string | null },
   serviceType?: string,
+  locale = "en",
 ): string | null {
+  const t = bookingT(locale);
   const kind = petKindOf(pet);
-  if (!sitter.kinds.includes(kind)) return `${sitter.firstName} doesn't care for ${PET_KIND_META[kind].plural}`;
+  if (!sitter.kinds.includes(kind)) return t("pets.notKind", { name: sitter.firstName, kinds: petKindPlural(kind, locale) });
   if (kind === "DOG" && pet.size) {
     const ok = { SMALL: sitter.acceptsSmall, MEDIUM: sitter.acceptsMedium, LARGE: sitter.acceptsLarge, GIANT: sitter.acceptsGiant }[pet.size];
-    if (ok === false) return `${sitter.firstName} doesn't take ${SIZE_TEXT[pet.size]} dogs`;
+    const size = SIZES.find((s) => s === pet.size);
+    if (ok === false && size) return t("pets.size", { name: sitter.firstName, size: t(`pets.sizes.${size}`) });
   }
-  if (serviceType === "DOG_WALKING" && kind !== "DOG") return "Dog walking is for dogs only";
+  if (serviceType === "DOG_WALKING" && kind !== "DOG") return t("pets.dogsOnly");
   return null;
 }
 
-/** "Maple", "Maple & Biscuit", "Maple, Biscuit & Rex" */
-export function petNames(names: readonly (string | null | undefined)[]) {
+/** "Maple", "Maple & Biscuit", "Maple, Biscuit & Rex" (fr: "Maple, Biscuit et Rex") */
+export function petNames(names: readonly (string | null | undefined)[], locale = "en") {
   const n = names.filter((x): x is string => !!x);
   if (n.length <= 1) return n[0] ?? "";
-  return `${n.slice(0, -1).join(", ")} & ${n[n.length - 1]}`;
+  return bookingT(locale)("pets.and", { first: n.slice(0, -1).join(", "), last: n[n.length - 1] });
 }
 
 /**

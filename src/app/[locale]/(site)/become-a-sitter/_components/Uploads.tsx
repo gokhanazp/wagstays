@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createApplicationUploadUrl } from "@/app/actions/application-uploads";
 import { APPLICATION_FILE_RULES, MAX_HOME_PHOTOS, type ApplicationFileKind, type UploadedFile } from "@/lib/application-files";
@@ -9,13 +10,13 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 const MAX_BYTES = 10 * 1024 * 1024;
 
 /** Uploads a file straight to the private documents bucket through a server-issued signed URL. */
-async function uploadApplicationFile(draftId: string, kind: ApplicationFileKind, file: File): Promise<UploadedFile> {
+async function uploadApplicationFile(draftId: string, kind: ApplicationFileKind, file: File, failedMsg: string): Promise<UploadedFile> {
   const signed = await createApplicationUploadUrl({ draftId, kind, contentType: file.type, sizeBytes: file.size });
   if ("error" in signed) throw new Error(signed.error);
   const { error } = await getSupabaseBrowserClient()
     .storage.from(STORAGE_BUCKETS.documents)
     .uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
-  if (error) throw new Error("Upload failed — please try again.");
+  if (error) throw new Error(failedMsg);
   return { kind, path: signed.path, fileName: file.name, contentType: file.type, sizeBytes: file.size };
 }
 
@@ -52,6 +53,7 @@ export function FileUploadRow({
   onFile: (fileName: string) => void;
   error?: string;
 }) {
+  const t = useTranslations("apply.uploads");
   const ref = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -74,7 +76,7 @@ export function FileUploadRow({
             {uploading ? (
               <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                Uploading securely…
+                {t("uploading")}
               </p>
             ) : value ? (
               <p className="font-body-sm text-body-sm text-primary font-semibold truncate flex items-center gap-1">
@@ -97,13 +99,13 @@ export function FileUploadRow({
             e.target.value = "";
             if (!file) return;
             if (file.size > MAX_BYTES) {
-              setLocalError("That file is over 10 MB — please choose a smaller one.");
+              setLocalError(t("tooLarge"));
               return;
             }
             setLocalError("");
             setUploading(true);
             try {
-              const up = await uploadApplicationFile(draftId, kind, file);
+              const up = await uploadApplicationFile(draftId, kind, file, t("failed"));
               setUploaded(up);
               onFile(file.name);
             } catch (err) {
@@ -123,7 +125,7 @@ export function FileUploadRow({
           type="button"
         >
           <span className="material-symbols-outlined text-base">{value ? "sync" : buttonIcon}</span>
-          {value ? "Replace" : buttonLabel}
+          {value ? t("replace") : buttonLabel}
         </button>
       </div>
       {msg && (
@@ -140,10 +142,12 @@ export function FileUploadRow({
 
 type Photo = { id: string; url: string; name: string; uploaded?: UploadedFile; failed?: boolean };
 
-const SLOT_HINTS = ["Living room & bed", "Yard or outdoor space", "Where pets sleep"];
+const SLOT_HINTS = ["living", "yard", "sleep"] as const;
 
 /** Home photos — previewed instantly, uploaded to the private documents bucket, posted as JSON (`homePhotos`). */
 export function HomePhotos({ draftId }: { draftId: string }) {
+  const t = useTranslations("apply.form.photos");
+  const tu = useTranslations("apply.uploads");
   const ref = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState("");
@@ -154,7 +158,7 @@ export function HomePhotos({ draftId }: { draftId: string }) {
   function add(files: FileList | null) {
     if (!files) return;
     const ok = [...files].filter((f) => f.type.startsWith("image/") && f.size <= MAX_BYTES);
-    setError(ok.length < files.length ? "Some files were skipped — use PNG or JPG images up to 10 MB." : "");
+    setError(ok.length < files.length ? t("skipped") : "");
     const next = ok.map((f) => {
       const url = URL.createObjectURL(f);
       urls.current.push(url);
@@ -164,7 +168,7 @@ export function HomePhotos({ draftId }: { draftId: string }) {
     setPhotos((p) => [...p, ...accepted]);
     accepted.forEach((photo, i) => {
       const file = ok[i];
-      uploadApplicationFile(draftId, "HOME_PHOTO", file)
+      uploadApplicationFile(draftId, "HOME_PHOTO", file, tu("failed"))
         .then((up) => setPhotos((p) => p.map((x) => (x.id === photo.id ? { ...x, uploaded: up } : x))))
         .catch(() => setPhotos((p) => p.map((x) => (x.id === photo.id ? { ...x, failed: true } : x))));
     });
@@ -186,19 +190,19 @@ export function HomePhotos({ draftId }: { draftId: string }) {
     <div className="flex flex-col gap-space-sm pt-space-xs">
       <div className="flex items-center justify-between gap-space-sm">
         <div>
-          <span className="font-title-md text-title-md text-on-surface">Photos of Your Home & Resting Areas</span>
+          <span className="font-title-md text-title-md text-on-surface">{t("title")}</span>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Add at least 3 clear photos — it boosts your approval rate by 65%.
+            {t("hint")}
           </p>
         </div>
         <span className="font-label-md text-label-md text-primary font-bold whitespace-nowrap">
-          {Math.min(photos.length, 3)}/3 Added
+          {t("added", { count: Math.min(photos.length, 3) })}
         </span>
       </div>
       <input name="homePhotos" type="hidden" value={JSON.stringify(uploadedPhotos)} />
       <input
         accept="image/png,image/jpeg,image/webp"
-        aria-label="Add home photos"
+        aria-label={t("addAria")}
         className="sr-only"
         multiple
         onChange={(e) => {
@@ -227,7 +231,7 @@ export function HomePhotos({ draftId }: { draftId: string }) {
                   <span className="truncate">{p.name}</span>
                 </span>
                 <button
-                  aria-label="Remove photo"
+                  aria-label={t("removeAria")}
                   className="w-7 h-7 rounded-full bg-surface/80 text-error flex items-center justify-center hover:bg-surface shrink-0"
                   onClick={() => remove(p.id)}
                   type="button"
@@ -249,9 +253,9 @@ export function HomePhotos({ draftId }: { draftId: string }) {
               <span className="material-symbols-outlined text-2xl">add_photo_alternate</span>
             </div>
             <span className="font-label-lg text-label-lg text-on-surface">
-              {i === 0 ? "Add Photos" : SLOT_HINTS[(photos.length + i) % SLOT_HINTS.length]}
+              {i === 0 ? t("addPhotos") : t(`slotHints.${SLOT_HINTS[(photos.length + i) % SLOT_HINTS.length]}`)}
             </span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">PNG, JPG (Max 10 MB)</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">{t("formats")}</span>
           </button>
         ))}
       </div>

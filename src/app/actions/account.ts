@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { getOrigin } from "@/lib/origin";
 import { verifyPassword } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -19,7 +20,8 @@ export type FormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
   | undefined;
 
-const NOT_FOUND = "We couldn't find that — it may have been removed.";
+type T = Awaited<ReturnType<typeof getTranslations<"account.errors">>>;
+const errors = () => getTranslations("account.errors");
 
 /** Signed-in, non-suspended user or null. Every action re-checks this itself. */
 async function currentUser() {
@@ -27,11 +29,11 @@ async function currentUser() {
   return user && !user.suspended ? user : null;
 }
 
-const optText = (max: number, msg?: string) =>
+const optText = (t: T, max: number, msg?: string) =>
   z
     .string()
     .trim()
-    .max(max, msg ?? `Please keep this under ${max} characters.`)
+    .max(max, msg ?? t("tooLong", { max }))
     .optional()
     .transform((v) => (v ? v : null));
 
@@ -57,21 +59,23 @@ function revalidateBookingPages(bookingId: string, sitterSlug?: string) {
 // Bookings
 // ---------------------------------------------------------------------------------------------
 
-const CancelSchema = z.object({
-  reason: z.enum(CANCEL_REASONS, "Please choose a reason."),
-  details: optText(500),
-});
+const cancelSchema = (t: T) =>
+  z.object({
+    reason: z.enum(CANCEL_REASONS, t("cancel.reason")),
+    details: optText(t, 500),
+  });
 
 /** Owner cancels one of their own PENDING / CONFIRMED bookings. WagPoints are refunded by transitionBooking. */
 export async function cancelBooking(bookingId: string, _: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
+  if (!user) return { error: t("logInAgain") };
   const booking = await db.booking.findUnique({ where: { id: bookingId }, include: { sitter: { select: { slug: true } } } });
-  if (!booking || booking.ownerId !== user.id) return { error: NOT_FOUND };
+  if (!booking || booking.ownerId !== user.id) return { error: t("notFound") };
   if (!allowedTransitions(booking.status, "OWNER").includes("CANCELLED")) {
-    return { error: "This booking can no longer be cancelled." };
+    return { error: t("cancel.notCancellable") };
   }
-  const parsed = CancelSchema.safeParse(Object.fromEntries(formData));
+  const parsed = cancelSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { reason, details } = parsed.data;
 
@@ -86,28 +90,26 @@ export async function cancelBooking(bookingId: string, _: FormState, formData: F
   redirect(await localizedPath(`/account/bookings/${booking.id}?notice=cancelled`));
 }
 
-const ReviewSchema = z.object({
-  rating: z.coerce.number("Please choose a star rating.").int().min(1, "Please choose a star rating.").max(5, "Please choose a star rating."),
-  body: z
-    .string()
-    .trim()
-    .min(20, "Please write at least 20 characters.")
-    .max(1000, "Please keep your review under 1,000 characters."),
-});
+const reviewSchema = (t: T) =>
+  z.object({
+    rating: z.coerce.number(t("starRating")).int().min(1, t("starRating")).max(5, t("starRating")),
+    body: z.string().trim().min(20, t("review.minLength")).max(1000, t("review.maxLength")),
+  });
 
 /** Owner reviews a COMPLETED booking of theirs (one review per booking). */
 export async function createReview(bookingId: string, _: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
+  if (!user) return { error: t("logInAgain") };
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
     include: { review: { select: { id: true } }, pet: true, sitter: { select: { id: true, slug: true } } },
   });
-  if (!booking || booking.ownerId !== user.id) return { error: NOT_FOUND };
-  if (booking.status !== "COMPLETED") return { error: "You can review a booking once it's completed." };
-  if (booking.review) return { error: "You've already reviewed this booking." };
+  if (!booking || booking.ownerId !== user.id) return { error: t("notFound") };
+  if (booking.status !== "COMPLETED") return { error: t("review.notCompleted") };
+  if (booking.review) return { error: t("review.already") };
 
-  const parsed = ReviewSchema.safeParse({ rating: formData.get("rating") ?? undefined, body: formData.get("body") ?? "" });
+  const parsed = reviewSchema(t).safeParse({ rating: formData.get("rating") ?? undefined, body: formData.get("body") ?? "" });
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   const pet = booking.pet;
@@ -130,7 +132,7 @@ export async function createReview(bookingId: string, _: FormState, formData: Fo
     ]);
     reviewId = created.id;
   } catch {
-    return { error: "You've already reviewed this booking." }; // unique bookingId race
+    return { error: t("review.already") }; // unique bookingId race
   }
   await refreshSitterRating(booking.sitterId);
   emit({ type: "review.created", reviewId, bookingId: booking.id });
@@ -145,59 +147,61 @@ export async function createReview(bookingId: string, _: FormState, formData: Fo
 // Pets
 // ---------------------------------------------------------------------------------------------
 
-const TraitSchema = z.object({
-  label: z.string().trim().min(1).max(40, "Trait labels must be under 40 characters."),
-  tone: z.enum(["neutral", "warning"]).default("neutral"),
-});
+const traitSchema = (t: T) =>
+  z.object({
+    label: z.string().trim().min(1).max(40, t("pet.traitLength")),
+    tone: z.enum(["neutral", "warning"]).default("neutral"),
+  });
 
-const PetSchema = z.object({
-  name: z.string().trim().min(1, "Please enter your pet's name.").max(40, "Please keep the name under 40 characters."),
-  species: z.enum(["DOG", "CAT", "OTHER"], "Please choose a species."),
-  speciesOther: optText(40),
-  breed: optText(60),
-  ageYears: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v, ctx) => {
-      if (!v) return null;
-      const n = Number(v.replace(",", "."));
-      if (!Number.isFinite(n) || n < 0 || n > 40) {
-        ctx.addIssue({ code: "custom", message: "Please enter an age between 0 and 40 years." });
-        return z.NEVER;
-      }
-      return Math.round(n * 10) / 10;
-    }),
-  size: z
-    .union([z.enum(PET_SIZES), z.literal("")], "Please choose a size.")
-    .optional()
-    .transform((v) => v || null),
-  sex: z
-    .union([z.enum(["MALE", "FEMALE"]), z.literal("")], "Please choose male or female.")
-    .optional()
-    .transform((v) => v || null),
-  neutered: checkbox,
-  rabiesVaccinated: checkbox,
-  microchip: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => v?.replace(/\s+/g, "") || null)
-    .refine((v) => v === null || /^[A-Za-z0-9]{9,15}$/.test(v), "Microchip numbers are 9–15 letters or digits."),
-  removePhoto: checkbox,
-  traits: z
-    .string()
-    .optional()
-    .transform((v, ctx) => {
-      try {
-        const arr = z.array(TraitSchema).max(12, "You can add up to 12 traits.").parse(v ? JSON.parse(v) : []);
-        return arr;
-      } catch (e) {
-        ctx.addIssue({ code: "custom", message: e instanceof z.ZodError ? (e.issues[0]?.message ?? "Invalid traits.") : "Invalid traits." });
-        return z.NEVER;
-      }
-    }),
-});
+const petSchema = (t: T) =>
+  z.object({
+    name: z.string().trim().min(1, t("pet.name")).max(40, t("pet.nameLength")),
+    species: z.enum(["DOG", "CAT", "OTHER"], t("pet.species")),
+    speciesOther: optText(t, 40),
+    breed: optText(t, 60),
+    ageYears: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v, ctx) => {
+        if (!v) return null;
+        const n = Number(v.replace(",", "."));
+        if (!Number.isFinite(n) || n < 0 || n > 40) {
+          ctx.addIssue({ code: "custom", message: t("pet.age") });
+          return z.NEVER;
+        }
+        return Math.round(n * 10) / 10;
+      }),
+    size: z
+      .union([z.enum(PET_SIZES), z.literal("")], t("pet.size"))
+      .optional()
+      .transform((v) => v || null),
+    sex: z
+      .union([z.enum(["MALE", "FEMALE"]), z.literal("")], t("pet.sex"))
+      .optional()
+      .transform((v) => v || null),
+    neutered: checkbox,
+    rabiesVaccinated: checkbox,
+    microchip: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => v?.replace(/\s+/g, "") || null)
+      .refine((v) => v === null || /^[A-Za-z0-9]{9,15}$/.test(v), t("pet.microchip")),
+    removePhoto: checkbox,
+    traits: z
+      .string()
+      .optional()
+      .transform((v, ctx) => {
+        try {
+          const arr = z.array(traitSchema(t)).max(12, t("pet.maxTraits")).parse(v ? JSON.parse(v) : []);
+          return arr;
+        } catch (e) {
+          ctx.addIssue({ code: "custom", message: e instanceof z.ZodError ? (e.issues[0]?.message ?? t("pet.invalidTraits")) : t("pet.invalidTraits") });
+          return z.NEVER;
+        }
+      }),
+  });
 
 /** Only same-origin relative paths are allowed as a post-save destination. */
 function safeNext(raw: FormDataEntryValue | null): URL | null {
@@ -212,18 +216,19 @@ function safeNext(raw: FormDataEntryValue | null): URL | null {
 
 /** Creates (petId = null) or updates one of the owner's pets, including photo + traits. */
 export async function savePet(petId: string | null, _: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
+  if (!user) return { error: t("logInAgain") };
   if (petId) {
     const existing = await db.pet.findUnique({ where: { id: petId }, select: { ownerId: true } });
-    if (!existing || existing.ownerId !== user.id) return { error: NOT_FOUND };
+    if (!existing || existing.ownerId !== user.id) return { error: t("notFound") };
   }
 
-  const parsed = PetSchema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")));
+  const parsed = petSchema(t).safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { traits, removePhoto, ...data } = parsed.data;
   if (data.species === "OTHER" && !data.speciesOther) {
-    return { fieldErrors: { speciesOther: ["Please tell us what kind of pet this is (e.g. Rabbit)."] } };
+    return { fieldErrors: { speciesOther: [t("pet.otherKind")] } };
   }
   if (data.species !== "OTHER") data.speciesOther = null;
 
@@ -259,21 +264,22 @@ export async function savePet(petId: string | null, _: FormState, formData: Form
     redirect(await localizedPath(`${next.pathname}${next.search}${next.hash}`));
   }
   if (!petId) redirect(await localizedPath(`/account/pets?saved=${id}`));
-  return { ok: true, message: "Changes saved." };
+  return { ok: true, message: t("pet.saved") };
 }
 
 /** Deletes an owner's pet; pets with booking history are archived instead so records stay intact. */
 export async function deletePet(petId: string): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
+  if (!user) return { error: t("logInAgain") };
   const pet = await db.pet.findUnique({ where: { id: petId }, select: { ownerId: true, name: true } });
-  if (!pet || pet.ownerId !== user.id) return { error: NOT_FOUND };
+  if (!pet || pet.ownerId !== user.id) return { error: t("notFound") };
 
   const upcoming = await db.booking.count({
     where: { petId, status: { in: ["PENDING", "CONFIRMED"] }, endAt: { gte: new Date() } },
   });
   if (upcoming > 0) {
-    return { error: `${pet.name} has ${upcoming === 1 ? "an upcoming booking" : `${upcoming} upcoming bookings`}. Cancel ${upcoming === 1 ? "it" : "them"} first, then delete this profile.` };
+    return { error: t("pet.upcoming", { name: pet.name, count: upcoming }) };
   }
   const history = await db.booking.count({ where: { petId } });
   if (history > 0) await db.pet.update({ where: { id: petId, ownerId: user.id }, data: { archivedAt: new Date() } });
@@ -287,22 +293,24 @@ export async function deletePet(petId: string): Promise<FormState> {
 // Settings
 // ---------------------------------------------------------------------------------------------
 
-const ProfileSchema = z.object({
-  firstName: z.string().trim().min(1, "Please enter your first name.").max(40),
-  lastName: z.string().trim().min(1, "Please enter your last name.").max(40),
-  phone: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => v || null)
-    .refine((v) => v === null || (/^[+()\d\s.-]{7,25}$/.test(v) && v.replace(/\D/g, "").length >= 10), "Please enter a valid phone number, e.g. +1 (416) 555-0119."),
-  removeAvatar: checkbox,
-});
+const profileSchema = (t: T) =>
+  z.object({
+    firstName: z.string().trim().min(1, t("profile.firstName")).max(40),
+    lastName: z.string().trim().min(1, t("profile.lastName")).max(40),
+    phone: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => v || null)
+      .refine((v) => v === null || (/^[+()\d\s.-]{7,25}$/.test(v) && v.replace(/\D/g, "").length >= 10), t("profile.phone")),
+    removeAvatar: checkbox,
+  });
 
 export async function updateProfile(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
-  const parsed = ProfileSchema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")));
+  if (!user) return { error: t("logInAgain") };
+  const parsed = profileSchema(t).safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { removeAvatar, ...data } = parsed.data;
 
@@ -315,27 +323,29 @@ export async function updateProfile(_: FormState, formData: FormData): Promise<F
   }
   await db.user.update({ where: { id: user.id }, data: { ...data, ...(avatarUrl !== undefined && { avatarUrl }) } });
   revalidatePath("/", "layout");
-  return { ok: true, message: "Profile updated." };
+  return { ok: true, message: t("profile.updated") };
 }
 
-const EmailSchema = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email("Please enter a valid email.")),
-  currentPassword: z.string().min(1, "Please enter your current password."),
-});
+const emailSchema = (t: T) =>
+  z.object({
+    email: z.string().trim().toLowerCase().pipe(z.email(t("email.invalid"))),
+    currentPassword: z.string().min(1, t("currentPassword")),
+  });
 
 export async function changeEmail(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
-  const parsed = EmailSchema.safeParse(Object.fromEntries(formData));
+  if (!user) return { error: t("logInAgain") };
+  const parsed = emailSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { email, currentPassword } = parsed.data;
 
   if (!(await verifyPassword(user.email, currentPassword))) {
-    return { fieldErrors: { currentPassword: ["That password isn't right."] } };
+    return { fieldErrors: { currentPassword: [t("wrongPassword")] } };
   }
-  if (email === user.email) return { fieldErrors: { email: ["That's already your email."] } };
+  if (email === user.email) return { fieldErrors: { email: [t("email.same")] } };
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
-    return { fieldErrors: { email: ["An account with this email already exists."] } };
+    return { fieldErrors: { email: [t("email.taken")] } };
   }
   // Supabase emails a confirmation link to the new address; the profile email syncs once it's confirmed.
   const supabase = await createSupabaseServerClient();
@@ -344,32 +354,34 @@ export async function changeEmail(_: FormState, formData: FormData): Promise<For
     { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/account/settings` },
   );
   if (error) return { error: error.message };
-  return { ok: true, message: `Check ${email} — click the confirmation link there to finish changing your email.` };
+  return { ok: true, message: t("email.check", { email }) };
 }
 
-const PasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Please enter your current password."),
-    newPassword: z.string().min(8, "Use at least 8 characters.").max(200),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, { path: ["confirmPassword"], message: "Passwords don't match." });
+const passwordSchema = (t: T) =>
+  z
+    .object({
+      currentPassword: z.string().min(1, t("currentPassword")),
+      newPassword: z.string().min(8, t("password.min")).max(200),
+      confirmPassword: z.string(),
+    })
+    .refine((d) => d.newPassword === d.confirmPassword, { path: ["confirmPassword"], message: t("password.mismatch") });
 
 export async function changePassword(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await errors();
   const user = await currentUser();
-  if (!user) return { error: "Please log in again." };
-  const parsed = PasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!user) return { error: t("logInAgain") };
+  const parsed = passwordSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
 
   if (!(await verifyPassword(user.email, parsed.data.currentPassword))) {
-    return { fieldErrors: { currentPassword: ["That password isn't right."] } };
+    return { fieldErrors: { currentPassword: [t("wrongPassword")] } };
   }
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
   if (error) {
     return error.code === "same_password"
-      ? { fieldErrors: { newPassword: ["Choose a password you haven't used here before."] } }
+      ? { fieldErrors: { newPassword: [t("password.reused")] } }
       : { error: error.message };
   }
-  return { ok: true, message: "Password changed." };
+  return { ok: true, message: t("password.changed") };
 }

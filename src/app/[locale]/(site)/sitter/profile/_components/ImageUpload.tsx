@@ -1,12 +1,14 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- preview of an uploaded file */
 
+import { useTranslations } from "next-intl";
 import { useActionState, useRef, useState } from "react";
 import { uploadProfileImage } from "@/app/actions/sitter";
 import { BTN } from "@/components/ui";
 import { Feedback } from "../../_components/Feedback";
 
 export function ImageUpload({ kind, current, title, hint }: { kind: "avatar" | "card"; current: string | null; title: string; hint: string }) {
+  const t = useTranslations("sitter.imageUpload");
   const [state, action, pending] = useActionState(uploadProfileImage, undefined);
   const [preview, setPreview] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -35,7 +37,7 @@ export function ImageUpload({ kind, current, title, hint }: { kind: "avatar" | "
         <div className="flex flex-wrap items-center gap-space-sm">
           <button className={`${BTN.small} bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4]`} disabled={pending} onClick={() => input.current?.click()} type="button">
             <span className="material-symbols-outlined text-base">upload</span>
-            {pending ? "Uploading…" : "Upload new"}
+            {pending ? t("uploading") : t("uploadNew")}
           </button>
         </div>
         <Feedback state={state} />

@@ -1,4 +1,7 @@
 // Shared (client + server) rules for two-way reviews.
+import { createTranslator } from "next-intl";
+import en from "../../messages/en/sitter.json";
+import fr from "../../messages/fr/sitter.json";
 
 /** Sitter reply to a public review. */
 export const REPLY_MAX = 600;
@@ -15,6 +18,22 @@ export const OWNER_REVIEW_TAGS = [
   "Would sit again",
 ] as const;
 export const OWNER_NOTE_MAX = 500;
+
+const OWNER_TAG_KEYS: Record<(typeof OWNER_REVIEW_TAGS)[number], keyof typeof en.lib.ownerTags> = {
+  "Clear instructions": "clearInstructions",
+  "On time": "onTime",
+  "Pet as described": "petAsDescribed",
+  "Great communication": "greatCommunication",
+  "Welcoming home": "welcomingHome",
+  "Would sit again": "wouldSitAgain",
+};
+
+/** Localized label of a stored owner-review tag (tags are stored in English); unknown text is returned as is. */
+export function ownerTagLabel(tag: string, locale = "en") {
+  const key = OWNER_TAG_KEYS[tag as (typeof OWNER_REVIEW_TAGS)[number]];
+  if (!key) return tag;
+  return createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { sitter: locale === "fr" ? fr : en }, namespace: "sitter.lib.ownerTags" })(key);
+}
 
 export function canEditReply(repliedAt: Date | null, now = Date.now()) {
   return !!repliedAt && now - repliedAt.getTime() <= REPLY_EDIT_WINDOW_MS;

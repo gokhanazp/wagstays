@@ -1,1 +1,123 @@
-{}
+{
+  "meta": {
+    "title": "Comment fonctionnent les prix",
+    "description": "Ce que vous payez sur WagStays: le tarif du gardien, les animaux supplémentaires, les tarifs des jours fériés et les suppléments pour chiots, plus des frais fixes, la couverture vétérinaire WagShield et la TVH. Exemples détaillés et FAQ."
+  },
+  "breadcrumbs": {
+    "home": "Accueil",
+    "pricing": "Comment fonctionnent les prix"
+  },
+  "receipt": {
+    "example": "Exemple",
+    "wagShield": "Couverture vétérinaire WagShield",
+    "serviceFee": "Frais de service",
+    "hst": "TVH ({rate} %)",
+    "total": "Total"
+  },
+  "examples": {
+    "oneWalk": {
+      "title": "1 chien, une promenade de 60 minutes",
+      "note": "Tarif du gardien: {price} par promenade."
+    },
+    "twoDogs": {
+      "title": "2 chiens pendant la même promenade",
+      "note": "{price} par promenade, +{extra} pour le deuxième chien."
+    },
+    "christmas": {
+      "title": "2 chiens, 3 nuits pendant Noël",
+      "note": "Pension à {price} la nuit, {holiday} les jours fériés, +{extra} par animal supplémentaire par nuit. Arrivée le 24 déc., départ le 27 déc. {year}."
+    },
+    "puppy": {
+      "title": "1 chiot, 2 nuits de pension",
+      "note": "Biscuit a 6 mois: +{surcharge} par nuit en plus des {price}."
+    }
+  },
+  "hero": {
+    "eyebrow": "Des prix clairs, sans surprise",
+    "title": "Comment fonctionnent les prix",
+    "intro": "Vous payez le tarif du gardien, plus des frais de service fixes, la couverture vétérinaire WagShield et la TVH. Les animaux supplémentaires, les jours fériés et les chiots peuvent ajouter un peu — toujours affiché avant de réserver.",
+    "navLabel": "Sur cette page"
+  },
+  "nav": {
+    "whatYouPay": "Ce que vous payez",
+    "extraPets": "Animaux supplémentaires",
+    "holidays": "Jours fériés",
+    "puppies": "Chiots",
+    "weekly": "Réservations hebdomadaires",
+    "capacity": "Nombre d'animaux",
+    "cancellations": "Annulations",
+    "wagpoints": "WagPoints",
+    "faq": "FAQ"
+  },
+  "whatYouPay": {
+    "title": "Ce que vous payez",
+    "sitterPrice": "Prix du gardien",
+    "sitterPriceText": "Fixé par le gardien, par promenade, nuit, jour ou visite. Il comprend un animal.",
+    "wagShield": "Couverture vétérinaire WagShield · {amount}",
+    "wagShieldText": "Fixe, par réservation. Soins vétérinaires d'urgence jusqu'à {amount}.",
+    "serviceFee": "Frais de service · {amount}",
+    "serviceFeeText": "Fixes, par réservation — jamais un pourcentage. Paiements sécurisés, vérification et soutien.",
+    "hst": "TVH · {rate} %",
+    "hstText": "Taxe de vente harmonisée de l'Ontario sur le prix du gardien et les frais (après les WagPoints utilisés).",
+    "summary": "Une promenade à {price} revient à <b>{total}</b> tout compris. Votre carte n'est débitée qu'une fois votre demande acceptée par le gardien."
+  },
+  "extraPets": {
+    "title": "Animaux supplémentaires",
+    "text": "Le prix du gardien couvre votre premier animal. Les gardiens qui acceptent plus d'un animal fixent un prix pour <b>chaque animal supplémentaire</b> (par promenade, nuit, jour ou visite) ainsi que le nombre maximal d'animaux par réservation. Vous le verrez sur chaque profil sous la forme <em>« Chaque chien supplémentaire +{extra} par promenade (jusqu'à 2 chiens) »</em> — ou <em>« Un animal par réservation »</em> lorsqu'un gardien n'en accepte qu'un seul.",
+    "together": "Réserver deux animaux ensemble coûte généralement moins cher que deux réservations séparées — les frais ne sont facturés qu'une fois. Deux promenades séparées coûteraient <b>{total}</b>. Une recherche avec <link>2 animaux</link> n'affiche que les gardiens qui en acceptent autant."
+  },
+  "holidays": {
+    "title": "Tarifs des jours fériés",
+    "text": "Certains gardiens appliquent un tarif spécial les jours fériés. Il <b>remplace</b> leur prix habituel pour cette promenade, nuit, journée ou visite seulement — le récapitulatif nomme chaque jour férié et indique la différence.",
+    "listTitle": "Jours fériés de l'Ontario en {year}",
+    "observed": "Le tarif s'applique au jour férié lui-même, et non au jour de semaine où il est observé."
+  },
+  "puppies": {
+    "title": "Supplément pour chiot",
+    "text": "Les chiots de moins de 1 an demandent plus d'attention — sorties pipi supplémentaires, surveillance des mâchouillages, dressage. Certains gardiens ajoutent un petit supplément par chiot, par promenade, nuit, jour ou visite. Nous utilisons l'âge indiqué dans le profil de votre animal; gardez-le à jour."
+  },
+  "weekly": {
+    "title": "Réservations hebdomadaires récurrentes",
+    "text": "Vous réservez la même promenade ou visite chaque semaine? Chaque semaine est une réservation distincte avec son propre prix: les frais de service, la couverture WagShield et la TVH s'appliquent à chacune, et une semaine qui tombe un jour férié utilise le tarif de ce jour. Votre rabais WagPoints s'applique à la première réservation. Le paiement affiche la première réservation et le total pour toutes les semaines."
+  },
+  "capacity": {
+    "title": "Combien d'animaux un gardien peut-il accepter?",
+    "walks": "<b>Promenades et visites à domicile:</b> jusqu'au nombre fixé par le gardien par promenade ou visite (« jusqu'à 2 chiens »).",
+    "boarding": "<b>Pension et garderie:</b> chaque animal occupe aussi une des places du gardien à la maison. Deux animaux ont besoin de deux places libres chaque nuit ou chaque jour — si une date est complète, le calendrier vous l'indique avant de réserver."
+  },
+  "cancellations": {
+    "title": "Annulations et remboursements",
+    "charged": "Votre carte ne sera débitée qu'une fois votre demande acceptée par le gardien.",
+    "refund": "Annulez d'un seul toucher pour un remboursement à 100 %, sans frais, jusqu'à 24 heures avant l'heure de début.",
+    "declined": "Si le gardien refuse, vous ne payez rien. Les WagPoints utilisés pour une réservation annulée ou refusée sont remis automatiquement dans votre solde.",
+    "guarantee": "Pas satisfait? Obtenez une nouvelle réservation gratuite ou un remboursement complet grâce à notre garantie de satisfaction à 100 %."
+  },
+  "wagpoints": {
+    "title": "WagPoints",
+    "text": "Vous récupérez <b>{pct} %</b> du prix du gardien en WagPoints quand une réservation est terminée (une promenade à {price} rapporte {earn}). Au paiement, jusqu'à {max} de votre solde est déduit d'une réservation, avant la TVH. Consultez votre solde sous <link>Compte → WagPoints</link>."
+  },
+  "faq": {
+    "title": "Questions des propriétaires",
+    "chargedQ": "Quand suis-je débité?",
+    "chargedA": "Seulement quand le gardien accepte votre demande. L'envoi d'une demande de réservation est gratuit, tout comme une rencontre préalable avant de réserver.",
+    "percentQ": "Les frais de service sont-ils un pourcentage de ma réservation?",
+    "percentA": "Non. Ce sont des frais fixes de {fee} par réservation, quel que soit le tarif du gardien. La couverture vétérinaire WagShield est aussi un montant fixe de {cover} par réservation.",
+    "secondPetQ": "Pourquoi ne puis-je pas ajouter mon deuxième animal à une réservation?",
+    "secondPetA": "Chaque gardien décide combien d'animaux il accepte à la fois pour chaque service. Si un service indique « Un animal par réservation », ce gardien n'accepte qu'un seul animal pour ce service. Utilisez « Nombre d'animaux » dans la recherche pour voir les gardiens qui en acceptent plus d'un.",
+    "holidaysQ": "Quels jours comptent comme jours fériés?",
+    "holidaysA": "Les jours fériés de la province du gardien. En Ontario: le jour de l'An, le jour de la Famille, le Vendredi saint, la fête de la Reine, la fête du Canada, le congé civique, la fête du Travail, l'Action de grâce, Noël et le lendemain de Noël. Chaque profil de gardien comporte un lien « Quels jours? » avec les prochaines dates.",
+    "puppyQ": "Comment savez-vous que mon animal est un chiot?",
+    "puppyA": "Grâce à l'âge indiqué dans le profil de votre animal. Les animaux de moins de 1 an sont considérés comme des chiots. Si le gardien n'a pas de supplément pour chiot, rien n'est ajouté.",
+    "weeklyQ": "Les frais et la TVH s'appliquent-ils à chaque visite hebdomadaire?",
+    "weeklyA": "Oui. Chaque visite ou séjour hebdomadaire est une réservation distincte, calculée selon sa propre date — une visite qui tombe un jour férié peut donc coûter un peu plus. Votre rabais WagPoints s'applique à la première.",
+    "cancelQ": "Et si j'annule?",
+    "cancelA": "Annulez d'un seul toucher pour un remboursement à 100 %, sans frais, jusqu'à 24 heures avant l'heure de début. Les WagPoints utilisés sont remis automatiquement dans votre solde.",
+    "earnsQ": "Le gardien reçoit-il la totalité du prix du gardien?",
+    "earnsA": "Le prix du gardien (y compris les animaux supplémentaires, les tarifs des jours fériés et les suppléments pour chiots) est ce que gagne le gardien. La couverture WagShield, les frais de service et la TVH s'ajoutent pour vous."
+  },
+  "cta": {
+    "title": "Prêt à trouver un gardien?",
+    "text": "Tous les prix sont sur le profil — pas besoin de s'inscrire pour regarder.",
+    "button": "Trouver un gardien"
+  }
+}

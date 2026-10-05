@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { getLocale, getTranslations } from "next-intl/server";
 import { changePoints } from "@/lib/wagpoints";
 import { emit } from "@/lib/events";
 import { revalidatePath } from "@/i18n/revalidate";
@@ -9,7 +10,8 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { priceBooking } from "@/lib/pricing";
 import { petBlockReason } from "@/lib/pets";
-import { MAX_PETS_LIMIT, petCountBlockReason, quoteBooking } from "@/lib/quote";
+import { MAX_PETS_LIMIT, quoteBooking } from "@/lib/quote";
+import { petCountNote } from "@/app/[locale]/(site)/book/[slug]/_lib";
 import { holidaysForDates } from "@/lib/holidays";
 import { getFees } from "@/lib/settings";
 import { getOwnerReadiness, readinessMessage } from "@/lib/owner-readiness";
@@ -46,28 +48,31 @@ const checkbox = z
   .optional()
   .transform((v) => v === "on" || v === "1" || v === "true");
 
-const BookingSchema = z.object({
-  serviceId: z.string().min(1, "Please choose a service."),
+type T = Awaited<ReturnType<typeof getTranslations<"booking.actions">>>;
+
+// Built per request so the messages are in the user's language.
+const bookingSchema = (t: T) => z.object({
+  serviceId: z.string().min(1, t("chooseService")),
   // every pet in the booking, comma-separated, primary first (the legacy single `petId` is still accepted)
   petIds: z
     .string()
     .optional()
     .transform((v) => [...new Set((v ?? "").split(",").map((x) => x.trim()).filter(Boolean))])
-    .pipe(z.array(z.string().max(64)).max(MAX_PETS_LIMIT, `You can book at most ${MAX_PETS_LIMIT} pets at once.`)),
+    .pipe(z.array(z.string().max(64)).max(MAX_PETS_LIMIT, t("maxPets", { max: MAX_PETS_LIMIT }))),
   petId: z.string().max(64).optional(),
-  date: z.string().refine(isIsoDay, "Please choose a valid date."),
+  date: z.string().refine(isIsoDay, t("validDate")),
   // check-out (boarding) / last day (day care)
   endDate: z
     .string()
     .optional()
     .transform((v) => (v ? v : null))
-    .refine((v) => v === null || isIsoDay(v), "Please choose a valid end date."),
+    .refine((v) => v === null || isIsoDay(v), t("validEndDate")),
   // "HH:MM" start / drop-off time (legacy slot keys like "midday" still accepted)
-  slot: z.string().refine((v) => parseSlot(v) !== null, "Please choose a time."),
+  slot: z.string().refine((v) => parseSlot(v) !== null, t("chooseTime")),
   recurring: checkbox,
   weeks: z.coerce.number().int().min(MIN_WEEKS).max(MAX_WEEKS).optional().catch(undefined),
   meet: checkbox,
-  meetingAddress: z.string().trim().min(5, "Please enter a meeting address.").max(200),
+  meetingAddress: z.string().trim().min(5, t("address")).max(200),
   leashPreference: optText(120),
   otherAnimalsReaction: optText(120),
   feedingRules: optText(500),
@@ -78,10 +83,10 @@ const BookingSchema = z.object({
   vetClinic: optText(120),
   vetPhone: optText(120),
   applyWagPoints: checkbox,
-  cardholderName: z.string().trim().min(2, "Please enter the cardholder name.").max(80),
+  cardholderName: z.string().trim().min(2, t("cardholder")).max(80),
   // Local dev: the full card number / CVC never leave the browser — only brand + last 4.
-  cardBrand: z.enum(["Visa", "Mastercard", "Amex"], "Please enter a Visa, Mastercard or Amex card."),
-  cardLast4: z.string().regex(/^\d{4}$/, "Please enter a valid card number."),
+  cardBrand: z.enum(["Visa", "Mastercard", "Amex"], t("cardBrand")),
+  cardLast4: z.string().regex(/^\d{4}$/, t("cardNumber")),
 });
 
 class BookingConflict extends Error {
@@ -93,31 +98,33 @@ class BookingConflict extends Error {
   }
 }
 
-function conflictMessage(rows: { req: BookingRequest; check: { ok: boolean; error?: string } }[]) {
+function conflictMessage(rows: { req: BookingRequest; check: { ok: boolean; error?: string } }[], t: T, locale: string) {
   const bad = rows.filter((r) => !r.check.ok);
-  if (rows.length === 1) return { error: bad[0].check.error ?? "That time isn't available.", conflicts: [] };
+  if (rows.length === 1) return { error: bad[0].check.error ?? t("timeUnavailable"), conflicts: [] };
   return {
-    error: `${bad.length} of ${rows.length} weekly dates aren't available — change the day or time, or book fewer weeks.`,
-    conflicts: bad.map((r) => `${formatDayLong(r.req.date)}: ${r.check.error}`),
+    error: t("weeklyConflicts", { bad: bad.length, total: rows.length }),
+    conflicts: bad.map((r) => `${formatDayLong(r.req.date, locale)}: ${r.check.error}`),
   };
 }
 
 export async function createBooking(slug: string, _: BookingState, formData: FormData): Promise<BookingState> {
   const user = await getCurrentUser();
   if (!user) redirect(await localizedPath(`/login?next=${encodeURIComponent(`/book/${slug}`)}`));
-  if (user.suspended) return { error: "Your account is suspended." };
+  const locale = await getLocale();
+  const t = await getTranslations("booking.actions");
+  if (user.suspended) return { error: t("suspended") };
   // Trust steps (phone, a pet, admin approval when required) — also covers weekly series, which are created here.
-  const readiness = await getOwnerReadiness(user.id);
-  if (!readiness.ready) return { error: readinessMessage(readiness) };
+  const readiness = await getOwnerReadiness(user.id, locale);
+  if (!readiness.ready) return { error: readinessMessage(readiness, locale) };
 
-  const parsed = BookingSchema.safeParse(Object.fromEntries(formData));
+  const parsed = bookingSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     const fieldErrors = z.flattenError(parsed.error).fieldErrors;
-    return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
+    return { error: Object.values(fieldErrors).flat()[0] ?? t("checkForm"), fieldErrors };
   }
   const d = parsed.data;
   const petIds = d.petIds.length ? d.petIds : d.petId ? [d.petId] : [];
-  if (!petIds.length) return { error: "Please choose a pet.", fieldErrors: { petIds: ["Please choose a pet."] } };
+  if (!petIds.length) return { error: t("choosePet"), fieldErrors: { petIds: [t("choosePet")] } };
 
   const sitter = await db.sitterProfile.findUnique({
     where: { slug },
@@ -133,7 +140,7 @@ export async function createBooking(slug: string, _: BookingState, formData: For
       city: { select: { taxRateBps: true, provinceCode: true } },
     },
   });
-  if (!sitter || sitter.status !== "ACTIVE") return { error: "This sitter isn't taking bookings right now." };
+  if (!sitter || sitter.status !== "ACTIVE") return { error: t("notTaking") };
 
   const [service, ownPets] = await Promise.all([
     db.service.findFirst({ where: { id: d.serviceId, sitterId: sitter.id, active: true } }),
@@ -142,25 +149,28 @@ export async function createBooking(slug: string, _: BookingState, formData: For
       select: { id: true, name: true, species: true, speciesOther: true, size: true, ageYears: true },
     }),
   ]);
-  if (!service) return { error: "That service isn't offered by this sitter." };
+  if (!service) return { error: t("notOffered") };
   // Every pet must be the owner's own (and not archived); keep the order the owner picked them in.
   const pets = petIds.map((id) => ownPets.find((p) => p.id === id));
-  if (pets.some((p) => !p)) return { error: "Please choose your own pets." };
+  if (pets.some((p) => !p)) return { error: t("ownPets") };
   const chosen = pets as (typeof ownPets)[number][];
 
   // The sitter must care for each kind of pet (and, for dogs, its size); dog walking is for dogs only.
   const firstName = sitter.displayName.includes("&") ? sitter.displayName : sitter.displayName.split(" ")[0];
   const acceptance = { ...sitter, firstName, kinds: sitter.species.map((s) => s.kind) };
   for (const p of chosen) {
-    const blocked = petBlockReason(acceptance, p, service.type);
-    if (blocked) return { error: `${p.name}: ${blocked} — please choose another pet, service or sitter.`, fieldErrors: { petIds: [blocked] } };
+    const blocked = petBlockReason(acceptance, p, service.type, locale);
+    if (blocked) return { error: t("petBlocked", { name: p.name, reason: blocked }), fieldErrors: { petIds: [blocked] } };
   }
   // More than one pet only when the sitter has an additional-pet rate, up to the service's limit.
-  const countBlocked = petCountBlockReason(service, chosen.length, firstName);
+  const countBlocked = petCountNote(service, chosen.length, firstName, locale);
   if (countBlocked) return { error: `${countBlocked}.`, fieldErrors: { petIds: [countBlocked] } };
 
   const stay = isStayService(service.type);
-  if (stay && !d.endDate) return { error: service.type === "BOARDING" ? "Please choose a check-out date." : "Please choose the last day." };
+  if (stay && !d.endDate) {
+    const ta = await getTranslations("booking.availability");
+    return { error: service.type === "BOARDING" ? ta("chooseCheckout") : ta("chooseLastDay") };
+  }
   const weeks = d.recurring && canRecur(service.type) ? (d.weeks ?? DEFAULT_WEEKS) : 1;
   const req: BookingRequest = {
     type: service.type,
@@ -171,7 +181,7 @@ export async function createBooking(slug: string, _: BookingState, formData: For
     petCount: chosen.length,
   };
   const lastDate = addDays(stay ? d.endDate! : d.date, 7 * (weeks - 1));
-  if (stay && d.endDate! > addDays(d.date, MAX_STAY_DAYS)) return { error: `Stays can be at most ${MAX_STAY_DAYS} days.` };
+  if (stay && d.endDate! > addDays(d.date, MAX_STAY_DAYS)) return { error: t("maxStay", { max: MAX_STAY_DAYS }) };
 
   const fees = await getFees();
   const seriesId = weeks > 1 ? randomUUID() : null;
@@ -183,10 +193,10 @@ export async function createBooking(slug: string, _: BookingState, formData: For
         // Serialise bookings per sitter: concurrent requests wait here, then see each other's rows.
         await tx.$queryRaw`SELECT id FROM "SitterProfile" WHERE id = ${sitter.id} FOR UPDATE`;
         const snap = await loadSnapshot(sitter.id, d.date, lastDate, tx);
-        if (!snap) throw new BookingConflict("This sitter isn't taking bookings right now.");
-        const rows = checkSeries(snap, req, weeks, Date.now());
+        if (!snap) throw new BookingConflict(t("notTaking"));
+        const rows = checkSeries(snap, req, weeks, Date.now(), locale);
         if (rows.some((r) => !r.check.ok)) {
-          const m = conflictMessage(rows);
+          const m = conflictMessage(rows, t, locale);
           throw new BookingConflict(m.error, m.conflicts);
         }
 
@@ -256,7 +266,7 @@ export async function createBooking(slug: string, _: BookingState, formData: For
   } catch (e) {
     if (e instanceof BookingConflict) return { error: e.message, conflicts: e.conflicts };
     if (e instanceof Error && e.message === "WAGPOINTS") {
-      return { error: "Your WagPoints balance changed — please review the total and try again." };
+      return { error: t("wagPointsChanged") };
     }
     throw e;
   }

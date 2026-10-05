@@ -1,12 +1,14 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { savePhoneForBooking } from "@/app/actions/readiness";
 import type { ReadinessStep } from "@/lib/owner-readiness";
 
 /** "Before your first booking" card on checkout with inline quick actions. */
 export function ReadinessChecklist({ steps, phone, addPetHref }: { steps: ReadinessStep[]; phone: string | null; addPetHref: string }) {
+  const t = useTranslations("booking.readinessChecklist");
   const remaining = steps.filter((s) => !s.done).length;
   return (
     <section
@@ -20,10 +22,10 @@ export function ReadinessChecklist({ steps, phone, addPetHref }: { steps: Readin
         </div>
         <div className="flex flex-col min-w-0">
           <h2 className="font-title-md text-title-md text-on-surface" id="readiness-title">
-            Before your first booking
+            {t("title")}
           </h2>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            {remaining === 1 ? "One quick step" : `${remaining} quick steps`} to keep every stay safe — your details are saved for next time.
+            {t("steps", { count: remaining })}
           </p>
         </div>
       </div>
@@ -45,12 +47,13 @@ export function ReadinessChecklist({ steps, phone, addPetHref }: { steps: Readin
                   className="shrink-0 inline-flex items-center gap-1 h-9 px-space-md rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors"
                   href={addPetHref}
                 >
-                  <span className="material-symbols-outlined text-base">add</span>Add pet
+                  <span className="material-symbols-outlined text-base">add</span>
+                  {t("addPet")}
                 </Link>
               )}
               {!s.done && s.status === "REJECTED" && s.href && (
                 <Link className="shrink-0 inline-flex items-center gap-1 h-9 px-space-md rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md hover:brightness-95" href={s.href}>
-                  Contact support
+                  {t("contactSupport")}
                 </Link>
               )}
             </div>
@@ -63,13 +66,15 @@ export function ReadinessChecklist({ steps, phone, addPetHref }: { steps: Readin
 }
 
 function PhoneForm({ defaultValue }: { defaultValue: string }) {
+  const t = useTranslations("booking.readinessChecklist");
+  const tc = useTranslations("common.actions");
   const [state, action, pending] = useActionState(savePhoneForBooking, undefined);
   const error = state?.fieldErrors?.phone?.[0] ?? state?.error;
   return (
     <form action={action} className="flex flex-col gap-1 sm:pl-8">
       <div className="flex gap-space-xs">
         <label className="sr-only" htmlFor="readiness-phone">
-          Phone number
+          {t("phone")}
         </label>
         <input
           aria-describedby={error ? "readiness-phone-error" : undefined}
@@ -91,7 +96,7 @@ function PhoneForm({ defaultValue }: { defaultValue: string }) {
           type="submit"
         >
           {pending ? <span className="material-symbols-outlined text-base animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-base">call</span>}
-          Save
+          {tc("save")}
         </button>
       </div>
       {error && (

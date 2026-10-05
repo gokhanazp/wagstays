@@ -1,5 +1,10 @@
 import "server-only";
+import { createTranslator } from "next-intl";
 import { db } from "./db";
+import en from "../../messages/en/chat.json";
+import fr from "../../messages/fr/chat.json";
+
+const tr = (locale = "en") => createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { chat: locale === "fr" ? fr : en }, namespace: "chat.inbox" });
 
 // Messaging data access. A user can sit on the owner side (Conversation.ownerId === user.id) and, if they
 // have a SitterProfile, on the sitter side (Conversation.sitterId === profile.id). Every helper here takes the
@@ -23,7 +28,8 @@ export function ownerDisplayName(o: { firstName: string; lastName: string }) {
   return `${o.firstName} ${o.lastName.charAt(0)}.`.trim();
 }
 
-export async function listConversations(userId: string) {
+export async function listConversations(userId: string, locale = "en") {
+  const t = tr(locale);
   const sitterId = await getViewerSitterId(userId);
   const rows = await db.conversation.findMany({
     // Empty chats (opened via "Message" but never written in) only show on the owner's side, so sitters
@@ -55,7 +61,7 @@ export async function listConversations(userId: string) {
       id: c.id,
       side,
       other,
-      preview: last ? `${last.senderId === userId ? "You: " : ""}${last.body}` : "No messages yet",
+      preview: last ? (last.senderId === userId ? t("youPrefix", { body: last.body }) : last.body) : t("noMessages"),
       at: last?.createdAt ?? c.lastMessageAt,
       unread,
     };

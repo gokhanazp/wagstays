@@ -1,1 +1,123 @@
-{}
+{
+  "meta": {
+    "title": "How Pricing Works",
+    "description": "What you pay on WagStays: the sitter's own rate, extra pets, statutory holiday rates and puppy surcharges, plus a flat fee, WagShield vet cover and HST. Worked examples and FAQ."
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "pricing": "How pricing works"
+  },
+  "receipt": {
+    "example": "Example",
+    "wagShield": "WagShield vet cover",
+    "serviceFee": "Service fee",
+    "hst": "HST ({rate}%)",
+    "total": "Total"
+  },
+  "examples": {
+    "oneWalk": {
+      "title": "1 dog, one 60-minute walk",
+      "note": "Sitter's rate {price} per walk."
+    },
+    "twoDogs": {
+      "title": "2 dogs on the same walk",
+      "note": "{price} per walk, +{extra} for the second dog."
+    },
+    "christmas": {
+      "title": "2 dogs, 3 nights over Christmas",
+      "note": "Boarding at {price} a night, {holiday} on statutory holidays, +{extra} per extra pet per night. Check-in Dec 24, check-out Dec 27, {year}."
+    },
+    "puppy": {
+      "title": "1 puppy, 2 nights of boarding",
+      "note": "Biscuit is 6 months old: +{surcharge} per night on top of {price}."
+    }
+  },
+  "hero": {
+    "eyebrow": "Clear prices, no surprises",
+    "title": "How pricing works",
+    "intro": "You pay the sitter's own rate, plus a flat service fee, WagShield vet cover and HST. Extra pets, statutory holidays and puppies can add a little — always shown before you book.",
+    "navLabel": "On this page"
+  },
+  "nav": {
+    "whatYouPay": "What you pay",
+    "extraPets": "Extra pets",
+    "holidays": "Holidays",
+    "puppies": "Puppies",
+    "weekly": "Weekly bookings",
+    "capacity": "How many pets",
+    "cancellations": "Cancellations",
+    "wagpoints": "WagPoints",
+    "faq": "FAQ"
+  },
+  "whatYouPay": {
+    "title": "What you pay",
+    "sitterPrice": "Sitter's price",
+    "sitterPriceText": "Set by the sitter, per walk, night, day or visit. It includes one pet.",
+    "wagShield": "WagShield vet cover · {amount}",
+    "wagShieldText": "Flat, per booking. Emergency vet care up to {amount}.",
+    "serviceFee": "Service fee · {amount}",
+    "serviceFeeText": "Flat, per booking — never a percentage. Secure payments, verification and support.",
+    "hst": "HST · {rate}%",
+    "hstText": "Ontario's Harmonized Sales Tax on the sitter's price and fees (after any WagPoints).",
+    "summary": "A {price} walk comes to <b>{total}</b> all in. Your card isn't charged until the sitter accepts your request."
+  },
+  "extraPets": {
+    "title": "Extra pets",
+    "text": "The sitter's price covers your first pet. Sitters who take more than one pet set a price for <b>each extra pet</b> (per walk, night, day or visit) and the most pets they take in one booking. You'll see it on every profile as <em>“Each extra dog +{extra} per walk (up to 2 dogs)”</em> — or <em>“One pet per booking”</em> when a sitter only takes one.",
+    "together": "Booking two pets together is usually cheaper than two separate bookings — the fees are charged once. Two separate walks would be <b>{total}</b>. Searching with <link>2 pets</link> shows only sitters who take that many."
+  },
+  "holidays": {
+    "title": "Statutory holiday rates",
+    "text": "Some sitters charge a holiday rate on statutory holidays. It <b>replaces</b> their usual price for that walk, night, day or visit only — the summary names each holiday and shows the difference.",
+    "listTitle": "Ontario statutory holidays in {year}",
+    "observed": "Holiday rates use the holiday itself, not a weekday it's observed on."
+  },
+  "puppies": {
+    "title": "Puppy surcharge",
+    "text": "Puppies under 1 year need more attention — extra potty breaks, chewing patrol, training. Some sitters add a small surcharge per puppy, per walk, night, day or visit. We use the age in your pet's profile, so keep it up to date."
+  },
+  "weekly": {
+    "title": "Weekly recurring bookings",
+    "text": "Booking the same walk or visit every week? Each week is its own booking with its own price: the service fee, WagShield cover and HST apply to each one, and a week that lands on a statutory holiday uses the holiday rate. Your WagPoints discount comes off the first booking. The checkout shows the first booking and the total for all weeks."
+  },
+  "capacity": {
+    "title": "How many pets can a sitter take?",
+    "walks": "<b>Walks and drop-in visits:</b> up to the number the sitter sets per walk or visit (“up to 2 dogs”).",
+    "boarding": "<b>Boarding and day care:</b> each pet also takes one of the sitter's places at home. Two pets need two free places on every night or day — if a date is full, the calendar tells you before you book."
+  },
+  "cancellations": {
+    "title": "Cancellations & refunds",
+    "charged": "Your card won't be charged until the sitter accepts your request.",
+    "refund": "Cancel in one tap for a 100% refund, no fees, up to 24 hours before your start time.",
+    "declined": "If the sitter declines, you aren't charged. WagPoints used on a cancelled or declined booking go back to your balance automatically.",
+    "guarantee": "Not happy? Get a free rebooking or a full refund under our 100% Satisfaction Guarantee."
+  },
+  "wagpoints": {
+    "title": "WagPoints",
+    "text": "You earn <b>{pct}%</b> of the sitter's price back in WagPoints when a booking is completed (a {price} walk earns {earn}). At checkout, up to {max} of your balance comes off a booking, before HST. You can see your balance under <link>Account → WagPoints</link>."
+  },
+  "faq": {
+    "title": "Questions pet parents ask",
+    "chargedQ": "When am I charged?",
+    "chargedA": "Only when the sitter accepts your request. Sending a booking request is free, and so is a Meet & Greet before you book.",
+    "percentQ": "Is the service fee a percentage of my booking?",
+    "percentA": "No. It's a flat {fee} per booking, whatever the sitter charges. WagShield vet cover is also a flat {cover} per booking.",
+    "secondPetQ": "Why can't I add my second pet to a booking?",
+    "secondPetA": "Each sitter decides how many pets they take at once for each service. If a service shows “One pet per booking”, that sitter only takes one pet for it. Use “Number of pets” in search to see sitters who take more than one.",
+    "holidaysQ": "Which days count as statutory holidays?",
+    "holidaysA": "The statutory holidays of the sitter's province. In Ontario: New Year's Day, Family Day, Good Friday, Victoria Day, Canada Day, Civic Holiday, Labour Day, Thanksgiving, Christmas Day and Boxing Day. Each sitter profile has a “Which days?” link with the next dates.",
+    "puppyQ": "How do you know my pet is a puppy?",
+    "puppyA": "From the age in your pet's profile. Pets under 1 year old count as puppies. If the sitter has no puppy surcharge, nothing is added.",
+    "weeklyQ": "Do fees and HST apply to every weekly visit?",
+    "weeklyA": "Yes. Each weekly visit or stay is its own booking, priced on its own date — so a visit that falls on a holiday can cost a little more. Your WagPoints discount comes off the first one.",
+    "cancelQ": "What if I cancel?",
+    "cancelA": "Cancel in one tap for a 100% refund, no fees, up to 24 hours before your start time. Any WagPoints you used are returned to your balance automatically.",
+    "earnsQ": "Does the sitter get the whole sitter's price?",
+    "earnsA": "The sitter's price (including extra pets, holiday rates and puppy surcharges) is what the sitter earns. The WagShield cover, service fee and HST are added on top for you."
+  },
+  "cta": {
+    "title": "Ready to find a sitter?",
+    "text": "Every price is on the profile — no sign-up needed to look.",
+    "button": "Find a sitter"
+  }
+}

@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
-import { petKindLabel } from "@/lib/pets";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireUser } from "@/lib/auth";
 import { getOwnerPets } from "@/lib/queries";
 import { BTN, Card, EmptyState, PageHeader } from "@/components/ui";
 import { ageLabel, sizeLabel } from "../_lib";
 
-export const metadata: Metadata = { title: "My Pets | WagStays" };
+export async function generateMetadata() {
+  const t = await getTranslations("account.meta");
+  return { title: t("pets") };
+}
 
 const TRAIT_TONE: Record<string, string> = {
   warning: "bg-error-container text-on-error-container",
@@ -17,8 +19,10 @@ const TRAIT_TONE: Record<string, string> = {
 export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/account/pets">) {
   const user = await requireUser();
   const sp = await searchParams;
-  const pets = await getOwnerPets(user.id);
-  const notice = sp.deleted ? "Pet profile deleted." : sp.saved ? "Pet profile saved." : null;
+  const [pets, t, tc, locale] = await Promise.all([getOwnerPets(user.id), getTranslations("account.pets"), getTranslations("common"), getLocale()]);
+  const notice = sp.deleted ? t("deleted") : sp.saved ? t("saved") : null;
+  const kindLabel = (p: { species: string; speciesOther?: string | null }) =>
+    p.species === "OTHER" ? p.speciesOther?.trim() || t("otherPet") : p.species === "DOG" || p.species === "CAT" ? tc(`enums.petKind.${p.species}`) : p.species;
 
   return (
     <>
@@ -26,12 +30,12 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/
         actions={
           <Link className={BTN.primary} href="/account/pets/new">
             <span className="material-symbols-outlined text-xl">add</span>
-            Add a pet
+            {t("addPet")}
           </Link>
         }
-        description="Keep your pets' details up to date so sitters know exactly how to care for them."
-        eyebrow="Pet Parent"
-        title="My Pets"
+        description={t("description")}
+        eyebrow={tc("enums.role.OWNER")}
+        title={tc("nav.myPets")}
       />
 
       {notice && (
@@ -46,18 +50,18 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/
           <EmptyState
             action={
               <Link className={`${BTN.primary} mt-space-sm`} href="/account/pets/new">
-                Add your first pet
+                {t("emptyAction")}
               </Link>
             }
             icon="pets"
-            text="Add your dog, cat or other companion — you'll pick them when you book."
-            title="No pets yet"
+            text={t("emptyText")}
+            title={t("emptyTitle")}
           />
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-space-lg">
           {pets.map((p) => {
-            const facts = [petKindLabel(p), ageLabel(p.ageYears), sizeLabel(p.size)].filter(Boolean);
+            const facts = [kindLabel(p), ageLabel(p.ageYears, locale), sizeLabel(p.size, locale)].filter(Boolean);
             return (
               <Card className="overflow-hidden flex flex-col" key={p.id}>
                 <div className="relative h-44 bg-primary-fixed flex items-center justify-center">
@@ -70,7 +74,7 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/
                   {p.microchip && (
                     <span className="absolute top-space-sm right-space-sm bg-surface-container-lowest/90 px-space-sm py-0.5 rounded-full font-label-sm text-label-sm text-primary flex items-center gap-0.5 shadow-sm">
                       <span className="material-symbols-outlined text-sm">verified</span>
-                      Chipped
+                      {t("chipped")}
                     </span>
                   )}
                 </div>
@@ -84,12 +88,12 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/
                     {p.rabiesVaccinated && (
                       <span className="inline-flex items-center gap-1 px-space-sm py-0.5 rounded-full font-label-sm text-label-sm bg-[#EBF3EF] text-primary">
                         <span className="material-symbols-outlined text-sm">vaccines</span>
-                        Rabies vaccinated
+                        {t("rabies")}
                       </span>
                     )}
                     {p.neutered && (
                       <span className="inline-flex items-center px-space-sm py-0.5 rounded-full font-label-sm text-label-sm bg-[#EBF3EF] text-primary">
-                        {p.sex === "FEMALE" ? "Spayed" : "Neutered"}
+                        {p.sex === "FEMALE" ? t("spayed") : t("neutered")}
                       </span>
                     )}
                     {p.traits.map((t) => (
@@ -101,7 +105,7 @@ export default async function MyPetsPage({ searchParams }: PageProps<"/[locale]/
                   <div className="mt-auto pt-space-sm">
                     <Link className={`${BTN.secondary} w-full`} href={`/account/pets/${p.id}`}>
                       <span className="material-symbols-outlined text-xl">edit</span>
-                      Edit profile
+                      {t("editProfile")}
                     </Link>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 type Photo = { id: string; url: string; caption: string | null };
@@ -8,6 +9,8 @@ const img = "w-full h-full object-cover group-hover:scale-105 transition-transfo
 const TILES = 4;
 
 export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; totalCount: number; name: string }) {
+  const t = useTranslations("profile.photos");
+  const tc = useTranslations("common");
   const [open, setOpen] = useState<number | null>(null);
   const extra = totalCount - TILES;
   const [main, second, third, fourth] = photos;
@@ -28,7 +31,7 @@ export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; to
   }, [open, photos.length]);
 
   if (!main) return null;
-  const alt = (p: Photo) => p.caption?.replace(/\s*🐾\s*$/, "") || `Photo from ${name}'s profile`;
+  const alt = (p: Photo) => p.caption?.replace(/\s*🐾\s*$/, "") || t("alt", { name });
   const hasStack = !!second;
 
   return (
@@ -77,7 +80,7 @@ export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; to
                     <img alt={alt(fourth)} className={img} src={fourth.url} />
                     <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center hover:bg-primary/10 transition-colors cursor-pointer">
                       <span className="bg-surface-container-lowest px-3 py-1.5 rounded-full font-label-sm text-label-sm text-primary font-bold shadow-md">
-                        {extra > 0 ? `+${extra} Photos` : "View All Photos"}
+                        {extra > 0 ? t("more", { count: extra }) : t("viewAll")}
                       </span>
                     </div>
                   </button>
@@ -90,14 +93,14 @@ export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; to
 
       {open !== null && photos[open] && (
         <div
-          aria-label={`${name}'s photos`}
+          aria-label={t("dialog", { name })}
           aria-modal="true"
           className="fixed inset-0 z-[100] bg-on-background/90 flex flex-col items-center justify-center p-4 sm:p-10"
           onClick={() => setOpen(null)}
           role="dialog"
         >
           <button
-            aria-label="Close"
+            aria-label={tc("actions.close")}
             className="absolute top-4 right-4 w-11 h-11 rounded-full bg-surface-container-lowest/90 text-on-surface flex items-center justify-center hover:bg-surface-container-lowest"
             onClick={() => setOpen(null)}
             type="button"
@@ -110,7 +113,7 @@ export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; to
             {photos.length > 1 && (
               <>
                 <button
-                  aria-label="Previous photo"
+                  aria-label={t("prev")}
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-surface-container-lowest/90 text-on-surface flex items-center justify-center"
                   onClick={() => setOpen((open - 1 + photos.length) % photos.length)}
                   type="button"
@@ -118,7 +121,7 @@ export function PhotoGallery({ photos, totalCount, name }: { photos: Photo[]; to
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <button
-                  aria-label="Next photo"
+                  aria-label={t("next")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-surface-container-lowest/90 text-on-surface flex items-center justify-center"
                   onClick={() => setOpen((open + 1) % photos.length)}
                   type="button"

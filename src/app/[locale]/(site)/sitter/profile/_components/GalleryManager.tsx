@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- gallery thumbnails */
 
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { addPhoto, deletePhoto, movePhoto, updatePhotoCaption } from "@/app/actions/sitter";
 import { BTN, INPUT } from "@/components/ui";
@@ -14,14 +15,16 @@ type Photo = { id: string; url: string; caption: string | null };
 const ICON_BTN = "w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container disabled:opacity-40 transition-colors";
 
 function CaptionForm({ photo }: { photo: Photo }) {
+  const t = useTranslations("sitter.galleryManager");
+  const tc = useTranslations("common.actions");
   const [state, action, pending] = useActionState(updatePhotoCaption, undefined);
   return (
     <form action={action} className="flex flex-col gap-1">
       <input name="photoId" type="hidden" value={photo.id} />
       <div className="flex gap-space-xs">
-        <input aria-label="Caption" className={`${INPUT} h-10`} defaultValue={photo.caption ?? ""} maxLength={80} name="caption" placeholder="Add a caption" />
+        <input aria-label={t("caption")} className={`${INPUT} h-10`} defaultValue={photo.caption ?? ""} maxLength={80} name="caption" placeholder={t("addCaption")} />
         <button className={`${BTN.small} bg-surface-container-high text-on-surface hover:bg-surface-container-highest shrink-0`} disabled={pending} type="submit">
-          {pending ? "…" : "Save"}
+          {pending ? "…" : tc("save")}
         </button>
       </div>
       <Feedback state={state} />
@@ -30,20 +33,22 @@ function CaptionForm({ photo }: { photo: Photo }) {
 }
 
 function AddPhotoForm({ disabled }: { disabled: boolean }) {
+  const t = useTranslations("sitter.galleryManager");
+  const tu = useTranslations("sitter.imageUpload");
   const { form, state, pending, onSubmit } = useFormAction(addPhoto, { resetOnSuccess: true });
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-space-sm p-space-md rounded-2xl border-[1.5px] border-dashed border-outline-variant" ref={form}>
-      <span className="font-label-lg text-label-lg text-on-surface">Add a photo</span>
+      <span className="font-label-lg text-label-lg text-on-surface">{t("addPhoto")}</span>
       <div className="flex flex-col sm:flex-row gap-space-sm">
-        <input accept="image/jpeg,image/png,image/webp" aria-label="Photo file" className="font-body-sm text-body-sm text-on-surface-variant file:mr-space-sm file:h-9 file:px-space-md file:rounded-full file:border-0 file:bg-[#EBF3EF] file:text-primary-container file:font-semibold min-w-0" disabled={disabled} name="file" required type="file" />
-        <input aria-label="Caption" className={`${INPUT} h-10 sm:flex-1`} disabled={disabled} maxLength={80} name="caption" placeholder="Caption (optional)" />
+        <input accept="image/jpeg,image/png,image/webp" aria-label={t("photoFile")} className="font-body-sm text-body-sm text-on-surface-variant file:mr-space-sm file:h-9 file:px-space-md file:rounded-full file:border-0 file:bg-[#EBF3EF] file:text-primary-container file:font-semibold min-w-0" disabled={disabled} name="file" required type="file" />
+        <input aria-label={t("caption")} className={`${INPUT} h-10 sm:flex-1`} disabled={disabled} maxLength={80} name="caption" placeholder={t("captionOptional")} />
         <button className={`${BTN.small} bg-primary text-on-primary hover:bg-primary-container shrink-0`} disabled={pending || disabled} type="submit">
           <span className="material-symbols-outlined text-base">add_photo_alternate</span>
-          {pending ? "Uploading…" : "Upload"}
+          {pending ? tu("uploading") : t("upload")}
         </button>
       </div>
       <span className="font-body-sm text-body-sm text-on-surface-variant">
-        {disabled ? `You've reached ${MAX_PHOTOS} photos — remove one to add another.` : "JPG, PNG or WebP up to 5 MB. Bright, natural-light photos of your home and walks work best."}
+        {disabled ? t("full", { max: MAX_PHOTOS }) : t("hint")}
       </span>
       <Feedback state={state} />
     </form>
@@ -51,6 +56,7 @@ function AddPhotoForm({ disabled }: { disabled: boolean }) {
 }
 
 export function GalleryManager({ photos }: { photos: Photo[] }) {
+  const t = useTranslations("sitter.galleryManager");
   return (
     <div className="flex flex-col gap-space-md">
       {photos.length > 0 ? (
@@ -58,21 +64,21 @@ export function GalleryManager({ photos }: { photos: Photo[] }) {
           {photos.map((p, i) => (
             <li className="flex flex-col gap-space-sm p-space-sm rounded-2xl bg-surface-container-low" key={p.id}>
               <div className="relative">
-                <img alt={p.caption ?? `Gallery photo ${i + 1}`} className="w-full aspect-[4/3] object-cover rounded-xl bg-surface-container-high" src={p.url} />
+                <img alt={p.caption ?? t("photoAlt", { n: i + 1 })} className="w-full aspect-[4/3] object-cover rounded-xl bg-surface-container-high" src={p.url} />
                 <span className="absolute top-2 left-2 h-6 min-w-6 px-2 rounded-full bg-white/90 font-label-sm text-label-sm flex items-center justify-center">{i + 1}</span>
               </div>
               <CaptionForm photo={p} />
               <div className="flex items-center justify-between">
                 <div className="flex">
                   {i > 0 ? (
-                    <MiniAction action={movePhoto} className={ICON_BTN} fields={{ photoId: p.id, direction: "up" }} label="Move earlier">
+                    <MiniAction action={movePhoto} className={ICON_BTN} fields={{ photoId: p.id, direction: "up" }} label={t("moveEarlier")}>
                       <span className="material-symbols-outlined text-xl">arrow_upward</span>
                     </MiniAction>
                   ) : (
                     <span className={`${ICON_BTN} opacity-30`}><span className="material-symbols-outlined text-xl">arrow_upward</span></span>
                   )}
                   {i < photos.length - 1 ? (
-                    <MiniAction action={movePhoto} className={ICON_BTN} fields={{ photoId: p.id, direction: "down" }} label="Move later">
+                    <MiniAction action={movePhoto} className={ICON_BTN} fields={{ photoId: p.id, direction: "down" }} label={t("moveLater")}>
                       <span className="material-symbols-outlined text-xl">arrow_downward</span>
                     </MiniAction>
                   ) : (
@@ -82,9 +88,9 @@ export function GalleryManager({ photos }: { photos: Photo[] }) {
                 <MiniAction
                   action={deletePhoto}
                   className={`${ICON_BTN} hover:text-error hover:bg-error-container`}
-                  confirm="Remove this photo from your gallery?"
+                  confirm={t("confirmDelete")}
                   fields={{ photoId: p.id }}
-                  label="Delete photo"
+                  label={t("delete")}
                 >
                   <span className="material-symbols-outlined text-xl">delete</span>
                 </MiniAction>
@@ -93,7 +99,7 @@ export function GalleryManager({ photos }: { photos: Photo[] }) {
           ))}
         </ul>
       ) : (
-        <p className="font-body-sm text-body-sm text-on-surface-variant">No photos yet — add at least 3 so owners can picture your home and walks.</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">{t("empty")}</p>
       )}
       <AddPhotoForm disabled={photos.length >= MAX_PHOTOS} />
     </div>

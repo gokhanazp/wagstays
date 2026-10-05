@@ -1,13 +1,14 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { createReview, type FormState } from "@/app/actions/account";
 import { BTN, LABEL, TEXTAREA } from "@/components/ui";
 
-const WORDS = ["", "Poor", "Fair", "Good", "Great", "Outstanding"];
-
 export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; sitterFirstName: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createReview.bind(null, bookingId), undefined);
+  const t = useTranslations("account.reviewForm");
+  const word = (n: number) => t(`words.${String(n) as "1" | "2" | "3" | "4" | "5"}`);
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [body, setBody] = useState("");
@@ -20,9 +21,9 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
   return (
     <form action={action} className="flex flex-col gap-space-md" noValidate>
       <fieldset className="flex flex-col gap-space-xs">
-        <legend className={`${LABEL} mb-space-xs`}>Your rating</legend>
+        <legend className={`${LABEL} mb-space-xs`}>{t("yourRating")}</legend>
         <div className="flex items-center gap-space-sm flex-wrap">
-          <div className="flex" onMouseLeave={() => setHover(0)} role="radiogroup" aria-label="Star rating">
+          <div className="flex" onMouseLeave={() => setHover(0)} role="radiogroup" aria-label={t("starRating")}>
             {[1, 2, 3, 4, 5].map((n) => (
               <label className="cursor-pointer p-0.5 rounded-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary" key={n} onMouseEnter={() => setHover(n)}>
                 <input
@@ -33,9 +34,7 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
                   type="radio"
                   value={n}
                 />
-                <span className="sr-only">
-                  {n} star{n === 1 ? "" : "s"} — {WORDS[n]}
-                </span>
+                <span className="sr-only">{t("star", { count: n, word: word(n) })}</span>
                 <span
                   aria-hidden
                   className={`material-symbols-outlined text-[32px] transition-colors ${n <= shown ? "text-tertiary-container" : "text-outline-variant"}`}
@@ -46,7 +45,7 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
               </label>
             ))}
           </div>
-          <span className="font-label-lg text-label-lg text-on-surface-variant min-w-[90px]">{shown ? WORDS[shown] : "Tap to rate"}</span>
+          <span className="font-label-lg text-label-lg text-on-surface-variant min-w-[90px]">{shown ? word(shown) : t("tapToRate")}</span>
         </div>
         {ratingErr && (
           <span className="flex items-center gap-1 font-body-sm text-body-sm text-error">
@@ -57,7 +56,7 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
       </fieldset>
 
       <label className="flex flex-col gap-space-xs">
-        <span className={LABEL}>Your review</span>
+        <span className={LABEL}>{t("yourReview")}</span>
         <textarea
           aria-invalid={!!bodyErr}
           className={TEXTAREA}
@@ -65,12 +64,12 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
           minLength={20}
           name="body"
           onChange={(e) => setBody(e.target.value)}
-          placeholder={`What did ${sitterFirstName} do well? Other pet parents will read this.`}
+          placeholder={t("placeholder", { name: sitterFirstName })}
           required
           value={body}
         />
         <span className={`flex justify-between gap-space-sm font-body-sm text-body-sm ${bodyErr ? "text-error" : "text-on-surface-variant"}`}>
-          <span>{bodyErr ?? (len < 20 ? `At least ${20 - len} more character${20 - len === 1 ? "" : "s"}` : "Looks good!")}</span>
+          <span>{bodyErr ?? (len < 20 ? t("moreChars", { count: 20 - len }) : t("looksGood"))}</span>
           <span>{len}/1000</span>
         </span>
       </label>
@@ -83,7 +82,7 @@ export function ReviewForm({ bookingId, sitterFirstName }: { bookingId: string; 
       )}
       <button className={`${BTN.primary} self-start`} disabled={pending} type="submit">
         <span className={`material-symbols-outlined text-xl ${pending ? "animate-spin" : ""}`}>{pending ? "autorenew" : "rate_review"}</span>
-        {pending ? "Posting…" : "Post review"}
+        {pending ? t("posting") : t("post")}
       </button>
     </form>
   );

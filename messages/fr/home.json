@@ -1,1 +1,160 @@
-{}
+{
+  "meta": {
+    "title": "WagStays — Gardiens d'animaux et promeneurs de chiens de confiance à Toronto",
+    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Antécédents vérifiés, suivi GPS des promenades en direct et couverture vétérinaire pour chaque réservation."
+  },
+  "hero": {
+    "badge": "La plateforme de soins pour animaux préférée de {city}",
+    "titleLine1": "Pour votre meilleur ami à poil",
+    "titleLine2": "Des gardiens attentionnés",
+    "titleLine3": "et de confiance, tout près",
+    "intro": "Des amoureux des animaux vérifiés dans votre quartier, des promeneurs de chiens professionnels et une assistance vétérinaire d'urgence gratuite 24 h/24, 7 j/7, pour voyager l'esprit tranquille pendant que votre animal est entre de bonnes mains.",
+    "avatarAlt1": "Gardienne WagStays tenant un chaton tigré",
+    "avatarAlt2": "Gardienne WagStays avec un golden retriever",
+    "avatarAlt3": "Gardienne WagStays avec deux petits chiens",
+    "parents": "+{count}k",
+    "rating": "{rating} / {max}",
+    "bookings": "Plus de {count} réservations réussies",
+    "photoAlt": "Un golden retriever joyeux joue à la balle avec un promeneur dans un parc ensoleillé",
+    "liveWalk": "Promenade en cours",
+    "vetCovered": "Soins vétérinaires couverts"
+  },
+  "search": {
+    "where": "Où cherchez-vous?",
+    "wherePlaceholder": "Entrez un quartier ou un secteur...",
+    "hoods": "Quartiers",
+    "dates": "Dates",
+    "start": "Début",
+    "end": "Fin",
+    "rangeTitle": "Dépôt → Récupération",
+    "pets": "Animaux",
+    "anyKindCount": "{count, plural, =1 {1 chien / chat} other {# animaux}}",
+    "kindCount": "{kind, select, DOG {{count, plural, one {# chien} other {# chiens}}} CAT {{count, plural, one {# chat} other {# chats}}} RABBIT {{count, plural, one {# lapin} other {# lapins}}} GUINEA_PIG {{count, plural, one {# cochon d'Inde} other {# cochons d'Inde}}} HAMSTER {{count, plural, one {# hamster} other {# hamsters}}} BIRD {{count, plural, one {# oiseau} other {# oiseaux}}} FERRET {{count, plural, one {# furet} other {# furets}}} REPTILE {{count, plural, one {# reptile} other {# reptiles}}} FISH {{count, plural, one {# poisson} other {# poissons}}} other {{count, plural, one {# animal} other {# animaux}}}}",
+    "petType": "Type d'animal",
+    "anyPet": "Tout animal",
+    "otherGroup": "Autres…",
+    "removePet": "Retirer un animal",
+    "addPet": "Ajouter un animal",
+    "submit": "Trouver un gardien 🐾",
+    "trustVerified": "Identité et adresse vérifiées à 100 %",
+    "trustVet": "Couverture vétérinaire WagShield gratuite jusqu'à {amount}",
+    "trustUpdates": "Photos et vidéos en direct chaque jour"
+  },
+  "services": {
+    "eyebrow": "Des soins professionnels",
+    "title": "Des soins attentionnés pour tous les besoins de votre compagnon",
+    "text": "Chaque animal a ses habitudes et sa personnalité. Choisissez le service qui convient le mieux au vôtre et commencez en toute confiance après une rencontre préalable gratuite.",
+    "from": "À partir de",
+    "unit": {
+      "hour": "/heure",
+      "night": "/nuit",
+      "visit": "/visite",
+      "day": "/jour"
+    },
+    "cards": {
+      "DOG_WALKING": {
+        "eyebrow": "Le plus populaire",
+        "title": "Promenade de chiens",
+        "body": "Suivi GPS du trajet en direct, nouvelles des besoins, pauses eau fraîche et plein d'aventures à renifler.",
+        "chip1": "30 / 60 min",
+        "chip2": "Carte GPS",
+        "chip3": "Promenades solo"
+      },
+      "BOARDING": {
+        "eyebrow": "Séjours sans cage",
+        "title": "Pension de nuit",
+        "body": "Pendant votre absence, votre animal séjourne dans le foyer douillet d'un gardien: sans cage, choyé et traité comme un membre de la famille toute la nuit.",
+        "chip1": "Foyer douillet",
+        "chip2": "Soins de nuit",
+        "chip3": "Régimes spéciaux"
+      },
+      "DROP_IN": {
+        "eyebrow": "Idéal pour les chats",
+        "title": "Visites et jeux pour chats",
+        "body": "Dans le confort de son propre foyer: nourriture, eau fraîche, nettoyage de la litière, brossage et 30 minutes de jeu au laser.",
+        "chip1": "Reste à la maison",
+        "chip2": "Nettoyage de litière",
+        "chip3": "Photos et vidéos"
+      },
+      "DAY_CARE": {
+        "eyebrow": "Pour les jours de bureau",
+        "title": "Garderie pour chiens",
+        "body": "Fini les longues journées seul à la maison pendant que vous travaillez. Jeux en groupe, folles courses dans la cour et siestes reposantes.",
+        "chip1": "8 h – 19 h",
+        "chip2": "Jeux en groupe",
+        "chip3": "Sieste"
+      }
+    }
+  },
+  "featured": {
+    "eyebrow": "Gardiens les mieux notés",
+    "title": "Des amoureux des animaux dans votre quartier",
+    "text": "Des mains expérimentées: chacun a passé une entrevue en personne, avec vérification policière et des références.",
+    "photoAlt": "{name}, gardien WagStays",
+    "reviews": "{rating} ({count} avis)",
+    "away": "{hood} (à {distance})",
+    "priceLabel": {
+      "BOARDING": "Par nuit",
+      "DOG_WALKING": "Promenade / heure",
+      "DAY_CARE": "Par jour",
+      "DROP_IN": "Par visite"
+    },
+    "viewProfile": "Voir le profil",
+    "saveFavourite": "Ajouter {name} aux favoris",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "howItWorks": {
+    "eyebrow": "L'esprit tranquille en 3 étapes faciles",
+    "title": "Comment ça marche",
+    "text": "Choisir le bon gardien pour votre compagnon à poil n'a jamais été aussi simple, transparent et sûr.",
+    "step1": {
+      "title": "Parcourez les gardiens du coin",
+      "body": "Filtrez les gardiens près de chez vous selon les avis, les badges d'expérience, les photos du domicile et les disponibilités.",
+      "chip": "Messages gratuits"
+    },
+    "step2": {
+      "title": "Planifiez une rencontre préalable",
+      "body": "Avant de réserver, rencontrez votre gardien au parc ou à la maison lors d'une <hl>rencontre préalable</hl> gratuite et voyez par vous-même si le courant passe.",
+      "chip": "Première rencontre 100 % gratuite"
+    },
+    "step3": {
+      "title": "Détendez-vous avec des nouvelles en direct",
+      "body": "Des photos adorables toute la journée, des cartes GPS des promenades et des rapports de repas vous font vivre chaque moment de bonheur en temps réel.",
+      "chip": "Notifications quotidiennes en direct"
+    },
+    "pricingNote": "Des prix clairs, sans surprise — le tarif du gardien, plus des frais fixes, la couverture vétérinaire WagShield et la TVH.",
+    "pricingLink": "Comment fonctionnent les prix"
+  },
+  "wagshield": {
+    "eyebrow": "🛡️ Une protection sans condition",
+    "title": "Tout est couvert avec la protection WagShield",
+    "text": "Pour nous, chaque animal fait partie de la famille. C'est pourquoi chaque réservation sur notre plateforme est automatiquement protégée par nos normes de sécurité les plus strictes.",
+    "learnMore": "En savoir plus sur nos normes de sécurité",
+    "vetTitle": "Couverture vétérinaire gratuite",
+    "vetText": "Si un imprévu survient pendant une réservation, nous couvrons jusqu'à {amount} en frais de traitement vétérinaire.",
+    "lineTitle": "Ligne vétérinaire d'urgence 24/7",
+    "lineText": "Vous ou votre gardien pouvez joindre notre ligne vidéo vétérinaire d'urgence d'un simple toucher, de jour comme de nuit.",
+    "vettingTitle": "Sélection rigoureuse des gardiens",
+    "vettingText": "Seuls 2 candidats sur 10 sont acceptés, après vérification de l'identité, visite du domicile et vérification des antécédents en vue d'un travail auprès de personnes vulnérables.",
+    "paymentsTitle": "Paiements retenus en sécurité",
+    "paymentsText": "Votre paiement est retenu en toute sécurité et versé au gardien seulement une fois le séjour terminé et confirmé par vous."
+  },
+  "testimonials": {
+    "eyebrow": "De vrais avis, des animaux heureux",
+    "title": "Ce que disent les propriétaires",
+    "text": "Quelques-unes des milliers de familles qui profitent de la tranquillité d'esprit de savoir leur animal en sécurité.",
+    "stars": "{rating} étoiles sur 5"
+  },
+  "cta": {
+    "eyebrow": "🐶 Rejoignez la meute WagStays",
+    "title1": "Vous aimez les animaux autant que nous?",
+    "title2": "Gagnez un revenu d'appoint comme gardien dans votre quartier!",
+    "text": "Choisissez vos heures, les animaux que vous accueillez et vos propres tarifs. Passez vos journées avec des animaux adorables et gagnez <hl>{min} – {max}</hl> par mois.",
+    "become": "Devenir gardien 🐾",
+    "video": "Comment devenir gardien (vidéo de 2 min)",
+    "photoAlt": "Une gardienne heureuse assise dans l'herbe avec trois chiens joueurs",
+    "avg": "Moy. {amount}",
+    "avgNote": "Revenus mensuels des gardiens actifs"
+  }
+}

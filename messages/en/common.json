@@ -235,5 +235,11 @@
     "dogWalking": "Dog Walking",
     "howItWorks": "How It Works",
     "becomeSitter": "Become a Sitter"
+  },
+  "push": {
+    "unsupported": "This browser doesn't support notifications.",
+    "blocked": "Notifications are blocked. Allow them in your browser's site settings.",
+    "notGranted": "Permission wasn't granted.",
+    "failed": "Couldn't turn on notifications in this browser."
   }
 }

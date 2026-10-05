@@ -1,1 +1,59 @@
-{}
+{
+  "meta": {
+    "messages": "Messages",
+    "newMessage": "New message",
+    "conversation": "Conversation"
+  },
+  "inbox": {
+    "title": "Messages",
+    "newCount": "{count} new",
+    "emptyTitle": "No conversations yet",
+    "emptyText": "Message a sitter from their profile to ask about availability, your pet's routine or a Meet & Greet.",
+    "unread": "Unread",
+    "yourSitter": "Your sitter",
+    "petParent": "Pet parent",
+    "youPrefix": "You: {body}",
+    "noMessages": "No messages yet",
+    "pickTitle": "Pick a conversation",
+    "pickText": "Choose a chat on the left to read and reply. Keep payments and bookings on WagStays so you stay covered by WagShield."
+  },
+  "new": {
+    "backToMessages": "Back to messages",
+    "selfTitle": "You can't message yourself",
+    "selfSitterText": "This is your own sitter profile — pet parents can message you from it.",
+    "selfOwnerText": "Pick a pet parent you're caring for instead.",
+    "pausedTitle": "Messaging is paused",
+    "pausedText": "{name} isn't taking new requests right now.",
+    "findAnother": "Find another sitter"
+  },
+  "thread": {
+    "back": "Back to messages",
+    "verified": "ID & background verified",
+    "viewProfile": "View profile",
+    "book": "Book",
+    "petParent": "Pet parent",
+    "noUpcoming": "No upcoming bookings with {name} yet.",
+    "upcomingWith": "Upcoming with {name}",
+    "sayHello": "Say hello to {name}",
+    "helloText": "Share your pet's routine, ask about availability or suggest a Meet & Greet.",
+    "sending": "Sending…",
+    "composerLabel": "Message {name}",
+    "composerPlaceholder": "Message {name}…",
+    "send": "Send message",
+    "hint": "Enter to send · Shift + Enter for a new line"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "now": "now",
+    "minutes": "{count}m",
+    "hours": "{count}h"
+  },
+  "errors": {
+    "empty": "Write a message first.",
+    "tooLong": "Messages can be up to {max} characters.",
+    "signIn": "Please sign in again to send messages.",
+    "invalid": "Invalid message.",
+    "notFound": "Conversation not found."
+  }
+}

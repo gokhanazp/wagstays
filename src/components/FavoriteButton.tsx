@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useOptimistic, useTransition } from "react";
 import { toggleFavorite } from "@/app/actions/favorites";
 
@@ -15,7 +16,7 @@ export function FavoriteButton({
   className,
   activeClassName = "",
   children,
-  label = "Save to favourites",
+  label,
 }: {
   sitterId: string;
   initial: boolean;
@@ -24,6 +25,7 @@ export function FavoriteButton({
   label?: string;
   children?: (isFavorite: boolean) => React.ReactNode;
 }) {
+  const t = useTranslations("search.favorite");
   const router = useRouter();
   const pathname = usePathname();
   const [pending, start] = useTransition();
@@ -31,7 +33,7 @@ export function FavoriteButton({
 
   return (
     <button
-      aria-label={label}
+      aria-label={label ?? t("save")}
       aria-pressed={fav}
       className={`${className} ${fav ? activeClassName : ""}`}
       disabled={pending}

@@ -235,5 +235,11 @@
     "dogWalking": "Promenades",
     "howItWorks": "Comment ça marche",
     "becomeSitter": "Devenir gardien"
+  },
+  "push": {
+    "unsupported": "Ce navigateur ne prend pas en charge les notifications.",
+    "blocked": "Les notifications sont bloquées. Autorisez-les dans les paramètres du site de votre navigateur.",
+    "notGranted": "L'autorisation n'a pas été accordée.",
+    "failed": "Impossible d'activer les notifications dans ce navigateur."
   }
 }

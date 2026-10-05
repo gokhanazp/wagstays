@@ -3,7 +3,9 @@ import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { StatusChip } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { BOOKING_STATUS_LABELS, SERVICE_LABELS, type BookingStatus, type ServiceType } from "@/lib/constants";
+import { getLocale, getTranslations } from "next-intl/server";
+import { intlLocale } from "@/i18n/routing";
+import { BOOKING_STATUS_LABELS, type BookingStatus, type ServiceType } from "@/lib/constants";
 import { getThread, ownerDisplayName, upcomingBookingsBetween } from "@/lib/conversations";
 import { formatRating } from "@/lib/format";
 import { Avatar } from "../_components/Avatar";
@@ -11,7 +13,10 @@ import { ThreadView } from "../_components/ThreadView";
 
 type Props = { params: Promise<{ id: string }> };
 
-export const metadata: Metadata = { title: "Conversation" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("chat.meta");
+  return { title: t("conversation") };
+}
 
 const SMALL = "inline-flex items-center justify-center gap-1 h-9 px-space-md rounded-full font-label-md text-label-md transition-all whitespace-nowrap";
 
@@ -20,15 +25,16 @@ export default async function ThreadPage({ params }: Props) {
   const user = await requireUser();
   const thread = await getThread(id, user.id);
   if (!thread) notFound();
+  const [t, tc, locale] = await Promise.all([getTranslations("chat.thread"), getTranslations("common.enums"), getLocale()]);
 
   const tz = thread.sitter.city.timeZone || "America/Toronto";
   const isOwner = thread.side === "owner";
   const ownerName = ownerDisplayName(thread.owner);
   const bookings = isOwner ? [] : await upcomingBookingsBetween(thread.ownerId, thread.sitterId);
-  const dateFmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const dateFmt = new Intl.DateTimeFormat(intlLocale(locale), { timeZone: tz, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
   const back = (
-    <Link aria-label="Back to messages" className="md:hidden w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low" href="/messages">
+    <Link aria-label={t("back")} className="md:hidden w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low" href="/messages">
       <span className="material-symbols-outlined">arrow_back</span>
     </Link>
   );
@@ -42,7 +48,7 @@ export default async function ThreadPage({ params }: Props) {
           <div className="flex items-center gap-1">
             <span className="truncate font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">{thread.sitter.displayName}</span>
             {thread.sitter.idVerified && (
-              <span className="material-symbols-outlined text-primary text-lg" title="ID & background verified">
+              <span className="material-symbols-outlined text-primary text-lg" title={t("verified")}>
                 verified
               </span>
             )}
@@ -52,7 +58,7 @@ export default async function ThreadPage({ params }: Props) {
               star
             </span>
             <span className="shrink-0">
-              {formatRating(thread.sitter.rating)} ({thread.sitter.reviewCount})
+              {formatRating(thread.sitter.rating, locale)} ({thread.sitter.reviewCount})
             </span>
             <span className="truncate hidden sm:inline">· {thread.sitter.headline} · {thread.sitter.neighbourhood.name}</span>
           </div>
@@ -60,12 +66,12 @@ export default async function ThreadPage({ params }: Props) {
       </Link>
       <div className="flex items-center gap-space-xs shrink-0">
         <Link className={`${SMALL} bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4] hidden sm:inline-flex`} href={`/sitters/${thread.sitter.slug}`}>
-          View profile
+          {t("viewProfile")}
         </Link>
         {thread.sitter.status === "ACTIVE" && (
           <Link className={`${SMALL} bg-secondary text-on-secondary hover:shadow-[0_6px_16px_rgba(243,123,92,0.35)]`} href={`/book/${thread.sitter.slug}`}>
             <span className="material-symbols-outlined text-base">event_available</span>
-            Book
+            {t("book")}
           </Link>
         )}
       </div>
@@ -77,18 +83,18 @@ export default async function ThreadPage({ params }: Props) {
         <Avatar alt={ownerName} initial={thread.owner.firstName.charAt(0)} size="md" src={thread.owner.avatarUrl} />
         <div className="flex-1 min-w-0">
           <div className="truncate font-title-md text-title-md text-on-surface">{ownerName}</div>
-          <div className="font-body-sm text-body-sm text-on-surface-variant">Pet parent</div>
+          <div className="font-body-sm text-body-sm text-on-surface-variant">{t("petParent")}</div>
         </div>
       </div>
       <div className="px-space-md md:px-space-lg pb-space-md">
         {bookings.length === 0 ? (
           <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-space-xs">
             <span className="material-symbols-outlined text-base text-outline">event_busy</span>
-            No upcoming bookings with {thread.owner.firstName} yet.
+            {t("noUpcoming", { name: thread.owner.firstName })}
           </p>
         ) : (
           <div className="flex flex-col gap-space-xs">
-            <span className="font-label-md text-label-md uppercase tracking-wide text-primary">Upcoming with {thread.owner.firstName}</span>
+            <span className="font-label-md text-label-md uppercase tracking-wide text-primary">{t("upcomingWith", { name: thread.owner.firstName })}</span>
             <ul className="flex gap-space-sm overflow-x-auto pb-1 -mx-1 px-1">
               {bookings.map((b) => {
                 const st = BOOKING_STATUS_LABELS[b.status as BookingStatus];
@@ -103,12 +109,12 @@ export default async function ThreadPage({ params }: Props) {
                       </span>
                       <span className="flex flex-col">
                         <span className="font-label-lg text-label-lg text-on-surface whitespace-nowrap">
-                          {SERVICE_LABELS[b.service.type as ServiceType] ?? b.service.type} · {b.pet.name}
+                          {tc(`service.${b.service.type as ServiceType}`)} · {b.pet.name}
                           {b.petCount > 1 ? ` +${b.petCount - 1}` : ""}
                         </span>
                         <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{dateFmt.format(b.startAt)}</span>
                       </span>
-                      {st && <StatusChip tone={st.tone}>{st.label}</StatusChip>}
+                      {st && <StatusChip tone={st.tone}>{tc(`bookingStatus.${b.status as BookingStatus}`)}</StatusChip>}
                     </Link>
                   </li>
                 );

@@ -1,27 +1,36 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/ui";
 import { requireSitter } from "@/lib/auth";
-import { SERVICE_LABELS, SERVICE_TYPES } from "@/lib/constants";
+import { SERVICE_TYPES } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { getFees } from "@/lib/settings";
 import { SERVICE_DEFAULT_PRICE } from "@/lib/sitter";
 import { SERVICE_ICONS } from "../_lib";
 import { ServiceForm } from "./_components/ServiceForm";
 
-export const metadata: Metadata = { title: "Services & Rates | WagStays" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("sitter.meta");
+  return { title: `${t("services")}` };
+}
 
 export default async function SitterServicesPage() {
   const { profile } = await requireSitter();
-  const [services, fees] = await Promise.all([db.service.findMany({ where: { sitterId: profile.id } }), getFees()]);
+  const [services, fees, t, tc] = await Promise.all([
+    db.service.findMany({ where: { sitterId: profile.id } }),
+    getFees(),
+    getTranslations("sitter"),
+    getTranslations("common"),
+  ]);
   const taxPct = profile.city.taxRateBps / 100;
-  const taxLabel = `${["ON", "NS", "NB", "NL", "PE"].includes(profile.city.provinceCode) ? "HST" : "tax"} ${taxPct}%`;
+  const taxLabel = t(`services.taxLabel.${["ON", "NS", "NB", "NL", "PE"].includes(profile.city.provinceCode) ? "hst" : "tax"}`, { pct: taxPct });
 
   return (
     <>
       <PageHeader
-        description="Choose what you offer and set your rates. You keep 100% of your price — WagStays adds its fees and tax on top for the owner."
-        eyebrow="Sitter Dashboard"
-        title="Services & Rates"
+        description={t("services.description")}
+        eyebrow={t("eyebrow")}
+        title={t("meta.services")}
       />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-space-lg items-start">
         {SERVICE_TYPES.map((type) => {
@@ -46,7 +55,7 @@ export default async function SitterServicesPage() {
               provinceCode={profile.city.provinceCode}
               taxLabel={taxLabel}
               taxRateBps={profile.city.taxRateBps}
-              title={SERVICE_LABELS[type]}
+              title={tc(`enums.service.${type}`)}
               type={type}
             />
           );

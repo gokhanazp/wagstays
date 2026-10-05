@@ -1,7 +1,10 @@
+import { useLocale, useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/format";
 
 /** "You'll earn ~$X in WagPoints" — read-only hint on checkout and the booking confirmation page. */
 export function EarnPointsNote({ subtotalCents, earnRateBps, className = "" }: { subtotalCents: number; earnRateBps?: number; className?: string }) {
+  const t = useTranslations("account.points");
+  const locale = useLocale();
   const cents = earnRateBps ? Math.round((subtotalCents * earnRateBps) / 10000) : 0;
   if (cents <= 0) return null;
   return (
@@ -9,9 +12,7 @@ export function EarnPointsNote({ subtotalCents, earnRateBps, className = "" }: {
       <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
         toll
       </span>
-      <span>
-        You&apos;ll earn <strong className="font-semibold">~{formatMoney(cents, { exact: true })}</strong> in WagPoints once this booking is completed.
-      </span>
+      <span>{t.rich("earnNote", { amount: formatMoney(cents, { exact: true, locale }), b: (c) => <strong className="font-semibold">{c}</strong> })}</span>
     </p>
   );
 }

@@ -1,1 +1,272 @@
-{}
+{
+  "meta": {
+    "notFound": "Sitter not found",
+    "title": "{name} — {headline} in {hood}",
+    "description": "{name} is a {city} pet sitter in {hood}.",
+    "descriptionRated": "{name} is a {city} pet sitter in {hood} rated {rating} from {count, plural, one {# review} other {# reviews}}."
+  },
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Home",
+    "citySitters": "{city} Sitters",
+    "cityPetSitters": "{city} Pet Sitters",
+    "hoodPetSitters": "{hood} Pet Sitters"
+  },
+  "readiness": {
+    "phone": "Add your phone number before booking — you can do it at checkout.",
+    "pending": "Your account is being reviewed — you can book once it's approved.",
+    "blocked": "Your account can't book right now — please contact support."
+  },
+  "hero": {
+    "portraitAlt": "Portrait of {name}",
+    "verifiedSuper": "Verified Super Sitter",
+    "verified": "Verified Sitter",
+    "superSitter": "Super Sitter",
+    "trainer": "Certified Trainer",
+    "away": "{distance} away",
+    "reviewCount": "({count, plural, one {# review} other {# reviews}})",
+    "respondsIn": "Responds in: <b>{time}</b>",
+    "respondsInShort": "Responds in <b>{time}</b>",
+    "responseRate": "100% response rate",
+    "minutes": "{count} min",
+    "hours": "{count, plural, one {# hr} other {# hrs}}",
+    "priceLabel": {
+      "WALK": "Per Walk",
+      "NIGHT": "Per Night",
+      "DAY": "Per Day",
+      "VISIT": "Per Visit"
+    },
+    "from": "From",
+    "priceNote": {
+      "minutes": "{count} minutes",
+      "overnight": "overnight stay",
+      "fullDay": "full day",
+      "perBooking": "per booking"
+    }
+  },
+  "photos": {
+    "title": "Photos & Living Space",
+    "verifiedCount": "{count, plural, one {# Verified Photo} other {# Verified Photos}}",
+    "alt": "Photo from {name}'s profile",
+    "more": "+{count} Photos",
+    "viewAll": "View All Photos",
+    "dialog": "{name}'s photos",
+    "prev": "Previous photo",
+    "next": "Next photo"
+  },
+  "trust": {
+    "title": "WagStays Safety & Verification Standards",
+    "notVerified": "Not yet verified",
+    "id": {
+      "title": "Government ID Verified",
+      "note": "Official photo ID checked"
+    },
+    "police": {
+      "title": "Police Vulnerable Sector Check",
+      "note": "Clear record, police-issued"
+    },
+    "firstAid": {
+      "title": "Pet First Aid & CPR",
+      "note": "Emergency care certified"
+    },
+    "interview": {
+      "title": "Interview Passed",
+      "note": "In-person behaviour assessment"
+    }
+  },
+  "about": {
+    "title": "About {name}"
+  },
+  "services": {
+    "title": "Services & Pricing",
+    "covered": "All services covered by WagShield",
+    "feature": {
+      "DOG_WALKING": "Live GPS Route",
+      "BOARDING": "3x Daily Live Video",
+      "DAY_CARE": "Social Playtime",
+      "DROP_IN": "Litter & Water Refresh"
+    },
+    "fallback": {
+      "DOG_WALKING": "Live GPS route tracking, potty report and fresh water included.",
+      "BOARDING": "Your pet stays in a loving home with daily walks and round-the-clock attention.",
+      "DAY_CARE": "No more lonely workdays. Social play, exercise and nap time.",
+      "DROP_IN": "Food and water refresh, litter box cleaning, play and cuddles at home."
+    },
+    "perMinutes": "/ {count} min",
+    "perNight": "/ night",
+    "perDayCare": "/ day (8 AM – 7 PM)",
+    "checkoutNote": "Checkout adds WagShield vet cover, a flat service fee and {tax}.",
+    "taxHst": "HST",
+    "taxSales": "sales tax",
+    "howPricing": "How pricing works"
+  },
+  "pets": {
+    "title": "Pets I Care For",
+    "dogSizes": "Dog sizes: {sizes}",
+    "allSizes": "all sizes welcome"
+  },
+  "home": {
+    "title": "Home & Environment",
+    "yard": {
+      "title": "Home with Yard",
+      "note": "Fenced outdoor space for safe play"
+    },
+    "condo": {
+      "title": "Condo with Balcony"
+    },
+    "apartment": {
+      "title": "Cozy Apartment",
+      "note": "Pet-proofed indoor space with nearby parks"
+    },
+    "smokeFree": {
+      "title": "Smoke-Free Home",
+      "note": "No smoking indoors, air purifier running"
+    },
+    "smoking": {
+      "title": "Smoking Household",
+      "note": "Ask about outdoor-only arrangements"
+    },
+    "children": {
+      "title": "Children in the Home",
+      "note": "Great for dogs who love little humans"
+    },
+    "noChildren": {
+      "title": "No Children at Home",
+      "note": "A completely calm space for sensitive or shy dogs"
+    },
+    "residentPup": "Resident Pup: {name}",
+    "otherPets": {
+      "title": "Shares Home with Pets",
+      "note": "Friendly, fully vaccinated resident pets"
+    },
+    "noPets": {
+      "title": "No Other Pets",
+      "note": "Your pet gets undivided attention"
+    },
+    "radius": "Service Area Radius: {km} km",
+    "areaNote": "{hood} and nearby neighbourhoods",
+    "mapAlt": "Map of {location}"
+  },
+  "reviews": {
+    "outOf": "/ 5.0",
+    "summary": "{count, plural, one {# verified review} other {# verified reviews}} from real pet parents",
+    "communication": "Communication",
+    "reliability": "Reliability",
+    "care": "Love & Care",
+    "migrating": "Written reviews from {count, plural, one {# past booking} other {# past bookings}} are being moved to WagStays and will appear here soon.",
+    "none": "No reviews yet. Be the first pet parent to book and share your experience!",
+    "verifiedBooking": "Verified Booking",
+    "stars": "{rating} out of 5 stars",
+    "photoAlt": "Photo from {name}'s booking",
+    "walkSummary": "Walk Summary",
+    "responseFrom": "Response from {name}",
+    "showFewer": "Show Fewer Reviews",
+    "readAll": "Read All {count} Reviews"
+  },
+  "availability": {
+    "title": "Availability",
+    "nextAvailable": "Next available: {date}",
+    "anyService": "Any service",
+    "legend": {
+      "available": "Available",
+      "full": "Fully booked",
+      "away": "Away",
+      "closed": "Not working"
+    },
+    "usualHours": "{name}'s usual hours",
+    "closed": "Closed",
+    "timeNote": "Times are in {zone} time · book at least {hours} h ahead."
+  },
+  "booking": {
+    "title": "Book with {name}",
+    "unavailable": "{name} isn't taking new bookings right now.",
+    "fastSecure": "Fast & Secure",
+    "serviceType": "Service Type",
+    "pricePer": "{amount} / {unit}",
+    "option": {
+      "minutes": "{count} min",
+      "perNight": "per night",
+      "fullDay": "full day"
+    },
+    "timeLabel": {
+      "DOG_WALKING": "Walk Time",
+      "BOARDING": "Drop-off Time",
+      "DAY_CARE": "Drop-off Time",
+      "DROP_IN": "Visit Time"
+    },
+    "time": "Time",
+    "date": "Date",
+    "walkHours": "{count}-Hour Dog Walk",
+    "walkMinutes": "{count}-Min Dog Walk",
+    "dropInMinutes": "{count}-Min Drop-In Visit",
+    "puppy": "puppy",
+    "ageYears": "{count}y",
+    "dogsOnly": "Dog walking is for dogs only",
+    "addingPet": "Adding {name}: +{amount} per {unit}",
+    "addingPetFree": "Adding {name}: no extra charge",
+    "puppyExtra": "{name} is a puppy: +{amount} per {unit}",
+    "yourPets": "Your Pets",
+    "yourPet": "Your Pet",
+    "selectedOf": "{count} of up to {limit}",
+    "limitTitle": "Up to {limit} pets per booking",
+    "addPet": "Add your pet",
+    "addNewPet": "Add a new pet",
+    "takesUpTo": "{name} takes up to {limit} {phrase}.",
+    "rangeBoarding": "Check-in → Check-out",
+    "rangeDays": "First day → Last day",
+    "placeholderBoarding": "Add check-in & check-out",
+    "placeholderDays": "Add dates",
+    "tooSoon": "Too soon",
+    "booked": "Booked",
+    "closedThatDay": "Closed that day",
+    "pickDatesFirst": "Pick dates first",
+    "fullyBooked": "Fully booked",
+    "fullOn": "Fully booked on {date}.",
+    "notAvailableOn": "Not available on {date}.",
+    "nextAvailable": "Next available: {date}",
+    "recurring": "Weekly Recurring Booking",
+    "repeatFor": "Repeat for",
+    "weeksAria": "Number of weeks",
+    "weeks": "{count} weeks",
+    "conflicts": "{count} of {total} weekly dates aren't available:",
+    "andMore": "and {count} more",
+    "pickCheckout": "Now pick a check-out date.",
+    "pickLastDay": "Now pick the last day (the same day for a single day).",
+    "vetCover": "WagShield Vet Care Cover",
+    "serviceFee": "WagStays Service Fee",
+    "taxRate": "{tax} ({rate}%)",
+    "taxHst": "HST",
+    "taxSales": "Sales Tax",
+    "total": "Total",
+    "perWeek": "Per week · incl. {tax}",
+    "perVisit": "Per visit · incl. {tax}",
+    "includes": "Includes {tax} & WagShield",
+    "seriesStay": "{count} weekly bookings",
+    "seriesVisits": "{count} weekly visits",
+    "seriesStayTimes": "{count} weekly bookings × {amount}",
+    "seriesVisitsTimes": "{count} weekly visits × {amount}",
+    "howPricing": "How pricing works",
+    "opening": "Opening Checkout...",
+    "send": "Send Booking Request",
+    "meetGreet": "Request a Free Meet & Greet First",
+    "notCharged": "Your card <b>won't be charged</b> until the sitter accepts your request.",
+    "guaranteeTitle": "100% Satisfaction Guarantee",
+    "guaranteeText": "Not happy? Get a free rebooking or a full refund.",
+    "question": "Have a specific question?",
+    "ask": "Ask {name} a Question"
+  },
+  "mobileBar": {
+    "reviews": "{count, plural, one {# review} other {# reviews}}",
+    "bookNow": "Book Now"
+  },
+  "actions": {
+    "shareTitle": "{name} on WagStays",
+    "copyPrompt": "Copy this link",
+    "addFavorite": "Add to Favourites",
+    "saved": "Saved",
+    "shareAria": "Share profile",
+    "linkCopied": "Link copied!",
+    "share": "Share Profile",
+    "message": "Message"
+  }
+}

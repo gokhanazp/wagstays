@@ -3,6 +3,7 @@ import { cache } from "react";
 import { db } from "./db";
 import { getPlatformSettings } from "./settings";
 import { normalizeNaPhone } from "./phone";
+import { bookingT } from "./booking-messages";
 
 // "Ready to book" checks for pet parents (and sitters booking as pet parents). Admins are exempt.
 // Email verification is implied by being signed in (Supabase blocks unconfirmed logins).
@@ -25,7 +26,9 @@ export type OwnerReadiness = {
   phone: string | null;
 };
 
-export const getOwnerReadiness = cache(async (userId: string): Promise<OwnerReadiness> => {
+/** `locale` translates the step labels (default English). */
+export const getOwnerReadiness = cache(async (userId: string, locale: string = "en"): Promise<OwnerReadiness> => {
+  const t = bookingT(locale);
   const [user, settings] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
@@ -39,19 +42,17 @@ export const getOwnerReadiness = cache(async (userId: string): Promise<OwnerRead
   const phone = normalizeNaPhone(user.phone);
   const steps: ReadinessStep[] = [
     phone
-      ? { key: "phone", done: true, label: "Phone number added", detail: phone }
+      ? { key: "phone", done: true, label: t("readiness.phoneDone"), detail: phone }
       : {
           key: "phone",
           done: false,
-          label: user.phone ? "Check your phone number" : "Add your phone number",
-          detail: user.phone
-            ? `“${user.phone}” doesn't look like a Canadian or US number.`
-            : "So your sitter can reach you during a booking. Canadian or US numbers only.",
+          label: user.phone ? t("readiness.phoneCheck") : t("readiness.phoneAdd"),
+          detail: user.phone ? t("readiness.phoneInvalid", { phone: user.phone }) : t("readiness.phoneWhy"),
           href: "/account/settings",
         },
     user._count.pets > 0
-      ? { key: "pet", done: true, label: user._count.pets === 1 ? "Pet profile added" : `${user._count.pets} pet profiles added` }
-      : { key: "pet", done: false, label: "Add your pet", detail: "Tell your sitter who they'll be caring for.", href: "/account/pets/new" },
+      ? { key: "pet", done: true, label: t("readiness.petDone", { count: user._count.pets }) }
+      : { key: "pet", done: false, label: t("readiness.petAdd"), detail: t("readiness.petWhy"), href: "/account/pets/new" },
   ];
 
   // Manual approval only applies while the admin switch is on — but an explicit rejection always blocks booking.
@@ -59,15 +60,15 @@ export const getOwnerReadiness = cache(async (userId: string): Promise<OwnerRead
   if (settings.requireOwnerApproval || status === "REJECTED") {
     steps.push(
       status === "APPROVED"
-        ? { key: "approval", done: true, label: "Account approved", status }
+        ? { key: "approval", done: true, label: t("readiness.approved"), status }
         : status === "PENDING"
-          ? { key: "approval", done: false, status, label: "Your account is being reviewed — usually within a few hours", detail: "We'll let you know as soon as you can book." }
+          ? { key: "approval", done: false, status, label: t("readiness.pending"), detail: t("readiness.pendingDetail") }
           : {
               key: "approval",
               done: false,
               status,
-              label: "We couldn't approve your account",
-              detail: "Contact our support team and we'll help sort it out.",
+              label: t("readiness.rejected"),
+              detail: t("readiness.rejectedDetail"),
               href: "/account/support/new",
             },
     );
@@ -76,11 +77,12 @@ export const getOwnerReadiness = cache(async (userId: string): Promise<OwnerRead
 });
 
 /** Friendly one-liner for server actions that refuse a booking. */
-export function readinessMessage(r: OwnerReadiness): string {
+export function readinessMessage(r: OwnerReadiness, locale = "en"): string {
+  const t = bookingT(locale);
   const approval = r.steps.find((s) => s.key === "approval" && !s.done);
-  if (approval?.status === "REJECTED") return "We couldn't approve your account for bookings — please contact support and we'll help.";
-  const todo = r.steps.filter((s) => !s.done && s.key !== "approval").map((s) => (s.key === "phone" ? "add a phone number" : "add your pet"));
-  if (todo.length) return `Almost there — before your first booking, please ${todo.join(" and ")}.`;
-  if (approval) return "Your account is still being reviewed — you'll be able to book as soon as it's approved (usually within a few hours).";
-  return "Please complete your profile before booking.";
+  if (approval?.status === "REJECTED") return t("readiness.msgRejected");
+  const todo = r.steps.filter((s) => !s.done && s.key !== "approval").map((s) => s.key);
+  if (todo.length) return t("readiness.msgTodo", { todo: todo.length > 1 ? "both" : todo[0] });
+  if (approval) return t("readiness.msgPending");
+  return t("readiness.msgIncomplete");
 }

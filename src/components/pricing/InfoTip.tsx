@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 import { Popover } from "@/components/forms/Popover";
 
@@ -30,6 +31,7 @@ export function InfoTip({
   /** render a small text link ("Which days?") instead of the icon */
   text?: string;
 }) {
+  const t = useTranslations("booking.infoTip");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -38,7 +40,7 @@ export function InfoTip({
       <button
         aria-controls={open ? id : undefined}
         aria-expanded={open}
-        aria-label={label ?? (text ? undefined : `What is “${title}”?`)}
+        aria-label={label ?? (text ? undefined : t("whatIs", { title }))}
         className={
           text
             ? `inline font-label-sm text-label-sm text-primary font-bold underline decoration-dotted underline-offset-2 hover:decoration-solid focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded ${className}`
@@ -62,7 +64,7 @@ export function InfoTip({
           {children}
           {showPricingLink && (
             <Link className="self-start mt-0.5 font-label-sm text-label-sm text-primary font-bold hover:underline" href="/pricing" rel="noopener" target="_blank">
-              How pricing works →
+              {t("pricingLink")}
             </Link>
           )}
         </div>

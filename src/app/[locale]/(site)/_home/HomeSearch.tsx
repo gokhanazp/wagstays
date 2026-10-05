@@ -1,26 +1,30 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { intlLocale } from "@/i18n/routing";
 import { useId, useMemo, useRef, useState } from "react";
 import { RangePanel } from "@/components/forms/DatePicker";
 import { Popover } from "@/components/forms/Popover";
 import { Select } from "@/components/forms/Select";
+import { VET_COVERAGE_CENTS } from "@/lib/constants";
+import { formatMoney } from "@/lib/format";
 import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
 
 type Hood = { slug: string; name: string; city: string; cityLabel: string };
 
 const TABS = [
-  { slug: "boarding", icon: "roofing", label: "Overnight Boarding" },
-  { slug: "dog-walking", icon: "directions_walk", label: "Dog Walking" },
-  { slug: "day-care", icon: "sunny", label: "Doggy Day Care" },
-  { slug: "drop-in", icon: "home_pin", label: "Drop-In Visits" },
+  { slug: "boarding", icon: "roofing", type: "BOARDING" },
+  { slug: "dog-walking", icon: "directions_walk", type: "DOG_WALKING" },
+  { slug: "day-care", icon: "sunny", type: "DAY_CARE" },
+  { slug: "drop-in", icon: "home_pin", type: "DROP_IN" },
 ] as const;
 
 const MIN_PETS = 1;
 const MAX_PETS = 8;
 
-const fmtDay = (iso: string) =>
-  new Date(`${iso}T12:00:00`).toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+const fmtDay = (iso: string, locale: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric" });
 
 export function HomeSearch({
   hoods,
@@ -40,6 +44,9 @@ export function HomeSearch({
   today: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("home.search");
+  const tc = useTranslations("common.enums");
+  const locale = useLocale();
   const listId = useId();
   const [service, setService] = useState<(typeof TABS)[number]["slug"]>("boarding");
   const [where, setWhere] = useState(() => {
@@ -59,11 +66,6 @@ export function HomeSearch({
   const pickService = (slug: (typeof TABS)[number]["slug"]) => {
     setService(slug);
     if (slug === "dog-walking" && kind && kind !== "DOG") setKind("DOG");
-  };
-  const kindNoun = (k: PetKind | "", n: number) => {
-    if (!k || k === "OTHER") return n > 1 ? "Pets" : "Pet";
-    const m = PET_KIND_META[k];
-    return n > 1 ? m.plural.replace(/\b\w/g, (c) => c.toUpperCase()) : m.label;
   };
   const datesAnchor = useRef<HTMLDivElement>(null);
   const whereTile = useRef<HTMLDivElement>(null);
@@ -148,21 +150,21 @@ export function HomeSearch({
         className="flex items-center gap-2 overflow-x-auto pb-space-sm mb-space-md no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="tablist"
       >
-        {TABS.map((t) => {
-          const active = t.slug === service;
+        {TABS.map((tab) => {
+          const active = tab.slug === service;
           return (
             <button
               aria-selected={active}
               className={`shrink-0 px-5 py-2.5 rounded-full font-label-lg text-label-lg flex items-center gap-2 transition-all ${
                 active ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
               }`}
-              key={t.slug}
-              onClick={() => pickService(t.slug)}
+              key={tab.slug}
+              onClick={() => pickService(tab.slug)}
               role="tab"
               type="button"
             >
-              <span className="material-symbols-outlined text-lg">{t.icon}</span>
-              <span>{t.label}</span>
+              <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+              <span>{tc(`service.${tab.type}`)}</span>
             </button>
           );
         })}
@@ -176,7 +178,7 @@ export function HomeSearch({
           </div>
           <div className="flex flex-col w-full min-w-0">
             <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" htmlFor={`${listId}-where`}>
-              Where are you looking?
+              {t("where")}
             </label>
             <input
               aria-activedescendant={whereOpen && active >= 0 ? `${listId}-hood-${active}` : undefined}
@@ -194,15 +196,15 @@ export function HomeSearch({
               onClick={() => setWhereOpen(true)}
               onFocus={() => setWhereOpen(true)}
               onKeyDown={onWhereKey}
-              placeholder="Type a neighbourhood or area..."
+              placeholder={t("wherePlaceholder")}
               ref={whereInput}
               role="combobox"
               type="text"
               value={where}
             />
           </div>
-          <Popover anchor={whereTile} label="Neighbourhoods" matchWidth minWidth={280} onClose={() => setWhereOpen(false)} open={whereOpen && suggestions.length > 0}>
-            <ul aria-label="Neighbourhoods" className="max-h-[320px] overflow-y-auto overscroll-contain p-space-xs flex flex-col gap-0.5" id={`${listId}-hoods`} role="listbox">
+          <Popover anchor={whereTile} label={t("hoods")} matchWidth minWidth={280} onClose={() => setWhereOpen(false)} open={whereOpen && suggestions.length > 0}>
+            <ul aria-label={t("hoods")} className="max-h-[320px] overflow-y-auto overscroll-contain p-space-xs flex flex-col gap-0.5" id={`${listId}-hoods`} role="listbox">
               {suggestions.map((h, i) => {
                 const heading = h.cityLabel !== suggestions[i - 1]?.cityLabel ? h.cityLabel : null;
                 const isActive = i === active;
@@ -240,7 +242,7 @@ export function HomeSearch({
             <span className="material-symbols-outlined text-xl">calendar_month</span>
           </div>
           <div className="flex flex-col w-full min-w-0">
-            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Dates</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{t("dates")}</span>
             <button
               aria-expanded={datesOpen}
               aria-haspopup="dialog"
@@ -248,7 +250,7 @@ export function HomeSearch({
               onClick={() => setDatesOpen((o) => !o)}
               type="button"
             >
-              {start ? fmtDay(start) : "Start"} – {end ? fmtDay(end) : "End"}
+              {start ? fmtDay(start, locale) : t("start")} – {end ? fmtDay(end, locale) : t("end")}
             </button>
           </div>
           <RangePanel
@@ -262,7 +264,7 @@ export function HomeSearch({
             onClose={() => setDatesOpen(false)}
             open={datesOpen}
             start={start}
-            title="Drop-off → Pick-up"
+            title={t("rangeTitle")}
             unitLabel="night"
           />
         </div>
@@ -274,21 +276,21 @@ export function HomeSearch({
             </div>
             <div className="flex flex-col truncate">
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-0.5">
-                Pets
+                {t("pets")}
                 <span className="material-symbols-outlined text-sm">expand_more</span>
               </span>
               <span aria-live="polite" className="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">
-                {kind ? `${pets} ${kindNoun(kind, pets)}` : pets > 1 ? `${pets} Pets` : "1 Dog / Cat"}
+                {kind ? t("kindCount", { kind, count: pets }) : t("anyKindCount", { count: pets })}
               </span>
             </div>
             <Select
-              aria-label="Pet type"
+              aria-label={t("petType")}
               onChange={(v) => pickKind(v as PetKind | "")}
               options={[
-                { value: "", label: "Any pet", icon: "pets" },
-                { value: "DOG", label: "Dog", icon: PET_KIND_META.DOG.icon },
-                { value: "CAT", label: "Cat", icon: PET_KIND_META.CAT.icon },
-                ...PET_KINDS.filter((k) => k !== "DOG" && k !== "CAT").map((k) => ({ value: k, label: PET_KIND_META[k].label, icon: PET_KIND_META[k].icon, group: "Other…" })),
+                { value: "", label: t("anyPet"), icon: "pets" },
+                { value: "DOG", label: tc("petKind.DOG"), icon: PET_KIND_META.DOG.icon },
+                { value: "CAT", label: tc("petKind.CAT"), icon: PET_KIND_META.CAT.icon },
+                ...PET_KINDS.filter((k) => k !== "DOG" && k !== "CAT").map((k) => ({ value: k, label: tc(`petKind.${k}`), icon: PET_KIND_META[k].icon, group: t("otherGroup") })),
               ]}
               panelMinWidth={220}
               value={kind}
@@ -297,7 +299,7 @@ export function HomeSearch({
           </div>
           <div className="flex items-center gap-1.5 shrink-0 bg-surface-container-lowest rounded-full p-1 shadow-sm">
             <button
-              aria-label="Remove a pet"
+              aria-label={t("removePet")}
               className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container transition-colors text-base font-bold disabled:opacity-40"
               disabled={pets <= MIN_PETS}
               onClick={() => setPets((n) => Math.max(MIN_PETS, n - 1))}
@@ -307,7 +309,7 @@ export function HomeSearch({
             </button>
             <span className="font-label-lg text-label-lg px-1">{pets}</span>
             <button
-              aria-label="Add a pet"
+              aria-label={t("addPet")}
               className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container transition-colors text-base font-bold disabled:opacity-40"
               disabled={pets >= MAX_PETS}
               onClick={() => setPets((n) => Math.min(MAX_PETS, n + 1))}
@@ -324,7 +326,7 @@ export function HomeSearch({
             type="submit"
           >
             <span className="material-symbols-outlined text-2xl">search</span>
-            <span className="font-label-lg text-label-lg">Find a Sitter 🐾</span>
+            <span className="font-label-lg text-label-lg">{t("submit")}</span>
           </button>
         </div>
       </div>
@@ -334,19 +336,19 @@ export function HomeSearch({
           <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
             verified
           </span>
-          <span className="font-label-md text-label-md text-on-surface">100% ID & Address Verification</span>
+          <span className="font-label-md text-label-md text-on-surface">{t("trustVerified")}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
             local_hospital
           </span>
-          <span className="font-label-md text-label-md text-on-surface">Free WagShield Vet Cover up to $5,000</span>
+          <span className="font-label-md text-label-md text-on-surface">{t("trustVet", { amount: formatMoney(VET_COVERAGE_CENTS, { locale }) })}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
             photo_library
           </span>
-          <span className="font-label-md text-label-md text-on-surface">Daily Live Photo & Video Updates</span>
+          <span className="font-label-md text-label-md text-on-surface">{t("trustUpdates")}</span>
         </div>
       </div>
     </form>

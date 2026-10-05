@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 
 const noopSubscribe = () => () => {};
@@ -7,6 +8,8 @@ const noopSubscribe = () => () => {};
 /** Share link with copy-to-clipboard and the native share sheet (Web Share API) where supported. */
 export function ReferralShare({ url, rewardLabel }: { url: string; rewardLabel: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("account.referralShare");
+  const tc = useTranslations("common.actions");
   const canShare = useSyncExternalStore(
     noopSubscribe,
     () => typeof navigator.share === "function",
@@ -28,8 +31,8 @@ export function ReferralShare({ url, rewardLabel }: { url: string; rewardLabel: 
   async function share() {
     try {
       await navigator.share({
-        title: "Join me on WagStays",
-        text: `I use WagStays for trusted, verified pet sitters. Sign up with my link and we'll both get ${rewardLabel} in WagPoints after your first stay.`,
+        title: t("shareTitle"),
+        text: t("shareText", { reward: rewardLabel }),
         url,
       });
     } catch {
@@ -42,7 +45,7 @@ export function ReferralShare({ url, rewardLabel }: { url: string; rewardLabel: 
       <div className="flex items-center gap-space-xs p-1.5 pl-space-md rounded-full bg-surface-container-low border border-[#EFE7DE] min-w-0">
         <span className="material-symbols-outlined text-lg text-primary shrink-0">link</span>
         <input
-          aria-label="Your referral link"
+          aria-label={t("linkLabel")}
           className="flex-1 min-w-0 bg-transparent font-body-md text-body-md text-on-surface focus:outline-none truncate"
           id="referral-link"
           onFocus={(e) => e.currentTarget.select()}
@@ -57,7 +60,7 @@ export function ReferralShare({ url, rewardLabel }: { url: string; rewardLabel: 
           type="button"
         >
           <span className="material-symbols-outlined text-base">{copied ? "check" : "content_copy"}</span>
-          <span aria-live="polite">{copied ? "Copied!" : "Copy"}</span>
+          <span aria-live="polite">{copied ? tc("copied") : tc("copy")}</span>
         </button>
       </div>
       {canShare && (
@@ -67,7 +70,7 @@ export function ReferralShare({ url, rewardLabel }: { url: string; rewardLabel: 
           type="button"
         >
           <span className="material-symbols-outlined text-xl">ios_share</span>
-          Share invite
+          {t("share")}
         </button>
       )}
     </div>

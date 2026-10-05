@@ -15,8 +15,20 @@ const STATIC: { path: string; changeFrequency: "daily" | "weekly" | "monthly" | 
   { path: "/pipeda", changeFrequency: "yearly", priority: 0.2 },
 ];
 
+type Entry = Omit<MetadataRoute.Sitemap[number], "url" | "alternates"> & { path: string };
+
+/** Every page is listed once per language, each with hreflang alternates to the other. */
+function localized({ path, ...rest }: Entry): MetadataRoute.Sitemap {
+  const languages = { "en-CA": absoluteUrl(path), "fr-CA": absoluteUrl(`/fr${path === "/" ? "" : path}`) };
+  return [
+    { url: languages["en-CA"], alternates: { languages }, ...rest },
+    { url: languages["fr-CA"], alternates: { languages }, ...rest },
+  ];
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = STATIC.map((s) => ({ url: absoluteUrl(s.path), changeFrequency: s.changeFrequency, priority: s.priority }));
+  const pages: Entry[] = STATIC.map((s) => ({ path: s.path, changeFrequency: s.changeFrequency, priority: s.priority }));
+  const entries = pages;
 
   try {
     const cities = await db.city.findMany({
@@ -43,12 +55,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     for (const c of cities) {
       const inCity = sitters.filter((s) => c.neighbourhoods.some((n) => n.id === s.neighbourhoodId));
-      entries.push({ url: absoluteUrl(`/pet-sitters/${c.slug}`), lastModified: newest(inCity), changeFrequency: "weekly", priority: 0.8 });
+      entries.push({ path: `/pet-sitters/${c.slug}`, lastModified: newest(inCity), changeFrequency: "weekly", priority: 0.8 });
       for (const n of c.neighbourhoods) {
         const local = inCity.filter((s) => s.neighbourhoodId === n.id);
-        entries.push({ url: absoluteUrl(`/pet-sitters/${c.slug}/${n.slug}`), lastModified: newest(local), changeFrequency: "weekly", priority: 0.7 });
+        entries.push({ path: `/pet-sitters/${c.slug}/${n.slug}`, lastModified: newest(local), changeFrequency: "weekly", priority: 0.7 });
         entries.push({
-          url: absoluteUrl(`/dog-walkers/${c.slug}/${n.slug}`),
+          path: `/dog-walkers/${c.slug}/${n.slug}`,
           lastModified: newest(local.filter((s) => s.services.some((x) => x.type === "DOG_WALKING"))),
           changeFrequency: "weekly",
           priority: 0.6,
@@ -56,10 +68,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
     for (const s of sitters) {
-      entries.push({ url: absoluteUrl(`/sitters/${s.slug}`), lastModified: lastMod(s), changeFrequency: "weekly", priority: 0.8 });
+      entries.push({ path: `/sitters/${s.slug}`, lastModified: lastMod(s), changeFrequency: "weekly", priority: 0.8 });
     }
   } catch (e) {
     console.warn("[sitemap] database unavailable, listing static pages only:", (e as Error).message);
   }
-  return entries;
+  return entries.flatMap(localized);
 }

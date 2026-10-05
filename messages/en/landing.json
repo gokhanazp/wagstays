@@ -1,1 +1,99 @@
-{}
+{
+  "noun": {
+    "sitter": {
+      "one": "pet sitter",
+      "many": "pet sitters",
+      "title": "Pet Sitters",
+      "manyCap": "Pet sitters"
+    },
+    "walker": {
+      "one": "dog walker",
+      "many": "dog walkers",
+      "title": "Dog Walkers",
+      "manyCap": "Dog walkers"
+    }
+  },
+  "services": {
+    "DOG_WALKING": {
+      "label": "dog walks",
+      "unit": "walk"
+    },
+    "BOARDING": {
+      "label": "overnight boarding",
+      "unit": "night"
+    },
+    "DAY_CARE": {
+      "label": "doggy day care",
+      "unit": "day"
+    },
+    "DROP_IN": {
+      "label": "drop-in visits",
+      "unit": "visit"
+    }
+  },
+  "copy": {
+    "listJoin": "{rest} and {last}",
+    "priceOne": "{price} per {unit}",
+    "priceRange": "{min}–{max} per {unit}",
+    "title": "Trusted {nounTitle} in {place}",
+    "introCity": "WagStays connects {city} pet parents with {count, plural, one {# verified {one}} other {# verified {many}}} across {hoods, plural, one {# neighbourhood} other {# neighbourhoods}}, from {list} and beyond.",
+    "introLocal": "Looking for a {one} in {where}? WagStays has {count, plural, one {# verified {one}} other {# verified {many}}} based right in {where}.",
+    "introLocalNearby": "Looking for a {one} in {where}? WagStays has {count, plural, one {# verified {one}} other {# verified {many}}} based right in {where} and {nearby} more within {km} km in {names}.",
+    "introNearby": "No {many} are based in {where} just yet, but {count, plural, one {# verified {one}} other {# verified {many}}} within {km} km ({names}) can help.",
+    "introGrowing": "We're still growing our {one} community in {where}. Here are the closest WagStays sitters in {city}.",
+    "factsBoth": "They're rated {rating} out of 5 on average across {reviews} reviews, with {prices} (before tax).",
+    "factsRating": "They're rated {rating} out of 5 on average across {reviews} reviews.",
+    "factsPrices": "They're with {prices} (before tax).",
+    "factsPrice": "{label} from {price} per {unit}",
+    "parks": "Favourite local walking spots include {parks}.",
+    "descHood": "Compare {count, plural, one {# trusted {one}} other {# trusted {many}}} in and around {place}.",
+    "descCity": "Compare {count, plural, one {# trusted {one}} other {# trusted {many}}} in {place}.",
+    "descRating": "Rated {rating}/5 from {reviews} reviews.",
+    "descFrom": "{label} from {price}.",
+    "descTrust": "Verified sitters and vet care coverage on every booking.",
+    "notFound": "Page not found"
+  },
+  "faq": {
+    "costQ": "How much does a {one} cost in {where}?",
+    "costA": "{manyCap} serving {where} on WagStays charge {list}. Prices are set by each sitter and shown before HST.",
+    "costItem": "{price} for {label}",
+    "walkQ": "How long is a dog walk in {where}?",
+    "walkA": "Walks booked through WagStays in {where} last {duration}, depending on the walker. You can book one-off walks or a weekly recurring schedule.",
+    "walkMinutes": "{min} minutes",
+    "walkMinutesRange": "{min} to {max} minutes",
+    "verifiedQ": "Are WagStays {many} in {where} verified?",
+    "verifiedA": "Every sitter is reviewed by the WagStays team before their profile goes live. Of the {shown, plural, one {# {one}} other {# {many}}} serving {where}, {id, plural, one {# has} other {# have}} a verified government ID and {bg, plural, one {# has} other {# have}} a clear police vulnerable sector check — look for the badges on each profile.",
+    "coveredQ": "Is my pet covered if something goes wrong?",
+    "coveredA": "Yes. Every booking includes WagShield protection with up to {amount} in emergency vet care coverage.",
+    "meetQ": "Can I meet a {one} before booking?",
+    "meetA": "Yes. You can request a free Meet & Greet when you send a booking request, and you can message any sitter before you book."
+  },
+  "view": {
+    "breadcrumb": "Breadcrumb",
+    "home": "Home",
+    "citySitters": "{city} Pet Sitters",
+    "hoodSitters": "{hood} Pet Sitters",
+    "hoodNoun": "{hood} {nounTitle}",
+    "siblingsNearby": "{nounTitle} in nearby neighbourhoods",
+    "siblingsByHood": "{nounTitle} by neighbourhood",
+    "allSittersIn": "All pet sitters in {hood}",
+    "walkersIn": "Dog walkers in {hood}",
+    "statServing": "{count, plural, one {# {one}} other {# {many}}}",
+    "statServingNearby": "{count, plural, one {# {one}} other {# {many}}} nearby",
+    "statRating": "{rating} average rating",
+    "statFrom": "From {price} / {unit}",
+    "statVet": "{amount} vet care coverage",
+    "searchIn": "Search {many} in {place}",
+    "topNear": "Top-rated {many} near {place}",
+    "topIn": "Top-rated {many} in {place}",
+    "seeAll": "See all & check availability",
+    "empty": "No {many} are taking bookings here yet. <link>Become the first WagStays sitter in {place}</link>.",
+    "pricesTitle": "What {many} charge in {place}",
+    "pricesNote": "Prices are set by each sitter and shown before HST.",
+    "faqTitle": "Frequently asked questions",
+    "faqText": "About booking {many} in {place} with WagStays.",
+    "ctaTitle": "Find your {one} in {place}",
+    "ctaText": "Pick your dates, compare profiles and message sitters before you book — you can ask for a free Meet & Greet first.",
+    "ctaSearch": "Search {many}"
+  }
+}

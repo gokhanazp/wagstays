@@ -1,1 +1,36 @@
-{}
+{
+  "logo": {
+    "home": "WagStays home"
+  },
+  "favourites": {
+    "metaTitle": "Favourites",
+    "eyebrow": "Your Saved Sitters",
+    "title": "Favourites",
+    "subtitle": "Sitters you've saved, ready to book whenever you need them.",
+    "emptyTitle": "No favourites yet",
+    "emptyText": "Tap the heart on any sitter to save them here."
+  },
+  "suspended": {
+    "metaTitle": "Account suspended",
+    "titleSuspended": "Your account is suspended",
+    "titleOk": "Your account is in good standing",
+    "textSuspended": "We've paused access to your WagStays account while our Trust & Safety team takes a closer look. You can't make or manage bookings in the meantime. If you think this is a mistake, our support team is happy to help.",
+    "textOk": "There's nothing to worry about — your account isn't suspended."
+  },
+  "accountClosed": {
+    "metaTitle": "Account closed",
+    "title": "Your account is closed",
+    "text": "We've removed your login, photos and contact details and anonymised the rest. Past bookings and payments are kept without your name as a financial record. Thanks for being part of WagStays — give your pets a scratch from us.",
+    "privacy": "Privacy Policy"
+  },
+  "pwa": {
+    "iosTitle": "Get booking updates on your iPhone",
+    "pushTitle": "Never miss a booking update",
+    "iosText": "Tap <icon></icon> Share, then <b>Add to Home Screen</b>. Open WagStays from your Home Screen to turn on notifications.",
+    "pushText": "Get a notification when a sitter replies or your booking changes. You can turn it off anytime in Account Settings.",
+    "turnOn": "Turn on",
+    "notNow": "Not now",
+    "gotIt": "Got it",
+    "dismiss": "Dismiss"
+  }
+}

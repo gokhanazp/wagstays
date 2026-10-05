@@ -3,32 +3,35 @@
 import { emit } from "@/lib/events";
 import { conversationChannel, inboxChannel, ping } from "@/lib/realtime";
 import { revalidatePath } from "@/i18n/revalidate";
+import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { intlLocale } from "@/i18n/routing";
 import { db } from "@/lib/db";
 import { MESSAGE_MAX, markRead, participantSide } from "@/lib/conversations";
 import { getCurrentUser } from "@/lib/session";
 
 export type SendResult = { ok: true } | { ok: false; error: string };
 
-const sendSchema = z.object({
-  conversationId: z.string().min(1).max(64),
-  body: z
-    .string()
-    .trim()
-    .min(1, "Write a message first.")
-    .max(MESSAGE_MAX, `Messages can be up to ${MESSAGE_MAX.toLocaleString("en-CA")} characters.`),
-});
+const sendSchema = (t: Awaited<ReturnType<typeof getTranslations<"chat.errors">>>, locale: string) =>
+  z.object({
+    conversationId: z.string().min(1).max(64),
+    body: z
+      .string()
+      .trim()
+      .min(1, t("empty"))
+      .max(MESSAGE_MAX, t("tooLong", { max: MESSAGE_MAX.toLocaleString(intlLocale(locale)) })),
+  });
 
 /** Sends a message. Only a participant of the conversation (owner or the sitter's user) may post. */
 export async function sendMessage(conversationId: string, body: string): Promise<SendResult> {
-  const user = await getCurrentUser();
-  if (!user || user.suspended) return { ok: false, error: "Please sign in again to send messages." };
+  const [user, t, locale] = await Promise.all([getCurrentUser(), getTranslations("chat.errors"), getLocale()]);
+  if (!user || user.suspended) return { ok: false, error: t("signIn") };
 
-  const parsed = sendSchema.safeParse({ conversationId, body });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid message." };
+  const parsed = sendSchema(t, locale).safeParse({ conversationId, body });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? t("invalid") };
 
   const side = await participantSide(parsed.data.conversationId, user.id);
-  if (!side) return { ok: false, error: "Conversation not found." };
+  if (!side) return { ok: false, error: t("notFound") };
 
   const now = new Date();
   const [message] = await db.$transaction([

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 /** WagStays brand mark: a heart-pad paw on a sage squircle, drawn from the design palette. */
@@ -39,8 +40,9 @@ export function Wordmark({ className = "" }: { className?: string }) {
 }
 
 export function Logo({ href = "/", size = "md" }: { href?: string; size?: "sm" | "md" }) {
+  const t = useTranslations("misc.logo");
   return (
-    <Link aria-label="WagStays home" className="flex items-center gap-space-sm group shrink-0" href={href}>
+    <Link aria-label={t("home")} className="flex items-center gap-space-sm group shrink-0" href={href}>
       <LogoMark
         className={`${size === "sm" ? "w-8 h-8" : "w-10 h-10"} transition-transform duration-300 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover:-rotate-6 group-hover:scale-105`}
       />

@@ -1,1 +1,601 @@
-{}
+{
+  "meta": {
+    "bookings": "Mes réservations",
+    "bookingDetail": "Détails de la réservation",
+    "pets": "Mes animaux",
+    "addPet": "Ajouter un animal",
+    "editPet": "Modifier l'animal",
+    "settings": "Paramètres du compte",
+    "wagpoints": "WagPoints",
+    "support": "Aide et soutien",
+    "newTicket": "Nouvelle demande de soutien",
+    "ticket": "Demande de soutien"
+  },
+  "layout": {
+    "pendingApproval": "<b>Votre compte est en cours de vérification</b> — généralement en quelques heures. D'ici là, vous pouvez parcourir les gardiens et ajouter vos animaux; nous vous aviserons dès que vous pourrez réserver."
+  },
+  "shared": {
+    "weekOf": "Semaine {index} sur {total}",
+    "quantity": "{type, select, BOARDING {{count, plural, one {# nuit} other {# nuits}}} DAY_CARE {{count, plural, one {# jour} other {# jours}}} DOG_WALKING {{count, plural, one {# promenade} other {# promenades}}} other {{count, plural, one {# visite} other {# visites}}}}",
+    "ageMonths": "{count, plural, one {# mois} other {# mois}}",
+    "ageYears": "{count, plural, one {# an} other {# ans}}",
+    "sizeWithRange": "{size} ({range})",
+    "cancelReasons": {
+      "plansChanged": "Mes plans ont changé",
+      "petUnwell": "Mon animal est malade",
+      "foundAnother": "J'ai trouvé un autre gardien",
+      "wrongDate": "J'ai réservé la mauvaise date ou heure",
+      "other": "Autre raison"
+    },
+    "reason": "Raison",
+    "chooseReason": "Choisissez une raison…",
+    "anythingElse": "Autre chose à ajouter?",
+    "sharedWithSitter": "Facultatif — transmis à votre gardien.",
+    "cancelling": "Annulation…"
+  },
+  "bookings": {
+    "description": "Toutes les promenades, pensions et visites que vous avez réservées — avec les notes de votre gardien et les prochaines étapes.",
+    "filtersLabel": "Filtres des réservations",
+    "tabs": {
+      "upcoming": "À venir",
+      "past": "Passées",
+      "cancelled": "Annulées"
+    },
+    "empty": {
+      "upcomingTitle": "Aucune réservation à venir",
+      "upcomingText": "Vos promenades, pensions et visites à domicile réservées s'afficheront ici.",
+      "pastTitle": "Aucune réservation passée",
+      "pastText": "Les réservations terminées s'affichent ici, prêtes pour un avis ou une nouvelle réservation.",
+      "cancelledTitle": "Aucune réservation annulée",
+      "cancelledText": "Rien d'annulé ni de refusé — tant mieux!"
+    },
+    "leaveReview": "Laisser un avis",
+    "viewDetails": "Voir les détails"
+  },
+  "detail": {
+    "notices": {
+      "cancelled": "Votre réservation a été annulée. Les WagPoints utilisés ont été remis dans votre portefeuille.",
+      "reviewed": "Merci! Votre avis est maintenant publié sur le profil du gardien."
+    },
+    "timeline": {
+      "title": "Historique",
+      "requested": "Réservation demandée",
+      "confirmedBy": "Confirmée par {name}",
+      "completed": "Terminée",
+      "declinedBy": "Refusée par {name}",
+      "cancelledByYou": "Annulée par vous",
+      "cancelledBy": "Annulée par {name}",
+      "cancelledBySupport": "Annulée par le soutien WagStays",
+      "reviewed": "Vous avez laissé un avis"
+    },
+    "next": {
+      "pending": "En attente de l'acceptation de {name}",
+      "upcoming": "À venir — à bientôt!",
+      "inProgress": "En cours ou en attente du compte rendu de {name}"
+    },
+    "care": {
+      "title": "Instructions de soins",
+      "meetingAddress": "Adresse de rendez-vous",
+      "leash": "Laisse et équipement",
+      "otherAnimals": "Avec les autres animaux",
+      "feeding": "Consignes d'alimentation",
+      "notes": "Notes pour le gardien",
+      "gps": "Suivi GPS",
+      "gpsOn": "GPS en direct et photos activés",
+      "gpsOff": "Désactivé",
+      "emergency": "Contact d'urgence",
+      "vet": "Clinique vétérinaire",
+      "none": "Aucune instruction particulière n'a été ajoutée."
+    },
+    "price": {
+      "title": "Détail du prix",
+      "line": "{quantity} × {price}",
+      "subtotal": "Sous-total — {service}",
+      "protection": "Protection vétérinaire WagShield",
+      "serviceFee": "Frais de service de la plateforme",
+      "discount": "Rabais WagPoints",
+      "tax": "TVH",
+      "total": "Total",
+      "pointsReturned": "{amount} en WagPoints ont été remis dans votre portefeuille."
+    },
+    "bookingRef": "Réservation {ref}",
+    "heading": "{service} avec {name}",
+    "superSitter": "Super gardien",
+    "summary": {
+      "service": "Service",
+      "serviceMinutes": "{service} ({mins} min)",
+      "pets": "{count} animaux",
+      "pet": "Animal",
+      "dateTime": "Date et heure",
+      "repeatsWeekly": "Chaque semaine",
+      "meetGreet": "Rencontre préalable demandée",
+      "payment": "Paiement",
+      "cardEnding": "{brand} se terminant par {last4}",
+      "cardOnFile": "Carte enregistrée"
+    },
+    "noteFrom": "Note de {name}:",
+    "reasonGiven": "Raison donnée:",
+    "cancellationReason": "Raison de l'annulation:",
+    "review": {
+      "yours": "Votre avis",
+      "howWas": "Comment s'est passé le service de {service} pour {pets}?",
+      "stars": "{rating} étoiles sur 5",
+      "posted": "Publié le {date}",
+      "hidden": " · Masqué par la modération"
+    },
+    "actions": {
+      "message": "Écrire à {name}",
+      "bookAgain": "Réserver de nouveau",
+      "report": "Signaler un problème"
+    },
+    "series": {
+      "title": "Série hebdomadaire · {count} semaines",
+      "week": "Semaine {n}",
+      "total": "Total de la série (semaines actives)"
+    }
+  },
+  "cancelForm": {
+    "open": "Annuler la réservation",
+    "title": "Annuler cette réservation?",
+    "free": "Annulation gratuite jusqu'à {hours} heures avant le début. Les WagPoints utilisés retournent directement dans votre portefeuille.",
+    "late": "Cette réservation commence dans moins de {hours} heures. Vous pouvez quand même annuler, mais votre gardien a peut-être déjà réservé ce moment — des frais d'annulation tardive pourraient s'appliquer une fois les paiements activés.",
+    "detailsPlaceholder": "p. ex. Nous partons au chalet un jour plus tôt.",
+    "confirm": "Oui, annuler la réservation",
+    "keep": "Garder ma réservation"
+  },
+  "seriesCancel": {
+    "open": "Annuler cette semaine et les suivantes ({count})",
+    "title": "Annuler le reste de cette série?",
+    "text": "Cette action annule cette réservation et {later, plural, one {la réservation hebdomadaire suivante} other {les # réservations hebdomadaires suivantes}}. Les semaines précédentes ne sont pas touchées. Les WagPoints utilisés retournent dans votre portefeuille.",
+    "detailsPlaceholder": "p. ex. Nous déménageons à la fin du mois.",
+    "confirm": "Oui, annuler {count} réservations",
+    "keep": "Les garder"
+  },
+  "reviewForm": {
+    "words": {
+      "1": "Décevant",
+      "2": "Passable",
+      "3": "Bien",
+      "4": "Très bien",
+      "5": "Exceptionnel"
+    },
+    "yourRating": "Votre note",
+    "starRating": "Note en étoiles",
+    "star": "{count, plural, one {# étoile} other {# étoiles}} — {word}",
+    "tapToRate": "Touchez pour noter",
+    "yourReview": "Votre avis",
+    "placeholder": "Qu'est-ce que {name} a bien fait? D'autres propriétaires liront votre avis.",
+    "moreChars": "{count, plural, one {Encore # caractère au minimum} other {Encore # caractères au minimum}}",
+    "looksGood": "Parfait!",
+    "posting": "Publication…",
+    "post": "Publier l'avis"
+  },
+  "pets": {
+    "description": "Gardez les renseignements de vos animaux à jour pour que les gardiens sachent exactement comment en prendre soin.",
+    "addPet": "Ajouter un animal",
+    "deleted": "Profil de l'animal supprimé.",
+    "saved": "Profil de l'animal enregistré.",
+    "emptyAction": "Ajouter votre premier animal",
+    "emptyText": "Ajoutez votre chien, votre chat ou un autre compagnon — vous le choisirez au moment de réserver.",
+    "emptyTitle": "Aucun animal pour l'instant",
+    "otherPet": "Autre animal",
+    "chipped": "Micropucé",
+    "rabies": "Vacciné contre la rage",
+    "spayed": "Stérilisée",
+    "neutered": "Stérilisé",
+    "editProfile": "Modifier le profil",
+    "new": {
+      "backToBooking": "Retour à la réservation",
+      "descriptionNext": "Ajoutez votre animal et nous vous ramènerons directement où vous étiez.",
+      "description": "Présentez aux gardiens l'animal dont ils prendront soin.",
+      "title": "Ajouter un animal"
+    },
+    "edit": {
+      "title": "Modifier {name}",
+      "deleteTitle": "Supprimer le profil de {name}",
+      "upcoming": "{name} a {count, plural, one {une réservation à venir — annulez-la} other {# réservations à venir — annulez-les}} avant de supprimer ce profil.",
+      "permanent": "Le profil et ses traits seront supprimés définitivement. Cette action est irréversible."
+    }
+  },
+  "deletePet": {
+    "keep": "Garder {name}",
+    "deleting": "Suppression…",
+    "confirm": "Oui, supprimer",
+    "delete": "Supprimer l'animal"
+  },
+  "petForm": {
+    "species": {
+      "DOG": "Chien",
+      "CAT": "Chat",
+      "OTHER": "Autre"
+    },
+    "sex": {
+      "none": "Je préfère ne pas le dire",
+      "MALE": "Mâle",
+      "FEMALE": "Femelle"
+    },
+    "suggestions": {
+      "peopleFriendly": "Sociable avec les gens",
+      "goodWithDogs": "Bon avec les chiens",
+      "pullsOnLeash": "Tire en laisse",
+      "separationAnxiety": "Anxiété de séparation",
+      "chickenAllergy": "Allergie au poulet",
+      "needsMedication": "Prend des médicaments"
+    },
+    "basics": "L'essentiel",
+    "photo": "Photo",
+    "name": "Nom",
+    "namePlaceholder": "p. ex. Maple",
+    "breed": "Race",
+    "breedPlaceholder": "p. ex. Golden retriever",
+    "speciesLegend": "Espèce",
+    "otherKindHint": "Lapin, oiseau, reptile… dites à votre gardien à quoi s'attendre.",
+    "otherKindLabel": "Quel type d'animal?",
+    "otherKindPlaceholder": "p. ex. Lapin",
+    "ageHint": "En années — les décimales sont acceptées (p. ex. 0,5 pour six mois).",
+    "age": "Âge",
+    "agePlaceholder": "p. ex. 2,5",
+    "sexLabel": "Sexe",
+    "size": "Taille",
+    "health": "Santé et identification",
+    "neuteredDescription": "Aide les gardiens à planifier les jeux en groupe.",
+    "neuteredLabel": "Stérilisé",
+    "rabiesDescription": "Exigé pour la plupart des séjours en pension.",
+    "rabiesLabel": "Vacciné contre la rage",
+    "microchipHint": "Facultatif — de 9 à 15 lettres ou chiffres.",
+    "microchip": "Numéro de micropuce",
+    "microchipPlaceholder": "p. ex. 981098103982",
+    "personality": "Personnalité et notes de soins",
+    "traitsIntro": "Ajoutez de courts traits que les gardiens doivent connaître. Indiquez les allergies et besoins médicaux comme <b>importants</b> pour qu'ils ressortent.",
+    "traits": "Traits",
+    "removeTrait": "Retirer {label}",
+    "noTraits": "Aucun trait pour l'instant.",
+    "newTrait": "Nouveau trait",
+    "traitPlaceholder": "p. ex. Fou des balles de tennis",
+    "allergy": "Allergie / médical",
+    "addTrait": "Ajouter",
+    "suggestionsLabel": "Suggestions:",
+    "fixFields": "Veuillez corriger les champs en surbrillance.",
+    "saveContinue": "Enregistrer et poursuivre la réservation",
+    "addPet": "Ajouter l'animal"
+  },
+  "imagePicker": {
+    "badType": "Veuillez téléverser une image JPG, PNG ou WebP.",
+    "tooBig": "Les images doivent faire 5 Mo ou moins.",
+    "unreadable": "Impossible de lire cette image — veuillez en essayer une autre.",
+    "preview": "Aperçu",
+    "change": "Changer la photo",
+    "upload": "Téléverser une photo",
+    "help": "JPG, PNG ou WebP, jusqu'à 5 Mo."
+  },
+  "settings": {
+    "description": "Modifiez vos coordonnées, votre courriel de connexion et votre mot de passe, téléchargez vos données ou fermez votre compte.",
+    "wallet": "Portefeuille WagPoints",
+    "walletText": "Obtenez jusqu'à {amount} de rabais au paiement. Les points des réservations annulées reviennent ici automatiquement.",
+    "bookWithPoints": "Réserver avec mes WagPoints",
+    "privacy": "Des questions sur la confidentialité? Consultez notre <link>Politique de confidentialité</link> ou écrivez à <mail>{email}</mail>.",
+    "profile": {
+      "title": "Profil",
+      "photo": "Photo de profil",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "phoneHint": "Transmis à votre gardien une fois la réservation confirmée.",
+      "phone": "Téléphone",
+      "save": "Enregistrer le profil"
+    },
+    "email": {
+      "title": "Courriel de connexion",
+      "current": "Vous vous connectez actuellement avec <b>{email}</b>.",
+      "new": "Nouveau courriel",
+      "currentPassword": "Mot de passe actuel",
+      "update": "Mettre à jour le courriel"
+    },
+    "password": {
+      "title": "Mot de passe",
+      "newHint": "Au moins 8 caractères.",
+      "new": "Nouveau mot de passe",
+      "confirm": "Confirmer le nouveau mot de passe",
+      "change": "Changer le mot de passe"
+    }
+  },
+  "privacy": {
+    "export": {
+      "failed": "Nous n'avons pas pu préparer votre téléchargement. Veuillez réessayer.",
+      "offline": "Nous n'avons pas pu préparer votre téléchargement. Vérifiez votre connexion et réessayez.",
+      "title": "Vos données",
+      "text": "Téléchargez une copie de tout ce que nous détenons à votre sujet — profil, animaux, réservations et prix, avis, messages envoyés, favoris, historique WagPoints, candidatures et demandes de soutien — dans un fichier JSON. Les documents téléversés sont indiqués par leur nom de fichier seulement.",
+      "started": "Téléchargement lancé.",
+      "preparing": "Préparation…",
+      "download": "Télécharger mes données"
+    },
+    "close": {
+      "title": "Fermer le compte",
+      "intro": "La fermeture de votre compte est définitive et irréversible. Lorsque vous le fermez, nous:",
+      "login": "supprimons votre connexion et remplaçons votre nom, courriel et téléphone par « Utilisateur supprimé »;",
+      "pets": "retirons les photos de vos animaux et votre photo de profil, et archivons vos animaux;",
+      "messages": "remplaçons les messages que vous avez envoyés par « Message supprimé » et retirons vos favoris et vos notifications;",
+      "reviews": "conservons la note et le texte de vos avis, affichés comme « Ancien membre » — les gardiens comptent sur un historique d'avis honnête;",
+      "sitter": "suspendons et anonymisons votre profil de gardien, et supprimons ses photos et vos documents de candidature;",
+      "bookings": "conservons les réservations et paiements passés, sans votre nom, à titre de dossier financier. Les WagPoints inutilisés sont perdus;",
+      "retention": "conservons les demandes de soutien, les conversations et l'historique des points pendant 6 mois en cas de litige lié à la sécurité ou à un paiement, puis les supprimons définitivement.",
+      "copyFirst": "Vous voulez d'abord une copie? Utilisez « Télécharger mes données » ci-dessus.",
+      "blocked": "Terminez ou annulez {count, plural, one {cette réservation à venir} other {ces # réservations à venir}} avant de fermer votre compte:",
+      "confirmed": "Confirmée",
+      "pending": "En attente",
+      "withName": "avec {name}",
+      "forName": "pour {name} (vous êtes le gardien)",
+      "confirmHint": "Tapez DELETE en majuscules.",
+      "confirm": "Confirmation",
+      "password": "Mot de passe actuel",
+      "closing": "Fermeture du compte…",
+      "submit": "Fermer mon compte"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "offFlash": "Les notifications sont désactivées sur cet appareil.",
+    "onFlash": "Les notifications sont activées sur cet appareil.",
+    "testSent": "Test envoyé.",
+    "removed": "Retiré.",
+    "intro": "Recevez une notification pour les nouvelles demandes de réservation, les confirmations, les annulations et les messages.",
+    "iosHomeScreen": "Sur iPhone et iPad, les notifications fonctionnent une fois WagStays ajouté à votre écran d'accueil: touchez <icon></icon> <b>Partager</b> → <b>Sur l'écran d'accueil</b>, puis ouvrez WagStays à partir de là et revenez sur cette page.",
+    "updateIos": "Passez à iOS 16.4 ou plus récent pour recevoir des notifications.",
+    "unsupported": "Ce navigateur ne prend pas en charge les notifications. Essayez Chrome, Edge, Firefox ou Safari.",
+    "blocked": "Les notifications de WagStays sont bloquées dans ce navigateur. Autorisez-les dans les paramètres du site de votre navigateur, puis réessayez.",
+    "onDevice": "Activées sur cet appareil",
+    "offDevice": "Désactivées sur cet appareil",
+    "turnOff": "Désactiver",
+    "turnOn": "Activer",
+    "devices": "Vos appareils",
+    "thisDevice": "· Cet appareil",
+    "added": "Ajouté le {date}",
+    "remove": "Retirer {label}",
+    "sendTest": "Envoyer une notification test"
+  },
+  "wagpoints": {
+    "description": "Votre portefeuille de récompenses — accumulez des points à chaque réservation terminée, invitez vos amis et économisez au paiement.",
+    "balance": "Solde disponible",
+    "balanceText": "Utilisez jusqu'à {amount} de rabais par réservation au paiement. Vos points n'expirent jamais tant que votre compte est ouvert.",
+    "bookEarn": "Réserver et accumuler",
+    "howToEarn": "Comment accumuler",
+    "earnTitle": "{rate} en points sur vos réservations",
+    "earnText": "Chaque promenade, pension ou visite terminée vous rapporte {rate} du sous-total de la réservation.",
+    "friendTitle": "{reward} par ami",
+    "friendText": "Invitez un ami — vous recevez chacun {reward} une fois sa première réservation terminée.",
+    "saveTitle": "Économisez au paiement",
+    "saveText": "Cochez « Appliquer mes WagPoints » en réservant pour obtenir jusqu'à {amount} de rabais.",
+    "giveGet": "Offrez {reward}, recevez {reward}",
+    "shareText": "Partagez votre lien avec vos amis qui ont des animaux. Lorsqu'ils s'inscrivent et que leur première réservation est terminée, vous recevez chacun <b>{reward} en WagPoints</b>.",
+    "yourCode": "Votre code: <b>{code}</b>",
+    "invited": "Amis invités",
+    "booked": "Amis ayant réservé",
+    "rewards": "Récompenses obtenues",
+    "joined": "Inscrit le {date}",
+    "earned": "+{reward} obtenus",
+    "awaiting": "En attente du 1er séjour",
+    "history": "Historique",
+    "emptyText": "Les points que vous accumulez, utilisez ou recevez s'afficheront ici.",
+    "emptyTitle": "Aucune activité WagPoints pour l'instant",
+    "referralWith": "avec {name}",
+    "booking": "Réservation {ref}"
+  },
+  "referralShare": {
+    "shareTitle": "Rejoignez-moi sur WagStays",
+    "shareText": "J'utilise WagStays pour trouver des gardiens d'animaux vérifiés et de confiance. Inscrivez-vous avec mon lien et nous recevrons chacun {reward} en WagPoints après votre premier séjour.",
+    "linkLabel": "Votre lien de parrainage",
+    "share": "Partager l'invitation"
+  },
+  "points": {
+    "earnNote": "Vous obtiendrez <b>~{amount}</b> en WagPoints une fois cette réservation terminée.",
+    "referrerWithPet": "{name}, propriétaire de {pet},",
+    "invitedReward": "<b>{who}</b> vous invite — vous recevrez chacun <reward>{amount}</reward> en WagPoints après votre premier séjour.",
+    "invited": "<b>{who}</b> vous invite sur WagStays.",
+    "reasons": {
+      "BOOKING_EARN": "Obtenus sur une réservation",
+      "BOOKING_SPEND": "Utilisés au paiement",
+      "BOOKING_REFUND": "Remis dans votre portefeuille",
+      "REFERRAL": "Récompense de parrainage",
+      "ADMIN": "Ajustement par WagStays",
+      "WELCOME": "Prime de bienvenue"
+    }
+  },
+  "support": {
+    "categories": {
+      "BOOKING_ISSUE": { "label": "Problème de réservation", "hint": "Absence, retard, soins non conformes, problème d'horaire" },
+      "PAYMENT": { "label": "Paiements et remboursements", "hint": "Frais, remboursements, WagPoints, versements" },
+      "SAFETY": { "label": "Problème de sécurité", "hint": "Blessure, animal perdu, situation dangereuse — traité en priorité" },
+      "ACCOUNT": { "label": "Compte", "hint": "Connexion, profil, vérification" },
+      "OTHER": { "label": "Autre chose", "hint": "Tout ce qui ne correspond pas aux choix ci-dessus" }
+    },
+    "statuses": {
+      "OPEN": "Ouverte",
+      "IN_PROGRESS": "En cours",
+      "WAITING_ON_USER": "En attente de votre réponse",
+      "RESOLVED": "Résolue",
+      "CLOSED": "Fermée"
+    },
+    "list": {
+      "newRequest": "Nouvelle demande",
+      "description": "Une question sur une réservation, un paiement ou votre compte? Notre équipe de Toronto répond habituellement en quelques heures.",
+      "title": "Demandes de soutien",
+      "emergency": "Urgence animale? Appelez 24 h/24, 7 j/7",
+      "preferEmail": "Vous préférez le courriel?",
+      "contact": "Contacter le soutien",
+      "emptyText": "Si quelque chose ne va pas avec une réservation, un paiement ou votre compte, envoyez-nous une demande et nous nous en occuperons.",
+      "emptyTitle": "Aucune demande de soutien pour l'instant",
+      "nothingOpen": "Aucune demande ouverte pour le moment.",
+      "open": "Demandes ouvertes",
+      "past": "Résolues et fermées",
+      "updated": "Mise à jour le {date}"
+    },
+    "new": {
+      "forWith": "{service} pour {pets} avec {name}",
+      "forOwner": "{service} pour {pets} ({name})",
+      "asSitter": " · en tant que gardien",
+      "title": "Comment pouvons-nous vous aider?",
+      "intro": "Dites-nous ce qui s'est passé et nous vous répondrons ici. Préciser la réservation nous aide à régler le problème plus vite."
+    },
+    "form": {
+      "about": "De quoi s'agit-il?",
+      "category": "Catégorie",
+      "chooseCategory": "Choisissez une catégorie",
+      "bookingHint": "Facultatif — choisissez la réservation concernée.",
+      "noBookings": "Vous n'avez encore aucune réservation.",
+      "relatedBooking": "Réservation concernée",
+      "noBooking": "Aucune réservation en particulier",
+      "subject": "Objet",
+      "subjectPlaceholder": "p. ex. Le gardien est arrivé avec une heure de retard",
+      "bodyHint": "Indiquez les heures, ce à quoi vous vous attendiez et ce qui s'est passé. Ne communiquez pas de numéro de carte.",
+      "body": "Décrivez le problème",
+      "send": "Envoyer la demande"
+    },
+    "ticket": {
+      "created": "Merci — nous avons bien reçu votre demande. Nous vous répondrons ici et vous aviserons dès que ce sera fait.",
+      "request": "Demande {ref} · {category}",
+      "conversation": "Conversation",
+      "you": "Vous",
+      "supportAuthor": "{name} · Soutien WagStays",
+      "closedOn": "Fermée le {date}",
+      "resolvedOn": "Résolue le {date}",
+      "closedText": "Cette demande est fermée. <link>Ouvrez une nouvelle demande</link> si vous avez encore besoin d'aide.",
+      "details": "Détails",
+      "reference": "Référence",
+      "category": "Catégorie",
+      "opened": "Ouverte",
+      "lastUpdate": "Dernière mise à jour",
+      "relatedBooking": "Réservation concernée",
+      "viewBooking": "Voir la réservation"
+    },
+    "reply": {
+      "reopen": "Encore besoin d'aide? Répondez pour rouvrir la demande",
+      "add": "Ajouter une réponse",
+      "placeholder": "Écrivez votre message…",
+      "send": "Envoyer la réponse"
+    },
+    "resolve": {
+      "title": "Marquer cette demande comme résolue?",
+      "body": "Confirmez-nous que tout est réglé. Vous pourrez toujours répondre plus tard pour la rouvrir.",
+      "label": "Marquer comme résolue"
+    },
+    "safety": {
+      "title": "Un animal ou une personne est-il en danger en ce moment?",
+      "text": "Appelez notre ligne de sécurité 24 h/24, 7 j/7 au <tel>{phone}</tel>. En cas d'urgence médicale, communiquez avec la clinique vétérinaire d'urgence la plus proche ou composez le 911. Les signalements de sécurité envoyés ici sont marqués urgents et traités en priorité."
+    }
+  },
+  "dataExport": {
+    "wait": "Vous venez de télécharger vos données. Veuillez patienter {count, plural, one {# seconde} other {# secondes}} et réessayer."
+  },
+  "errors": {
+    "notFound": "Introuvable — cet élément a peut-être été supprimé.",
+    "logInAgain": "Veuillez vous reconnecter.",
+    "signInAgain": "Veuillez vous reconnecter.",
+    "tooLong": "Veuillez ne pas dépasser {max} caractères.",
+    "checkForm": "Veuillez vérifier le formulaire.",
+    "wrongPassword": "Ce mot de passe est incorrect.",
+    "currentPassword": "Veuillez entrer votre mot de passe actuel.",
+    "starRating": "Veuillez choisir une note en étoiles.",
+    "cancel": {
+      "reason": "Veuillez choisir une raison.",
+      "notCancellable": "Cette réservation ne peut plus être annulée."
+    },
+    "review": {
+      "minLength": "Veuillez écrire au moins 20 caractères.",
+      "maxLength": "Veuillez limiter votre avis à 1 000 caractères.",
+      "notCompleted": "Vous pourrez laisser un avis une fois la réservation terminée.",
+      "already": "Vous avez déjà laissé un avis pour cette réservation."
+    },
+    "pet": {
+      "traitLength": "Les traits doivent compter moins de 40 caractères.",
+      "name": "Veuillez entrer le nom de votre animal.",
+      "nameLength": "Veuillez limiter le nom à 40 caractères.",
+      "species": "Veuillez choisir une espèce.",
+      "age": "Veuillez entrer un âge entre 0 et 40 ans.",
+      "size": "Veuillez choisir une taille.",
+      "sex": "Veuillez choisir mâle ou femelle.",
+      "microchip": "Les numéros de micropuce comptent de 9 à 15 lettres ou chiffres.",
+      "maxTraits": "Vous pouvez ajouter jusqu'à 12 traits.",
+      "invalidTraits": "Traits invalides.",
+      "otherKind": "Veuillez nous dire de quel type d'animal il s'agit (p. ex. Lapin).",
+      "saved": "Modifications enregistrées.",
+      "upcoming": "{name} a {count, plural, one {une réservation à venir. Annulez-la} other {# réservations à venir. Annulez-les}} d'abord, puis supprimez ce profil."
+    },
+    "profile": {
+      "firstName": "Veuillez entrer votre prénom.",
+      "lastName": "Veuillez entrer votre nom.",
+      "phone": "Veuillez entrer un numéro de téléphone valide, p. ex. +1 (416) 555-0119.",
+      "updated": "Profil mis à jour."
+    },
+    "email": {
+      "invalid": "Veuillez entrer un courriel valide.",
+      "same": "C'est déjà votre courriel.",
+      "taken": "Un compte existe déjà avec ce courriel.",
+      "check": "Consultez {email} — cliquez sur le lien de confirmation pour terminer le changement de courriel."
+    },
+    "password": {
+      "min": "Utilisez au moins 8 caractères.",
+      "mismatch": "Les mots de passe ne correspondent pas.",
+      "reused": "Choisissez un mot de passe que vous n'avez jamais utilisé ici.",
+      "changed": "Mot de passe modifié."
+    },
+    "close": {
+      "confirm": "Tapez DELETE (en majuscules) pour confirmer.",
+      "blocked": "Vous avez encore des réservations à venir. Annulez-les ou attendez qu'elles soient terminées avant de fermer votre compte.",
+      "failed": "Nous n'avons pas pu fermer votre compte pour le moment — rien n'a été modifié. Veuillez réessayer ou contacter le soutien."
+    },
+    "support": {
+      "ticketNotFound": "Demande introuvable — elle a peut-être été supprimée.",
+      "writeMessage": "Veuillez écrire un message.",
+      "messageLength": "Veuillez limiter vos messages à {max} caractères.",
+      "category": "Veuillez indiquer de quoi il s'agit.",
+      "subject": "Veuillez ajouter un objet.",
+      "subjectMin": "Veuillez ajouter un court objet (au moins 4 caractères).",
+      "subjectMax": "Veuillez limiter l'objet à {max} caractères.",
+      "bodyMin": "Veuillez décrire ce qui s'est passé (au moins 10 caractères).",
+      "signInContact": "Veuillez vous reconnecter pour contacter le soutien.",
+      "ownBooking": "Veuillez choisir l'une de vos propres réservations.",
+      "createFailed": "Un problème est survenu lors de la création de votre demande — veuillez réessayer.",
+      "signInReply": "Veuillez vous reconnecter pour répondre.",
+      "closed": "Cette demande est fermée. Ouvrez-en une nouvelle si vous avez encore besoin d'aide.",
+      "replyReopened": "Réponse envoyée — nous avons rouvert votre demande.",
+      "replySent": "Réponse envoyée.",
+      "resolved": "Merci — nous avons marqué cette demande comme résolue."
+    },
+    "reviews": {
+      "writeReply": "Veuillez écrire une réponse.",
+      "replyLength": "Veuillez limiter votre réponse à {max} caractères.",
+      "reviewNotFound": "Avis introuvable.",
+      "hidden": "Cet avis a été masqué par WagStays; il n'est donc pas possible d'y répondre.",
+      "editWindow": "Les réponses ne peuvent être modifiées que dans les {days} jours suivant leur publication.",
+      "noChanges": "Aucune modification à enregistrer.",
+      "cantEdit": "Cette réponse ne peut plus être modifiée.",
+      "updated": "Réponse mise à jour.",
+      "alreadyReplied": "Vous avez déjà répondu à cet avis.",
+      "posted": "Réponse publiée — elle est maintenant visible sur votre profil public.",
+      "noteLength": "Veuillez limiter votre note à {max} caractères.",
+      "bookingNotFound": "Réservation introuvable.",
+      "notCompleted": "Vous pourrez évaluer le propriétaire une fois la réservation terminée.",
+      "alreadyRated": "Vous avez déjà évalué ce propriétaire pour cette réservation.",
+      "self": "Vous ne pouvez pas vous évaluer vous-même.",
+      "thanks": "Merci! Votre évaluation aide les autres gardiens."
+    },
+    "readiness": {
+      "phone": "Veuillez entrer votre numéro de téléphone.",
+      "invalidPhone": "Veuillez entrer un numéro canadien ou américain valide, p. ex. (416) 555-0123.",
+      "saved": "{phone} enregistré."
+    },
+    "push": {
+      "unavailable": "Les notifications ne sont pas disponibles pour le moment.",
+      "invalidSubscription": "Ce navigateur a renvoyé un abonnement invalide.",
+      "on": "Les notifications sont activées sur cet appareil.",
+      "off": "Les notifications sont désactivées sur cet appareil.",
+      "invalidDevice": "Appareil invalide.",
+      "removed": "Appareil retiré.",
+      "notFound": "Appareil introuvable.",
+      "testSent": "{count, plural, one {Test envoyé à # appareil.} other {Test envoyé à # appareils.}}",
+      "unreachable": "Aucun appareil n'a pu être joint. Essayez de désactiver puis de réactiver les notifications.",
+      "unknownDevice": "Appareil inconnu",
+      "browser": "Navigateur",
+      "deviceOn": "{browser} sur {os}"
+    }
+  }
+}

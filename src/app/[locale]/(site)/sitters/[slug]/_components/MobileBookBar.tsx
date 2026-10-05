@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /**
@@ -7,6 +8,7 @@ import { useEffect, useState } from "react";
  * scrolls to the booking widget (#book). Hides itself while the widget is on screen.
  */
 export function MobileBookBar({ priceLabel, unitLabel, rating, reviewCount }: { priceLabel: string; unitLabel: string; rating: string; reviewCount: number }) {
+  const t = useTranslations("profile.mobileBar");
   const [widgetVisible, setWidgetVisible] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function MobileBookBar({ priceLabel, unitLabel, rating, reviewCount }: { 
             <span className="material-symbols-outlined text-sm text-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }}>
               star
             </span>
-            {rating} · {reviewCount} reviews
+            {rating} · {t("reviews", { count: reviewCount })}
           </span>
         </div>
         <button
@@ -44,7 +46,7 @@ export function MobileBookBar({ priceLabel, unitLabel, rating, reviewCount }: { 
           type="button"
         >
           <span className="material-symbols-outlined text-lg">pets</span>
-          Book Now
+          {t("bookNow")}
         </button>
       </div>
     </div>

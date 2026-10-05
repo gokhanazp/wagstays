@@ -1,5 +1,10 @@
 // Shared (client-safe) constants for the sitter dashboard: price bounds, units, curated tag icons.
+import { createTranslator } from "next-intl";
+import en from "../../messages/en/sitter.json";
+import fr from "../../messages/fr/sitter.json";
 import type { ServiceType } from "./constants";
+
+const tr = (locale = "en") => createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { sitter: locale === "fr" ? fr : en }, namespace: "sitter.lib" });
 
 /** Allowed price range per service, in cents. Enforced by src/app/actions/sitter.ts. */
 export const SERVICE_PRICE_BOUNDS: Record<ServiceType, { min: number; max: number }> = {
@@ -72,6 +77,31 @@ export const TAG_ICONS: { icon: string; label: string }[] = [
   { icon: "school", label: "Training" },
 ];
 
+const TAG_ICON_KEYS: Record<string, keyof typeof en.lib.tagIcons> = {
+  yard: "yard",
+  location_searching: "gps",
+  photo_camera: "photos",
+  videocam: "video",
+  medical_services: "medical",
+  smoke_free: "smokeFree",
+  child_care: "children",
+  schedule: "hours",
+  directions_run: "exercise",
+  route: "route",
+  water_drop: "hydration",
+  monitor_heart: "health",
+  pets: "pets",
+  diversity_1: "social",
+  home: "home",
+  school: "training",
+};
+
+/** Localized label of a tag icon ("Yard" / "Cour"); falls back to the English label. */
+export function tagIconLabel(icon: string, locale = "en") {
+  const key = TAG_ICON_KEYS[icon];
+  return key ? tr(locale)(`tagIcons.${key}`) : (TAG_ICONS.find((t) => t.icon === icon)?.label ?? icon);
+}
+
 export const MAX_TAGS = 4;
 export const MAX_SKILLS = 12;
 export const MAX_PHOTOS = 12;
@@ -82,3 +112,9 @@ export const HOME_TYPES = [
   { value: "APARTMENT", label: "Apartment" },
   { value: "CONDO_BALCONY", label: "Condo with balcony" },
 ] as const;
+
+/** Localized label of a home type ("House with yard" / "Maison avec cour"). */
+export function homeTypeLabel(value: string, locale = "en") {
+  const h = HOME_TYPES.find((x) => x.value === value);
+  return h ? tr(locale)(`homeTypes.${h.value}`) : value;
+}

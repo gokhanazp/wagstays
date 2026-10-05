@@ -1,1 +1,99 @@
-{}
+{
+  "noun": {
+    "sitter": {
+      "one": "gardien d'animaux",
+      "many": "gardiens d'animaux",
+      "title": "Gardiens d'animaux",
+      "manyCap": "Les gardiens d'animaux"
+    },
+    "walker": {
+      "one": "promeneur de chiens",
+      "many": "promeneurs de chiens",
+      "title": "Promeneurs de chiens",
+      "manyCap": "Les promeneurs de chiens"
+    }
+  },
+  "services": {
+    "DOG_WALKING": {
+      "label": "promenades de chiens",
+      "unit": "promenade"
+    },
+    "BOARDING": {
+      "label": "pension de nuit",
+      "unit": "nuit"
+    },
+    "DAY_CARE": {
+      "label": "garderie pour chiens",
+      "unit": "jour"
+    },
+    "DROP_IN": {
+      "label": "visites à domicile",
+      "unit": "visite"
+    }
+  },
+  "copy": {
+    "listJoin": "{rest} et {last}",
+    "priceOne": "{price} par {unit}",
+    "priceRange": "{min}–{max} par {unit}",
+    "title": "{nounTitle} de confiance à {place}",
+    "introCity": "WagStays met en relation les propriétaires d'animaux de {city} avec {count, plural, one {# {one} vérifié} other {# {many} vérifiés}} dans {hoods, plural, one {# quartier} other {# quartiers}}, de {list} et au-delà.",
+    "introLocal": "Vous cherchez un {one} à {where}? WagStays compte {count, plural, one {# {one} vérifié} other {# {many} vérifiés}} directement à {where}.",
+    "introLocalNearby": "Vous cherchez un {one} à {where}? WagStays compte {count, plural, one {# {one} vérifié} other {# {many} vérifiés}} directement à {where}, et {nearby, plural, one {# autre} other {# autres}} à moins de {km} km, à {names}.",
+    "introNearby": "Aucun {one} n'est encore établi à {where}, mais {count, plural, one {# {one} vérifié à moins de {km} km ({names}) peut vous aider} other {# {many} vérifiés à moins de {km} km ({names}) peuvent vous aider}}.",
+    "introGrowing": "Nous cherchons encore plus d'un {one} à {where}. Voici les gardiens WagStays les plus proches à {city}.",
+    "factsBoth": "Ils ont une note moyenne de {rating} sur 5 selon {reviews} avis, avec {prices} (avant taxes).",
+    "factsRating": "Ils ont une note moyenne de {rating} sur 5 selon {reviews} avis.",
+    "factsPrices": "Tarifs: {prices} (avant taxes).",
+    "factsPrice": "{label} à partir de {price} par {unit}",
+    "parks": "Parmi les lieux de promenade préférés du coin: {parks}.",
+    "descHood": "Comparez {count, plural, one {# {one} de confiance} other {# {many} de confiance}} à {place} et dans les environs.",
+    "descCity": "Comparez {count, plural, one {# {one} de confiance} other {# {many} de confiance}} à {place}.",
+    "descRating": "Note de {rating}/5 selon {reviews} avis.",
+    "descFrom": "{label} à partir de {price}.",
+    "descTrust": "Gardiens vérifiés et couverture vétérinaire pour chaque réservation.",
+    "notFound": "Page introuvable"
+  },
+  "faq": {
+    "costQ": "Combien coûte un {one} à {where}?",
+    "costA": "{manyCap} qui desservent {where} sur WagStays demandent {list}. Les prix sont fixés par chaque gardien et affichés avant la TVH.",
+    "costItem": "{price} pour {label}",
+    "walkQ": "Combien de temps dure une promenade de chien à {where}?",
+    "walkA": "Les promenades réservées sur WagStays à {where} durent {duration}, selon le promeneur. Vous pouvez réserver des promenades ponctuelles ou un horaire hebdomadaire récurrent.",
+    "walkMinutes": "{min} minutes",
+    "walkMinutesRange": "{min} à {max} minutes",
+    "verifiedQ": "Les {many} WagStays à {where} sont-ils vérifiés?",
+    "verifiedA": "Chaque gardien est examiné par l'équipe WagStays avant la mise en ligne de son profil. Parmi {shown, plural, =1 {le seul {one} qui dessert} other {les # {many} qui desservent}} {where}, {id, plural, one {# a} other {# ont}} une pièce d'identité gouvernementale vérifiée et {bg, plural, one {# a} other {# ont}} une vérification des antécédents en vue d'un travail auprès de personnes vulnérables sans résultat défavorable — repérez les badges sur chaque profil.",
+    "coveredQ": "Mon animal est-il couvert en cas de problème?",
+    "coveredA": "Oui. Chaque réservation comprend la protection WagShield, avec jusqu'à {amount} de couverture pour les soins vétérinaires d'urgence.",
+    "meetQ": "Puis-je rencontrer un {one} avant de réserver?",
+    "meetA": "Oui. Vous pouvez demander une rencontre préalable gratuite en envoyant votre demande de réservation, et écrire à n'importe quel gardien avant de réserver."
+  },
+  "view": {
+    "breadcrumb": "Fil d'Ariane",
+    "home": "Accueil",
+    "citySitters": "Gardiens d'animaux à {city}",
+    "hoodSitters": "Gardiens d'animaux à {hood}",
+    "hoodNoun": "{nounTitle} à {hood}",
+    "siblingsNearby": "{nounTitle} dans les quartiers voisins",
+    "siblingsByHood": "{nounTitle} par quartier",
+    "allSittersIn": "Tous les gardiens d'animaux à {hood}",
+    "walkersIn": "Promeneurs de chiens à {hood}",
+    "statServing": "{count, plural, one {# {one}} other {# {many}}}",
+    "statServingNearby": "{count, plural, one {# {one} à proximité} other {# {many} à proximité}}",
+    "statRating": "Note moyenne de {rating}",
+    "statFrom": "À partir de {price} / {unit}",
+    "statVet": "Couverture vétérinaire de {amount}",
+    "searchIn": "Rechercher des {many} à {place}",
+    "topNear": "Les {many} les mieux notés près de {place}",
+    "topIn": "Les {many} les mieux notés à {place}",
+    "seeAll": "Tout voir et vérifier les disponibilités",
+    "empty": "Il n'y a pas encore de {many} qui acceptent des réservations ici. <link>Devenez le premier gardien WagStays à {place}</link>.",
+    "pricesTitle": "Ce que demandent les {many} à {place}",
+    "pricesNote": "Les prix sont fixés par chaque gardien et affichés avant la TVH.",
+    "faqTitle": "Questions fréquentes",
+    "faqText": "Sur la réservation de {many} à {place} avec WagStays.",
+    "ctaTitle": "Trouvez votre {one} à {place}",
+    "ctaText": "Choisissez vos dates, comparez les profils et écrivez aux gardiens avant de réserver — vous pouvez d'abord demander une rencontre préalable gratuite.",
+    "ctaSearch": "Rechercher des {many}"
+  }
+}

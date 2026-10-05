@@ -1,9 +1,10 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { intlLocale } from "@/i18n/routing";
 import { Calendar } from "@/components/forms/DatePicker";
 import {
-  WEEKDAY_LABELS,
   addDays,
   formatMinuteRange,
   isDayBookable,
@@ -12,7 +13,7 @@ import {
   todayIn,
   type AvailabilitySnapshot,
 } from "@/lib/availability-core";
-import { SERVICE_LABELS, type ServiceType } from "@/lib/constants";
+import { SERVICE_TYPES, type ServiceType } from "@/lib/constants";
 
 type Service = { type: string; durationMins: number | null };
 type DayState = "available" | "full" | "away" | "closed" | "past";
@@ -25,20 +26,23 @@ const DAY_CLASS: Record<DayState, string> = {
   past: "",
 };
 
-const LEGEND: { state: DayState; label: string; swatch: string }[] = [
-  { state: "available", label: "Available", swatch: "bg-[#EBF3EF] ring-1 ring-primary/30" },
-  { state: "full", label: "Fully booked", swatch: "bg-secondary-fixed/70" },
-  { state: "away", label: "Away", swatch: "bg-tertiary-fixed" },
-  { state: "closed", label: "Not working", swatch: "bg-surface-container-high" },
+const LEGEND: { state: Exclude<DayState, "past">; swatch: string }[] = [
+  { state: "available", swatch: "bg-[#EBF3EF] ring-1 ring-primary/30" },
+  { state: "full", swatch: "bg-secondary-fixed/70" },
+  { state: "away", swatch: "bg-tertiary-fixed" },
+  { state: "closed", swatch: "bg-surface-container-high" },
 ];
 
+const WEEKDAYS = ["0", "1", "2", "3", "4", "5", "6"] as const;
+const isServiceType = (v: string): v is ServiceType => (SERVICE_TYPES as readonly string[]).includes(v);
+
 /** "Mon–Fri 7:00 AM – 9:00 PM · Sat 9:00 AM – 1:00 PM · Sun closed" from the weekly hours. */
-function weeklySummary(snap: AvailabilitySnapshot) {
+function weeklySummary(snap: AvailabilitySnapshot, short: (d: number) => string, locale: string) {
   const byDay = Array.from({ length: 7 }, (_, d) =>
     snap.hours
       .filter((h) => h.weekday === d)
       .sort((a, b) => a.startMinute - b.startMinute)
-      .map((h) => formatMinuteRange(h.startMinute, h.endMinute))
+      .map((h) => formatMinuteRange(h.startMinute, h.endMinute, locale))
       .join(", "),
   );
   // Monday-first, grouping consecutive days with the same hours
@@ -49,10 +53,9 @@ function weeklySummary(snap: AvailabilitySnapshot) {
     if (last && last.text === byDay[d]) last.to = d;
     else groups.push({ from: d, to: d, text: byDay[d] });
   }
-  const short = (d: number) => WEEKDAY_LABELS[d].slice(0, 3);
   return groups.map((g) => ({
     days: g.from === g.to ? short(g.from) : `${short(g.from)}–${short(g.to)}`,
-    hours: g.text || "Closed",
+    hours: g.text,
   }));
 }
 
@@ -61,6 +64,9 @@ function weeklySummary(snap: AvailabilitySnapshot) {
  * Clicking an available day scrolls to the booking widget (#book).
  */
 export function AvailabilityCalendar({ snapshot, services, firstName, nowMs }: { snapshot: AvailabilitySnapshot; services: Service[]; firstName: string; nowMs: number }) {
+  const t = useTranslations("profile.availability");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const types = useMemo(() => [...new Set(services.map((s) => s.type))], [services]);
   const [type, setType] = useState<string>("ANY");
   const [wide, setWide] = useState(false);
@@ -89,37 +95,39 @@ export function AvailabilityCalendar({ snapshot, services, firstName, nowMs }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, snapshot, nowMs]);
 
-  const summary = weeklySummary(snapshot);
+  const summary = weeklySummary(snapshot, (d) => tc(`enums.weekdayShort.${WEEKDAYS[d]}`), locale);
 
   return (
     <div className="w-full min-w-0 bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-md" id="availability">
       <div className="flex flex-wrap items-center justify-between gap-space-sm">
         <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">calendar_month</span>
-          Availability
+          {t("title")}
         </h2>
         {nextFree && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-md text-label-md">
             <span className="w-2 h-2 rounded-full bg-primary" />
-            Next available: {new Date(`${nextFree}T12:00:00`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}
+            {t("nextAvailable", {
+              date: new Date(`${nextFree}T12:00:00`).toLocaleDateString(intlLocale(locale), { weekday: "short", month: "short", day: "numeric" }),
+            })}
           </span>
         )}
       </div>
 
       {types.length > 1 && (
         <div className="flex gap-space-xs overflow-x-auto -mx-1 px-1 pb-1" role="tablist">
-          {["ANY", ...types].map((t) => (
+          {["ANY", ...types].map((st) => (
             <button
-              aria-selected={type === t}
+              aria-selected={type === st}
               className={`h-9 px-space-md rounded-full font-label-md text-label-md whitespace-nowrap transition-all ${
-                type === t ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
+                type === st ? "bg-primary text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
               }`}
-              key={t}
-              onClick={() => setType(t)}
+              key={st}
+              onClick={() => setType(st)}
               role="tab"
               type="button"
             >
-              {t === "ANY" ? "Any service" : SERVICE_LABELS[t as ServiceType] ?? t}
+              {st === "ANY" ? t("anyService") : isServiceType(st) ? tc(`enums.service.${st}`) : st}
             </button>
           ))}
         </div>
@@ -141,7 +149,7 @@ export function AvailabilityCalendar({ snapshot, services, firstName, nowMs }: {
         {LEGEND.map((l) => (
           <span className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant" key={l.state}>
             <span className={`w-3.5 h-3.5 rounded-full ${l.swatch}`} />
-            {l.label}
+            {t(`legend.${l.state}`)}
           </span>
         ))}
       </div>
@@ -149,18 +157,18 @@ export function AvailabilityCalendar({ snapshot, services, firstName, nowMs }: {
       <div className="rounded-2xl bg-surface-container-low p-space-md flex flex-col gap-space-xs">
         <span className="font-label-lg text-label-lg text-on-surface flex items-center gap-1.5">
           <span className="material-symbols-outlined text-lg text-primary">schedule</span>
-          {firstName}&apos;s usual hours
+          {t("usualHours", { name: firstName })}
         </span>
         <dl className="grid grid-cols-[auto_1fr] gap-x-space-md gap-y-1 font-body-sm text-body-sm">
           {summary.map((g) => (
             <div className="contents" key={g.days}>
               <dt className="text-on-surface-variant">{g.days}</dt>
-              <dd className={g.hours === "Closed" ? "text-outline" : "text-on-surface"}>{g.hours}</dd>
+              <dd className={g.hours ? "text-on-surface" : "text-outline"}>{g.hours || t("closed")}</dd>
             </div>
           ))}
         </dl>
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Times are in {snapshot.timeZone.split("/").pop()?.replace("_", " ")} time · book at least {snapshot.noticeHours} h ahead.
+          {t("timeNote", { zone: snapshot.timeZone.split("/").pop()?.replace("_", " ") ?? "", hours: snapshot.noticeHours })}
         </p>
       </div>
     </div>

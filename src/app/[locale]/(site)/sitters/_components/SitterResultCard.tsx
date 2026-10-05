@@ -1,22 +1,27 @@
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
 import type { SitterCard } from "@/lib/queries";
 import { PetKindIcons } from "@/components/PetKinds";
-import { UNIT_LONG } from "./search-url";
 import { petLimitBadge } from "@/lib/price-details";
 
 const SECONDARY_ICONS = new Set(["photo_camera", "videocam", "favorite", "monitor_heart"]);
+const UNITS = ["WALK", "NIGHT", "DAY", "VISIT"] as const;
+type Unit = (typeof UNITS)[number];
+const asUnit = (u: string): Unit => ((UNITS as readonly string[]).includes(u) ? (u as Unit) : "VISIT");
 
 export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
+  const t = useTranslations("search.card");
+  const locale = useLocale();
   const href = `/sitters/${sitter.slug}`;
   const price = sitter.price!;
-  const petNote = petLimitBadge(price);
+  const petNote = petLimitBadge(price, locale);
   return (
     <article className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row gap-space-lg group">
       {/* Photo Gallery Column */}
       <div className="relative sm:w-56 h-60 sm:h-auto sm:min-h-[240px] rounded-2xl overflow-hidden shrink-0">
-        <Link aria-label={`View ${sitter.displayName}'s profile`} className="absolute inset-0 block" href={href}>
+        <Link aria-label={t("viewProfileAria", { name: sitter.displayName })} className="absolute inset-0 block" href={href}>
           {/* eslint-disable-next-line @next/next/no-img-element -- keeps the design's fill/crop behaviour */}
           <img
             alt={`${sitter.displayName}, ${sitter.headline}`}
@@ -28,7 +33,7 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
           <span className="px-2.5 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-sm text-label-sm font-bold flex items-center gap-1 shadow-sm">
             <span className="material-symbols-outlined text-sm text-secondary">star</span>
             <span>
-              {formatRating(sitter.rating)} ({sitter.reviewCount})
+              {formatRating(sitter.rating, locale)} ({sitter.reviewCount})
             </span>
           </span>
         </div>
@@ -36,7 +41,7 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
           activeClassName="!text-secondary"
           className="absolute top-3 right-3 w-9 h-9 rounded-full bg-surface-container-lowest/90 backdrop-blur-md flex items-center justify-center text-outline hover:text-secondary hover:scale-110 active:scale-95 transition-all shadow-sm"
           initial={sitter.isFavorite}
-          label={`Save ${sitter.displayName} to favourites`}
+          label={t("saveFavorite", { name: sitter.displayName })}
           sitterId={sitter.id}
         />
         <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none">
@@ -57,14 +62,14 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
                   </Link>
                 </h2>
                 {sitter.idVerified && (
-                  <span className="material-symbols-outlined text-primary text-xl" title="ID & background verified">
+                  <span className="material-symbols-outlined text-primary text-xl" title={t("verified")}>
                     verified
                   </span>
                 )}
                 {sitter.isSuperSitter && (
                   <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm flex items-center gap-1">
                     <span className="material-symbols-outlined text-xs">award_star</span>
-                    Super Sitter
+                    {t("superSitter")}
                   </span>
                 )}
                 {sitter.highlight && (
@@ -77,14 +82,14 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                 {sitter.headline} •{" "}
                 <span className="text-primary font-semibold">
-                  {sitter.locationNote ?? sitter.neighbourhood.name} ({formatDistance(sitter.distanceKm)} away)
+                  {sitter.locationNote ?? sitter.neighbourhood.name} ({t("away", { distance: formatDistance(sitter.distanceKm, locale) })})
                 </span>
               </p>
               <PetKindIcons className="mt-1" kinds={sitter.species.map((x) => x.kind)} />
             </div>
             <div className="text-right shrink-0">
-              <div className="font-headline-md text-headline-md text-primary font-extrabold">{formatMoney(price.priceCents)}</div>
-              <span className="font-label-sm text-label-sm text-outline">/ per {UNIT_LONG[price.unit] ?? "visit"}</span>
+              <div className="font-headline-md text-headline-md text-primary font-extrabold">{formatMoney(price.priceCents, { locale })}</div>
+              <span className="font-label-sm text-label-sm text-outline">{t(`perUnit.${asUnit(price.unit)}`)}</span>
             </div>
           </div>
           {(sitter.availableLabel || petNote) && (
@@ -135,13 +140,13 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
             href={`/messages/new?sitter=${sitter.id}`}
           >
             <span className="material-symbols-outlined text-lg">chat_bubble</span>
-            <span>Message</span>
+            <span>{t("message")}</span>
           </Link>
           <Link
             className="flex-1 h-11 px-space-md rounded-full bg-secondary text-on-secondary hover:bg-secondary-container hover:text-on-secondary-container font-label-lg text-label-lg transition-all flex items-center justify-center gap-space-xs shadow-sm"
             href={href}
           >
-            <span>View Profile</span>
+            <span>{t("viewProfile")}</span>
             <span className="material-symbols-outlined text-lg">arrow_forward</span>
           </Link>
         </div>

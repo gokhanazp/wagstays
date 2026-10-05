@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { getLocale, getTranslations } from "next-intl/server";
 import { formatMoney } from "@/lib/format";
 import { getPlatformSettings } from "@/lib/settings";
 import { REF_COOKIE, findReferrer } from "@/lib/referrals";
@@ -10,6 +11,9 @@ export async function ReferralBanner() {
   if (!referrer) return null;
   const { referralRewardCents } = await getPlatformSettings();
   const pet = referrer.pets[0]?.name;
+  const [t, locale] = await Promise.all([getTranslations("account.points"), getLocale()]);
+  const who = pet ? t("referrerWithPet", { pet, name: referrer.firstName }) : referrer.firstName;
+  const b = (c: React.ReactNode) => <strong className="font-semibold">{c}</strong>;
   return (
     <div className="flex items-start gap-space-sm p-space-md rounded-2xl bg-secondary-fixed/60 border border-secondary-fixed text-on-surface" data-testid="referral-banner">
       <span className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shrink-0">
@@ -18,15 +22,14 @@ export async function ReferralBanner() {
         </span>
       </span>
       <p className="font-body-md text-body-md">
-        <strong className="font-semibold">{pet ? `${pet}'s pet parent ${referrer.firstName}` : referrer.firstName}</strong> invited you
-        {referralRewardCents > 0 ? (
-          <>
-            {" "}
-            — you&apos;ll both get <strong className="font-semibold text-secondary">{formatMoney(referralRewardCents)}</strong> in WagPoints after your first stay.
-          </>
-        ) : (
-          " to WagStays."
-        )}
+        {referralRewardCents > 0
+          ? t.rich("invitedReward", {
+              who,
+              amount: formatMoney(referralRewardCents, { locale }),
+              b,
+              reward: (c) => <strong className="font-semibold text-secondary">{c}</strong>,
+            })
+          : t.rich("invited", { who, b })}
       </p>
     </div>
   );

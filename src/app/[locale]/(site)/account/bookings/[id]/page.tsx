@@ -1,34 +1,37 @@
-import type { Metadata } from "next";
+import { priceLineLabel } from "@/lib/price-details";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { allowedTransitions } from "@/lib/booking-lifecycle";
 import { formatMoney, formatRating } from "@/lib/format";
-import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
+import { BOOKING_STATUS_LABELS, type BookingStatus, type ServiceType } from "@/lib/constants";
 import { BTN, Card, CardHeader, StatusChip, formatDateTime } from "@/components/ui";
-import { FREE_CANCEL_HOURS, SERVICE_ICONS, bookingRef, bookingWhen, hoursUntil, serviceLabel } from "../../_lib";
+import { FREE_CANCEL_HOURS, SERVICE_ICONS, bookingDay, bookingRef, bookingWhen, hoursUntil, quantityText } from "../../_lib";
 import { CancelBookingForm } from "../../_components/CancelBookingForm";
 import { ReviewForm } from "../../_components/ReviewForm";
 import { SeriesCancelForm } from "../_components/SeriesCancelForm";
 import { seriesMembers } from "@/lib/booking-series";
-import { formatDayLong, isStayService, quantityLabel, zonedParts } from "@/lib/availability-core";
+import { isStayService } from "@/lib/availability-core";
 import { bookingPriceLines } from "@/lib/quote";
 import { bookingPets, petNames } from "@/lib/pets";
 import { PetChips } from "@/components/booking/PetChips";
 
-export const metadata: Metadata = { title: "Booking Details | WagStays" };
+export async function generateMetadata() {
+  const t = await getTranslations("account.meta");
+  return { title: t("bookingDetail") };
+}
 
-const NOTICES: Record<string, string> = {
-  cancelled: "Your booking has been cancelled. Any WagPoints you used are back in your wallet.",
-  reviewed: "Thanks! Your review is now live on the sitter's profile.",
-};
+const NOTICES = ["cancelled", "reviewed"] as const;
 
 export default async function BookingDetailPage({ params, searchParams }: PageProps<"/[locale]/account/bookings/[id]">) {
   const user = await requireUser();
   const { id } = await params;
   const noticeKey = (await searchParams).notice;
-  const notice = typeof noticeKey === "string" ? NOTICES[noticeKey] : undefined;
+  const [t, tc, locale] = await Promise.all([getTranslations("account.detail"), getTranslations("common"), getLocale()]);
+  const ta = await getTranslations("account");
+  const notice = NOTICES.find((n) => n === noticeKey) ? t(`notices.${noticeKey as (typeof NOTICES)[number]}`) : undefined;
   const booking = await db.booking.findUnique({
     where: { id },
     include: {
@@ -43,7 +46,13 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   if (!booking || booking.ownerId !== user.id) notFound();
 
   const tz = booking.sitter.city.timeZone;
-  const status = BOOKING_STATUS_LABELS[booking.status as BookingStatus] ?? { label: booking.status, tone: "neutral" as const };
+  const statusLabel = (s: string) => {
+    const st = BOOKING_STATUS_LABELS[s as BookingStatus];
+    return st ? { label: tc(`enums.bookingStatus.${s as BookingStatus}`), tone: st.tone } : { label: s, tone: "neutral" as const };
+  };
+  const status = statusLabel(booking.status);
+  const service = tc(`enums.service.${booking.service.type as ServiceType}`);
+  const money = (cents: number) => formatMoney(cents, { exact: true, locale });
   const canCancel = allowedTransitions(booking.status, "OWNER").includes("CANCELLED");
   const hoursToStart = hoursUntil(booking.startAt);
   const firstName = booking.sitter.displayName.split(" ")[0];
@@ -55,64 +64,72 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   ).length;
   const showQuantity = isStayService(booking.service.type) || booking.quantity > 1;
   const pets = bookingPets(booking);
-  const names = petNames(pets.map((p) => p.name));
+  const names = petNames(pets.map((p) => p.name), locale);
 
   const timeline: { icon: string; label: string; at: Date | null; tone: "done" | "bad" }[] = [
-    { icon: "send", label: "Booking requested", at: booking.createdAt, tone: "done" },
-    ...(booking.confirmedAt ? [{ icon: "check_circle", label: `Confirmed by ${firstName}`, at: booking.confirmedAt, tone: "done" as const }] : []),
-    ...(booking.completedAt ? [{ icon: "task_alt", label: "Completed", at: booking.completedAt, tone: "done" as const }] : []),
-    ...(booking.status === "DECLINED" ? [{ icon: "block", label: `Declined by ${firstName}`, at: booking.updatedAt, tone: "bad" as const }] : []),
+    { icon: "send", label: t("timeline.requested"), at: booking.createdAt, tone: "done" },
+    ...(booking.confirmedAt ? [{ icon: "check_circle", label: t("timeline.confirmedBy", { name: firstName }), at: booking.confirmedAt, tone: "done" as const }] : []),
+    ...(booking.completedAt ? [{ icon: "task_alt", label: t("timeline.completed"), at: booking.completedAt, tone: "done" as const }] : []),
+    ...(booking.status === "DECLINED" ? [{ icon: "block", label: t("timeline.declinedBy", { name: firstName }), at: booking.updatedAt, tone: "bad" as const }] : []),
     ...(booking.status === "CANCELLED"
       ? [
           {
             icon: "event_busy",
-            label: `Cancelled by ${booking.cancelledBy === "OWNER" ? "you" : booking.cancelledBy === "SITTER" ? firstName : "WagStays support"}`,
+            label:
+              booking.cancelledBy === "OWNER"
+                ? t("timeline.cancelledByYou")
+                : booking.cancelledBy === "SITTER"
+                  ? t("timeline.cancelledBy", { name: firstName })
+                  : t("timeline.cancelledBySupport"),
             at: booking.cancelledAt,
             tone: "bad" as const,
           },
         ]
       : []),
-    ...(booking.review ? [{ icon: "star", label: "You left a review", at: booking.review.createdAt, tone: "done" as const }] : []),
+    ...(booking.review ? [{ icon: "star", label: t("timeline.reviewed"), at: booking.review.createdAt, tone: "done" as const }] : []),
   ];
   const nextStep =
     booking.status === "PENDING"
-      ? `Waiting for ${firstName} to accept`
+      ? t("next.pending", { name: firstName })
       : booking.status === "CONFIRMED"
         ? hoursToStart > 0
-          ? "Upcoming — see you soon!"
-          : `In progress or awaiting ${firstName}'s wrap-up`
+          ? t("next.upcoming")
+          : t("next.inProgress", { name: firstName })
         : null;
 
   const care = [
-    { icon: "location_on", label: "Meeting address", value: booking.meetingAddress },
-    { icon: "nest_eco_leaf", label: "Leash & gear", value: booking.leashPreference },
-    { icon: "diversity_1", label: "Around other animals", value: booking.otherAnimalsReaction },
-    { icon: "restaurant", label: "Feeding rules", value: booking.feedingRules },
-    { icon: "sticky_note_2", label: "Notes for the sitter", value: booking.notes },
-    { icon: "my_location", label: "GPS updates", value: booking.gpsUpdates ? "Live GPS + photo updates on" : "Off" },
+    { icon: "location_on", label: t("care.meetingAddress"), value: booking.meetingAddress },
+    { icon: "nest_eco_leaf", label: t("care.leash"), value: booking.leashPreference },
+    { icon: "diversity_1", label: t("care.otherAnimals"), value: booking.otherAnimalsReaction },
+    { icon: "restaurant", label: t("care.feeding"), value: booking.feedingRules },
+    { icon: "sticky_note_2", label: t("care.notes"), value: booking.notes },
+    { icon: "my_location", label: t("care.gps"), value: booking.gpsUpdates ? t("care.gpsOn") : t("care.gpsOff") },
     {
       icon: "emergency",
-      label: "Emergency contact",
+      label: t("care.emergency"),
       value: booking.emergencyName ? `${booking.emergencyName}${booking.emergencyPhone ? ` · ${booking.emergencyPhone}` : ""}` : null,
     },
-    { icon: "medical_services", label: "Vet clinic", value: booking.vetClinic ? `${booking.vetClinic}${booking.vetPhone ? ` · ${booking.vetPhone}` : ""}` : null },
+    { icon: "medical_services", label: t("care.vet"), value: booking.vetClinic ? `${booking.vetClinic}${booking.vetPhone ? ` · ${booking.vetPhone}` : ""}` : null },
   ].filter((r) => r.value);
 
   const price = [
     ...(booking.priceLines
-      ? bookingPriceLines(booking).map((l) => ({ label: l.label, cents: l.amountCents }))
+      ? bookingPriceLines(booking).map((l, i) => ({ label: priceLineLabel(l, i, locale), cents: l.amountCents }))
       : [
           {
             label: showQuantity
-              ? `${quantityLabel(booking.service.type, booking.quantity)} × ${formatMoney(Math.round(booking.subtotalCents / Math.max(booking.quantity, 1)), { exact: true })}`
-              : `${serviceLabel(booking.service.type)} subtotal`,
+              ? t("price.line", {
+                  quantity: quantityText(booking.service.type, booking.quantity, locale),
+                  price: money(Math.round(booking.subtotalCents / Math.max(booking.quantity, 1))),
+                })
+              : t("price.subtotal", { service }),
             cents: booking.subtotalCents,
           },
         ]),
-    { label: "WagShield Vet Protection", cents: booking.protectionFeeCents },
-    { label: "Platform Service Fee", cents: booking.serviceFeeCents },
-    ...(booking.discountCents > 0 ? [{ label: "WagPoints Discount", cents: -booking.discountCents }] : []),
-    { label: "HST", cents: booking.taxCents },
+    { label: t("price.protection"), cents: booking.protectionFeeCents },
+    { label: t("price.serviceFee"), cents: booking.serviceFeeCents },
+    ...(booking.discountCents > 0 ? [{ label: t("price.discount"), cents: -booking.discountCents }] : []),
+    { label: t("price.tax"), cents: booking.taxCents },
   ];
 
   return (
@@ -120,13 +137,13 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
       <div className="flex flex-col gap-space-sm">
         <Link className="flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-primary w-fit" href="/account/bookings">
           <span className="material-symbols-outlined text-base">arrow_back</span>
-          My Bookings
+          {tc("nav.myBookings")}
         </Link>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-space-md">
           <div className="flex flex-col gap-1">
-            <span className="font-label-md text-label-md uppercase tracking-wide text-primary">Booking {bookingRef(booking.id)}</span>
+            <span className="font-label-md text-label-md uppercase tracking-wide text-primary">{t("bookingRef", { ref: bookingRef(booking.id) })}</span>
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-md md:text-headline-md text-on-surface">
-              {serviceLabel(booking.service.type)} with {firstName}
+              {t("heading", { service, name: firstName })}
             </h1>
           </div>
           <span className="self-start md:self-auto">
@@ -158,11 +175,11 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                   {booking.sitter.displayName}
                 </Link>
                 <div className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
-                  <span className="text-tertiary-container font-bold">★ {formatRating(booking.sitter.rating)}</span>
+                  <span className="text-tertiary-container font-bold">★ {formatRating(booking.sitter.rating, locale)}</span>
                   {booking.sitter.isSuperSitter && (
                     <>
                       <span>•</span>
-                      <span className="text-secondary font-semibold">Super Sitter</span>
+                      <span className="text-secondary font-semibold">{t("superSitter")}</span>
                     </>
                   )}
                 </div>
@@ -171,26 +188,30 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
 
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-space-md font-body-sm text-body-sm">
               {[
-                { icon: SERVICE_ICONS[booking.service.type] ?? "pets", label: "Service", value: serviceLabel(booking.service.type) + (booking.service.durationMins ? ` (${booking.service.durationMins} min)` : "") },
+                {
+                  icon: SERVICE_ICONS[booking.service.type] ?? "pets",
+                  label: t("summary.service"),
+                  value: booking.service.durationMins ? t("summary.serviceMinutes", { service, mins: booking.service.durationMins }) : service,
+                },
                 pets.length > 1
-                  ? { icon: "pets", label: `${pets.length} pets`, value: names }
-                  : { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
+                  ? { icon: "pets", label: t("summary.pets", { count: pets.length }), value: names }
+                  : { icon: "pets", label: t("summary.pet"), value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
                 {
                   icon: "calendar_month",
-                  label: "Date & time",
-                  value: bookingWhen(booking.startAt, booking.endAt, tz),
+                  label: t("summary.dateTime"),
+                  value: bookingWhen(booking.startAt, booking.endAt, tz, locale),
                   extra: [
-                    showQuantity && quantityLabel(booking.service.type, booking.quantity),
-                    members.length > 1 ? `Week ${position} of ${members.length}` : booking.recurringWeekly && "Repeats weekly",
-                    booking.meetAndGreet && "Meet & Greet requested",
+                    showQuantity && quantityText(booking.service.type, booking.quantity, locale),
+                    members.length > 1 ? ta("shared.weekOf", { index: position, total: members.length }) : booking.recurringWeekly && t("summary.repeatsWeekly"),
+                    booking.meetAndGreet && t("summary.meetGreet"),
                   ]
                     .filter(Boolean)
                     .join(" · "),
                 },
                 {
                   icon: "credit_card",
-                  label: "Payment",
-                  value: booking.cardBrand && booking.cardLast4 ? `${booking.cardBrand} ending in ${booking.cardLast4}` : "Card on file",
+                  label: t("summary.payment"),
+                  value: booking.cardBrand && booking.cardLast4 ? t("summary.cardEnding", { brand: booking.cardBrand, last4: booking.cardLast4 }) : t("summary.cardOnFile"),
                 },
               ].map((r) => (
                 <div className="flex items-start gap-space-sm" key={r.label}>
@@ -209,7 +230,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               <div className="flex items-start gap-space-sm bg-primary-fixed/40 rounded-xl p-space-md font-body-sm text-body-sm text-on-surface">
                 <span className="material-symbols-outlined text-lg text-primary">chat</span>
                 <p className="min-w-0">
-                  <span className="font-semibold">Note from {firstName}:</span> {booking.sitterNote}
+                  <span className="font-semibold">{t("noteFrom", { name: firstName })}</span> {booking.sitterNote}
                 </p>
               </div>
             )}
@@ -217,7 +238,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               <div className="flex items-start gap-space-sm bg-surface-container-low rounded-xl p-space-md font-body-sm text-body-sm text-on-surface-variant">
                 <span className="material-symbols-outlined text-lg">info</span>
                 <p className="min-w-0">
-                  <span className="font-semibold text-on-surface">{booking.status === "DECLINED" ? "Reason given:" : "Cancellation reason:"}</span> {booking.cancelReason}
+                  <span className="font-semibold text-on-surface">{booking.status === "DECLINED" ? t("reasonGiven") : t("cancellationReason")}</span> {booking.cancelReason}
                 </p>
               </div>
             )}
@@ -225,7 +246,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
 
           {/* Care instructions */}
           <Card className="pb-space-lg">
-            <CardHeader icon="volunteer_activism" title="Care Instructions" />
+            <CardHeader icon="volunteer_activism" title={t("care.title")} />
             {care.length ? (
               <dl className="px-space-lg pt-space-md grid grid-cols-1 md:grid-cols-2 gap-space-md font-body-sm text-body-sm">
                 {care.map((r) => (
@@ -239,7 +260,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                 ))}
               </dl>
             ) : (
-              <p className="px-space-lg pt-space-md font-body-sm text-body-sm text-on-surface-variant">No special instructions were added.</p>
+              <p className="px-space-lg pt-space-md font-body-sm text-body-sm text-on-surface-variant">{t("care.none")}</p>
             )}
           </Card>
 
@@ -247,11 +268,11 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           {booking.status === "COMPLETED" && (
             <Card className="pb-space-lg">
               <div id="review" className="scroll-mt-28" />
-              <CardHeader icon="star" title={booking.review ? "Your Review" : `How was ${names}'s ${serviceLabel(booking.service.type).toLowerCase()}?`} />
+              <CardHeader icon="star" title={booking.review ? t("review.yours") : t("review.howWas", { pets: names, service: service.toLowerCase() })} />
               <div className="px-space-lg pt-space-md">
                 {booking.review ? (
                   <div className="flex flex-col gap-space-xs">
-                    <div aria-label={`${booking.review.rating} out of 5 stars`} className="flex text-tertiary-container" role="img">
+                    <div aria-label={t("review.stars", { rating: booking.review.rating })} className="flex text-tertiary-container" role="img">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <span className="material-symbols-outlined text-xl" key={n} style={{ fontVariationSettings: `'FILL' ${n <= booking.review!.rating ? 1 : 0}` }}>
                           star
@@ -260,8 +281,8 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                     </div>
                     <p className="font-body-md text-body-md text-on-surface whitespace-pre-line">{booking.review.body}</p>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
-                      Posted {formatDateTime(booking.review.createdAt, tz)}
-                      {booking.review.hidden ? " · Hidden by moderation" : ""}
+                      {t("review.posted", { date: formatDateTime(booking.review.createdAt, tz, locale) })}
+                      {booking.review.hidden ? t("review.hidden") : ""}
                     </span>
                   </div>
                 ) : (
@@ -283,12 +304,12 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             )}
             <Link className={`${BTN.sage} w-full`} href={`/messages/new?sitter=${booking.sitter.id}`}>
               <span className="material-symbols-outlined text-xl">chat_bubble</span>
-              Message {firstName}
+              {t("actions.message", { name: firstName })}
             </Link>
             {serviceActive && (
               <Link className={`${BTN.secondary} w-full`} href={`/book/${booking.sitter.slug}?service=${booking.serviceId}&pets=${pets.map((p) => p.id).join(",")}`}>
                 <span className="material-symbols-outlined text-xl">replay</span>
-                Book again
+                {t("actions.bookAgain")}
               </Link>
             )}
             {canCancel && (
@@ -297,7 +318,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             {canCancel && laterCancellable > 1 && <SeriesCancelForm bookingId={booking.id} count={laterCancellable} />}
             <Link className={`${BTN.ghost} w-full text-on-surface-variant`} href={`/account/support/new?booking=${booking.id}`}>
               <span className="material-symbols-outlined text-xl">flag</span>
-              Report a problem
+              {t("actions.report")}
             </Link>
           </Card>
 
@@ -306,11 +327,11 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             <Card className="p-space-lg flex flex-col gap-space-sm">
               <h2 className="font-title-md text-title-md text-on-surface flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-xl text-primary">event_repeat</span>
-                Weekly series · {members.length} weeks
+                {t("series.title", { count: members.length })}
               </h2>
               <ul className="flex flex-col gap-space-xs">
                 {members.map((m, i) => {
-                  const st = BOOKING_STATUS_LABELS[m.status as BookingStatus] ?? { label: m.status, tone: "neutral" as const };
+                  const st = statusLabel(m.status);
                   const current = m.id === booking.id;
                   return (
                     <li key={m.id}>
@@ -322,7 +343,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                         href={`/account/bookings/${m.id}`}
                       >
                         <span>
-                          <span className="font-semibold">Week {i + 1}</span> · {formatDayLong(zonedParts(m.startAt.getTime(), tz).iso)}
+                          <span className="font-semibold">{t("series.week", { n: i + 1 })}</span> · {bookingDay(m.startAt, tz, locale)}
                         </span>
                         <span className="font-label-sm text-label-sm">{st.label}</span>
                       </Link>
@@ -331,12 +352,9 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                 })}
               </ul>
               <div className="flex justify-between font-body-sm text-body-sm text-on-surface-variant pt-space-xs">
-                <span>Series total (active weeks)</span>
+                <span>{t("series.total")}</span>
                 <span className="font-semibold text-on-surface">
-                  {formatMoney(
-                    members.filter((m) => m.status !== "CANCELLED" && m.status !== "DECLINED").reduce((n, m) => n + m.totalCents, 0),
-                    { exact: true },
-                  )}
+                  {money(members.filter((m) => m.status !== "CANCELLED" && m.status !== "DECLINED").reduce((n, m) => n + m.totalCents, 0))}
                 </span>
               </div>
             </Card>
@@ -344,48 +362,48 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
 
           {/* Price */}
           <Card className="p-space-lg flex flex-col gap-space-sm">
-            <h2 className="font-title-md text-title-md text-on-surface">Price Breakdown</h2>
+            <h2 className="font-title-md text-title-md text-on-surface">{t("price.title")}</h2>
             <div className="flex flex-col gap-space-xs font-body-md text-body-md text-on-surface-variant">
               {price.map((r) => (
                 <div className={`flex justify-between gap-space-md ${r.cents < 0 ? "text-secondary font-medium" : ""}`} key={r.label}>
                   <span>{r.label}</span>
                   <span className={r.cents < 0 ? "" : "font-semibold text-on-surface"}>
                     {r.cents < 0 ? "-" : ""}
-                    {formatMoney(Math.abs(r.cents), { exact: true })}
+                    {money(Math.abs(r.cents))}
                   </span>
                 </div>
               ))}
             </div>
             <div className="bg-surface-container-low p-space-md rounded-xl flex justify-between items-baseline mt-space-xs">
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Total</span>
-              <span className="font-headline-sm text-headline-sm text-primary font-extrabold">{formatMoney(booking.totalCents, { exact: true })}</span>
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{t("price.total")}</span>
+              <span className="font-headline-sm text-headline-sm text-primary font-extrabold">{money(booking.totalCents)}</span>
             </div>
             {(booking.status === "CANCELLED" || booking.status === "DECLINED") && booking.discountCents > 0 && (
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                {formatMoney(booking.discountCents, { exact: true })} in WagPoints was returned to your wallet.
+                {t("price.pointsReturned", { amount: money(booking.discountCents) })}
               </p>
             )}
           </Card>
 
           {/* Timeline */}
           <Card className="p-space-lg flex flex-col gap-space-md">
-            <h2 className="font-title-md text-title-md text-on-surface">Timeline</h2>
+            <h2 className="font-title-md text-title-md text-on-surface">{t("timeline.title")}</h2>
             <ol className="flex flex-col">
-              {timeline.map((t, i) => (
-                <li className="flex gap-space-sm" key={t.label}>
+              {timeline.map((item, i) => (
+                <li className="flex gap-space-sm" key={item.label}>
                   <div className="flex flex-col items-center">
                     <span
                       className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                        t.tone === "bad" ? "bg-error-container text-on-error-container" : "bg-primary-fixed text-primary"
+                        item.tone === "bad" ? "bg-error-container text-on-error-container" : "bg-primary-fixed text-primary"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-base">{t.icon}</span>
+                      <span className="material-symbols-outlined text-base">{item.icon}</span>
                     </span>
                     {i < timeline.length - 1 && <span className="w-0.5 flex-1 min-h-4 bg-[#EFE7DE]" />}
                   </div>
                   <div className="pb-space-md min-w-0">
-                    <p className="font-label-lg text-label-lg text-on-surface">{t.label}</p>
-                    {t.at && <p className="font-body-sm text-body-sm text-on-surface-variant">{formatDateTime(t.at, tz)}</p>}
+                    <p className="font-label-lg text-label-lg text-on-surface">{item.label}</p>
+                    {item.at && <p className="font-body-sm text-body-sm text-on-surface-variant">{formatDateTime(item.at, tz, locale)}</p>}
                   </div>
                 </li>
               ))}

@@ -1,23 +1,26 @@
-import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { bookingPets, petNames } from "@/lib/pets";
 import { Link } from "@/i18n/navigation";
 import type { Prisma } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
-import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
+import { BOOKING_STATUS_LABELS, type BookingStatus, type ServiceType } from "@/lib/constants";
 import { BTN, Card, EmptyState, PageHeader, Pager, StatusChip } from "@/components/ui";
-import { SERVICE_ICONS, bookingRef, bookingWhen, serviceLabel } from "../_lib";
+import { SERVICE_ICONS, bookingRef, bookingWhen, quantityText } from "../_lib";
 import { seriesPositions } from "@/lib/booking-series";
-import { isStayService, quantityLabel } from "@/lib/availability-core";
+import { isStayService } from "@/lib/availability-core";
 
-export const metadata: Metadata = { title: "My Bookings | WagStays" };
+export async function generateMetadata() {
+  const t = await getTranslations("account.meta");
+  return { title: t("bookings") };
+}
 
 const PAGE_SIZE = 8;
 const TABS = [
-  { key: "upcoming", label: "Upcoming", icon: "upcoming" },
-  { key: "past", label: "Past", icon: "history" },
-  { key: "cancelled", label: "Cancelled", icon: "event_busy" },
+  { key: "upcoming", icon: "upcoming" },
+  { key: "past", icon: "history" },
+  { key: "cancelled", icon: "event_busy" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -33,6 +36,7 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 export default async function MyBookingsPage({ searchParams }: PageProps<"/[locale]/account/bookings">) {
   const user = await requireUser();
   const sp = await searchParams;
+  const [t, tc, locale] = await Promise.all([getTranslations("account"), getTranslations("common"), getLocale()]);
   const tab: TabKey = TABS.find((t) => t.key === one(sp.tab))?.key ?? "upcoming";
   const requestedPage = Math.max(1, Number.parseInt(one(sp.page) ?? "1", 10) || 1);
   const now = new Date();
@@ -65,17 +69,17 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/[loca
         actions={
           <Link className={BTN.primary} href="/sitters">
             <span className="material-symbols-outlined text-xl">search</span>
-            Find a Sitter
+            {tc("nav.findSitter")}
           </Link>
         }
-        description="Every walk, stay and visit you've booked — with your sitter's notes and next steps."
-        eyebrow="Pet Parent"
-        title="My Bookings"
+        description={t("bookings.description")}
+        eyebrow={tc("enums.role.OWNER")}
+        title={tc("nav.myBookings")}
       />
 
-      <nav aria-label="Booking filters" className="flex gap-space-xs overflow-x-auto -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 pb-1">
-        {TABS.map((t, i) => {
-          const active = t.key === tab;
+      <nav aria-label={t("bookings.filtersLabel")} className="flex gap-space-xs overflow-x-auto -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 pb-1">
+        {TABS.map((tabItem, i) => {
+          const active = tabItem.key === tab;
           return (
             <Link
               aria-current={active ? "page" : undefined}
@@ -84,11 +88,11 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/[loca
                   ? "bg-primary-container text-on-primary shadow-sm"
                   : "bg-surface-container-lowest border border-[#EFE7DE] text-on-surface-variant hover:bg-surface-container-low"
               }`}
-              href={`/account/bookings?tab=${t.key}`}
-              key={t.key}
+              href={`/account/bookings?tab=${tabItem.key}`}
+              key={tabItem.key}
             >
-              <span className="material-symbols-outlined text-lg">{t.icon}</span>
-              {t.label}
+              <span className="material-symbols-outlined text-lg">{tabItem.icon}</span>
+              {t(`bookings.tabs.${tabItem.key}`)}
               <span className={`min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center font-label-sm text-label-sm ${active ? "bg-white/20" : "bg-surface-container-high"}`}>
                 {counts[i]}
               </span>
@@ -103,25 +107,20 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/[loca
             action={
               tab === "upcoming" ? (
                 <Link className={`${BTN.primary} mt-space-sm`} href="/sitters">
-                  Find a Sitter
+                  {tc("nav.findSitter")}
                 </Link>
               ) : undefined
             }
             icon={tab === "cancelled" ? "event_busy" : tab === "past" ? "history" : "calendar_add_on"}
-            text={
-              tab === "upcoming"
-                ? "When you book a walk, stay or drop-in visit it will show up here."
-                : tab === "past"
-                  ? "Completed bookings appear here, ready for a review or a repeat booking."
-                  : "Nothing cancelled or declined — nice!"
-            }
-            title={tab === "upcoming" ? "No upcoming bookings" : tab === "past" ? "No past bookings yet" : "No cancelled bookings"}
+            text={t(`bookings.empty.${tab}Text`)}
+            title={t(`bookings.empty.${tab}Title`)}
           />
         </Card>
       ) : (
         <div className="flex flex-col gap-space-md">
           {bookings.map((b) => {
-            const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? { label: b.status, tone: "neutral" as const };
+            const st = BOOKING_STATUS_LABELS[b.status as BookingStatus];
+            const status = st ? { label: tc(`enums.bookingStatus.${b.status as BookingStatus}`), tone: st.tone } : { label: b.status, tone: "neutral" as const };
             const needsReview = b.status === "COMPLETED" && !b.review;
             return (
               <Card className="p-space-md md:p-space-lg flex flex-col gap-space-md" key={b.id}>
@@ -140,23 +139,23 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/[loca
                     <div className="flex flex-wrap items-center gap-x-space-md gap-y-1 font-body-sm text-body-sm text-on-surface-variant">
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-base text-primary">{SERVICE_ICONS[b.service.type] ?? "pets"}</span>
-                        {serviceLabel(b.service.type)}
-                        {(isStayService(b.service.type) || b.quantity > 1) && ` · ${quantityLabel(b.service.type, b.quantity)}`}
+                        {tc(`enums.service.${b.service.type as ServiceType}`)}
+                        {(isStayService(b.service.type) || b.quantity > 1) && ` · ${quantityText(b.service.type, b.quantity, locale)}`}
                       </span>
                       {series.get(b.id) && (
                         <span className="flex items-center gap-1 text-primary font-semibold">
                           <span className="material-symbols-outlined text-base">repeat</span>
-                          Week {series.get(b.id)!.index} of {series.get(b.id)!.total}
+                          {t("shared.weekOf", { index: series.get(b.id)!.index, total: series.get(b.id)!.total })}
                         </span>
                       )}
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-base text-primary">pets</span>
-                        {b.pets.length > 1 ? petNames(bookingPets(b).map((p) => p.name)) : `${b.pet.name}${b.pet.breed ? ` (${b.pet.breed})` : ""}`}
+                        {b.pets.length > 1 ? petNames(bookingPets(b).map((p) => p.name), locale) : `${b.pet.name}${b.pet.breed ? ` (${b.pet.breed})` : ""}`}
                       </span>
                     </div>
                     <span className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface">
                       <span className="material-symbols-outlined text-base text-primary">calendar_month</span>
-                      {bookingWhen(b.startAt, b.endAt, b.sitter.city.timeZone)}
+                      {bookingWhen(b.startAt, b.endAt, b.sitter.city.timeZone, locale)}
                     </span>
                   </div>
                 </div>
@@ -172,18 +171,18 @@ export default async function MyBookingsPage({ searchParams }: PageProps<"/[loca
 
                 <div className="flex flex-wrap items-center justify-between gap-space-sm border-t border-[#EFE7DE] pt-space-md">
                   <div className="flex items-baseline gap-space-sm">
-                    <span className="font-title-md text-title-md text-on-surface">{formatMoney(b.totalCents, { exact: true })}</span>
+                    <span className="font-title-md text-title-md text-on-surface">{formatMoney(b.totalCents, { exact: true, locale })}</span>
                     <span className="font-label-sm text-label-sm text-on-surface-variant">{bookingRef(b.id)}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-space-xs">
                     {needsReview && (
                       <Link className={`${BTN.small} bg-tertiary-fixed text-on-tertiary-fixed-variant hover:brightness-95`} href={`/account/bookings/${b.id}#review`}>
                         <span className="material-symbols-outlined text-base">star</span>
-                        Leave a review
+                        {t("bookings.leaveReview")}
                       </Link>
                     )}
                     <Link className={`${BTN.small} bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4]`} href={`/account/bookings/${b.id}`}>
-                      View details
+                      {t("bookings.viewDetails")}
                       <span className="material-symbols-outlined text-base">chevron_right</span>
                     </Link>
                   </div>

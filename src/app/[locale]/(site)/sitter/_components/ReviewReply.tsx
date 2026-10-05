@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { startTransition, useActionState, useState } from "react";
 import { replyToReview } from "@/app/actions/reviews";
 import type { SitterActionState } from "@/app/actions/sitter";
@@ -26,6 +27,8 @@ export function ReviewReply({
   hidden: boolean;
   compact?: boolean;
 }) {
+  const t = useTranslations("sitter.reviewReply");
+  const tc = useTranslations("common.actions");
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(reply ?? "");
   const [state, dispatch, pending] = useActionState(async (prev: SitterActionState, fd: FormData) => {
@@ -39,7 +42,7 @@ export function ReviewReply({
     return (
       <p className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
         <span className="material-symbols-outlined text-base">visibility_off</span>
-        Hidden by WagStays moderators — replies are turned off.
+        {t("hidden")}
       </p>
     );
   }
@@ -57,14 +60,14 @@ export function ReviewReply({
       >
         <input name="reviewId" type="hidden" value={reviewId} />
         <label className="flex flex-col gap-space-xs">
-          <span className="font-label-lg text-label-lg text-on-surface">{reply ? "Edit your public reply" : "Your public reply"}</span>
+          <span className="font-label-lg text-label-lg text-on-surface">{reply ? t("editLabel") : t("newLabel")}</span>
           <textarea
             autoFocus
             className={`${TEXTAREA} ${compact ? "min-h-[96px]" : "min-h-[110px]"}`}
             maxLength={REPLY_MAX + 50}
             name="body"
             onChange={(e) => setText(e.target.value)}
-            placeholder="e.g. Thank you so much! Milo was a joy — can't wait for our next walk."
+            placeholder={t("placeholder")}
             required
             value={text}
           />
@@ -72,7 +75,7 @@ export function ReviewReply({
         <div className="flex flex-wrap items-center justify-between gap-space-sm">
           <span className={`font-label-sm text-label-sm ${over ? "text-error" : "text-on-surface-variant"}`}>
             {text.trim().length}/{REPLY_MAX}
-            {!reply && " · You can edit it for 7 days"}
+            {!reply && t("editFor7Days")}
           </span>
           <div className="flex gap-space-xs">
             <button
@@ -84,10 +87,10 @@ export function ReviewReply({
               }}
               type="button"
             >
-              Cancel
+              {tc("cancel")}
             </button>
             <button className={`${small} bg-primary text-on-primary hover:bg-primary-container`} disabled={pending || over || !text.trim()} type="submit">
-              {pending ? "Saving…" : reply ? "Save reply" : "Post reply"}
+              {pending ? tc("saving") : reply ? t("save") : t("post")}
             </button>
           </div>
         </div>
@@ -101,17 +104,17 @@ export function ReviewReply({
       <div className="flex flex-col gap-space-xs">
         <div className="flex flex-col gap-1 pl-space-md border-l-2 border-primary-fixed-dim">
           <span className="font-label-md text-label-md text-on-surface">
-            Your reply{repliedAgo ? <span className="font-normal text-on-surface-variant"> · {repliedAgo}</span> : null}
+            {t("yourReply")}{repliedAgo ? <span className="font-normal text-on-surface-variant"> · {repliedAgo}</span> : null}
           </span>
           <p className="font-body-sm text-body-sm text-on-surface-variant whitespace-pre-line break-words">{reply}</p>
         </div>
         <div className="flex flex-wrap items-center gap-space-sm">
           {canEdit ? (
             <button className="inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline" onClick={() => setEditing(true)} type="button">
-              <span className="material-symbols-outlined text-base">edit</span>Edit reply
+              <span className="material-symbols-outlined text-base">edit</span>{t("edit")}
             </button>
           ) : (
-            <span className="font-label-sm text-label-sm text-outline">Edit window (7 days) has closed</span>
+            <span className="font-label-sm text-label-sm text-outline">{t("windowClosed")}</span>
           )}
           <Feedback state={state} />
         </div>
@@ -126,7 +129,7 @@ export function ReviewReply({
         onClick={() => setEditing(true)}
         type="button"
       >
-        <span className="material-symbols-outlined text-base">reply</span>Reply
+        <span className="material-symbols-outlined text-base">reply</span>{t("reply")}
       </button>
       <Feedback state={state} />
     </div>

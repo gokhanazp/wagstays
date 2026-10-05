@@ -5,8 +5,12 @@ import { BTN } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { localizedPath } from "@/i18n/server";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = { title: "New message" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("chat.meta");
+  return { title: t("newMessage") };
+}
 
 type Props = { searchParams: Promise<{ sitter?: string | string[]; owner?: string | string[] }> };
 
@@ -34,6 +38,7 @@ function Problem({ title, text, href, cta }: { title: string; text: string; href
  */
 export default async function NewConversationPage({ searchParams }: Props) {
   const user = await requireUser(); // logged-out → /login?next=/messages/new?...
+  const t = await getTranslations("chat.new");
   const sp = await searchParams;
   const sitterParam = one(sp.sitter);
   const ownerParam = one(sp.owner);
@@ -42,12 +47,12 @@ export default async function NewConversationPage({ searchParams }: Props) {
     const sitter = await db.sitterProfile.findUnique({ where: { id: sitterParam }, select: { id: true, userId: true, slug: true, status: true, displayName: true } });
     if (!sitter) notFound();
     if (sitter.userId === user.id) {
-      return <Problem cta="Back to messages" href="/messages" text="This is your own sitter profile — pet parents can message you from it." title="You can't message yourself" />;
+      return <Problem cta={t("backToMessages")} href="/messages" text={t("selfSitterText")} title={t("selfTitle")} />;
     }
     const existing = await db.conversation.findUnique({ where: { ownerId_sitterId: { ownerId: user.id, sitterId: sitter.id } }, select: { id: true } });
     if (existing) redirect(await localizedPath(`/messages/${existing.id}`));
     if (sitter.status !== "ACTIVE") {
-      return <Problem cta="Find another sitter" href="/sitters" text={`${sitter.displayName} isn't taking new requests right now.`} title="Messaging is paused" />;
+      return <Problem cta={t("findAnother")} href="/sitters" text={t("pausedText", { name: sitter.displayName })} title={t("pausedTitle")} />;
     }
     const conv = await db.conversation.upsert({
       where: { ownerId_sitterId: { ownerId: user.id, sitterId: sitter.id } },
@@ -62,7 +67,7 @@ export default async function NewConversationPage({ searchParams }: Props) {
     const me = await db.sitterProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
     if (!me) notFound();
     if (ownerParam === user.id) {
-      return <Problem cta="Back to messages" href="/messages" text="Pick a pet parent you're caring for instead." title="You can't message yourself" />;
+      return <Problem cta={t("backToMessages")} href="/messages" text={t("selfOwnerText")} title={t("selfTitle")} />;
     }
     const existing = await db.conversation.findUnique({ where: { ownerId_sitterId: { ownerId: ownerParam, sitterId: me.id } }, select: { id: true } });
     if (existing) redirect(await localizedPath(`/messages/${existing.id}`));

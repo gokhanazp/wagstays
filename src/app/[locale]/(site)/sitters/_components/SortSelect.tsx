@@ -1,31 +1,34 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Select } from "@/components/forms/Select";
 import type { SearchFilters } from "@/lib/queries";
 import type { SearchExtras } from "./search-url";
 import { useSearchNav } from "./useSearchNav";
 
-const SORTS: { value: SearchFilters["sort"]; label: string; icon: string }[] = [
-  { value: "recommended", icon: "auto_awesome", label: "Recommended" },
-  { value: "price-asc", icon: "trending_up", label: "Price: low to high" },
-  { value: "price-desc", icon: "trending_down", label: "Price: high to low" },
-  { value: "rating", icon: "star", label: "Top rated" },
-  { value: "distance", icon: "near_me", label: "Nearest" },
-];
+const SORTS = [
+  { value: "recommended", icon: "auto_awesome", label: "recommended" },
+  { value: "price-asc", icon: "trending_up", label: "priceAsc" },
+  { value: "price-desc", icon: "trending_down", label: "priceDesc" },
+  { value: "rating", icon: "star", label: "rating" },
+  { value: "distance", icon: "near_me", label: "distance" },
+] as const satisfies readonly { value: SearchFilters["sort"]; label: string; icon: string }[];
 
 export function SortSelect({ filters: urlFilters, extras }: { filters: SearchFilters; extras: SearchExtras }) {
+  const t = useTranslations("search.sort");
   const { filters, update } = useSearchNav(urlFilters, extras);
-  const current = SORTS.find((s) => s.value === filters.sort) ?? SORTS[0];
+  const sorts = SORTS.map((s) => ({ ...s, label: t(s.label) }));
+  const current = sorts.find((s) => s.value === filters.sort) ?? sorts[0];
   return (
     <div className="relative flex items-center gap-space-xs bg-surface-container px-space-sm sm:px-space-md py-2.5 sm:py-2 rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">
-      <span className="hidden sm:inline font-label-sm text-label-sm text-outline">Sort:</span>
+      <span className="hidden sm:inline font-label-sm text-label-sm text-outline">{t("label")}</span>
       <span className="font-label-lg text-label-lg text-on-surface font-bold whitespace-nowrap">{current.label}</span>
       <span className="material-symbols-outlined text-base">expand_more</span>
       <Select
         align="end"
-        aria-label="Sort results"
+        aria-label={t("aria")}
         onChange={(v) => update({ sort: v as SearchFilters["sort"] })}
-        options={SORTS}
+        options={sorts}
         value={filters.sort}
         variant="overlay"
       />

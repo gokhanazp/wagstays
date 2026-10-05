@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useMemo, useState } from "react";
 import { createBooking } from "@/app/actions/booking";
 import { Select } from "@/components/forms/Select";
@@ -10,8 +11,9 @@ import { priceBooking, type Fees } from "@/lib/pricing";
 import { holidaysForDates } from "@/lib/holidays";
 import { petNames } from "@/lib/pets";
 import { isPuppy, quoteBooking } from "@/lib/quote";
-import { explainLine, feeExplanations, perBookingPhrase, unitWord } from "@/lib/price-details";
+import { explainLine, feeExplanations, perBookingPhrase, petWord, priceLineLabel, taxName, unitWord } from "@/lib/price-details";
 import { InfoTip } from "@/components/pricing/InfoTip";
+import { intlLocale } from "@/i18n/routing";
 import { SERVICE_ICONS, plainTrait } from "../_lib";
 import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 
@@ -98,17 +100,18 @@ type Props = {
   notReady?: boolean;
 };
 
+// Values are stored on the booking in English (the sitter's booking page shows them); labels are translated.
 const LEASH_OPTIONS = [
-  "Y-front harness + 3 m long line (ready at home)",
-  "Classic flat collar",
-  "Retractable leash",
-];
+  { key: "harness", value: "Y-front harness + 3 m long line (ready at home)" },
+  { key: "collar", value: "Classic flat collar" },
+  { key: "retractable", value: "Retractable leash" },
+] as const;
 const REACTION_OPTIONS = [
-  "Friendly but excitable (pulls to say hello)",
-  "Calm and keeps to themselves",
-  "Wary of cats / may bark",
-  "Reactive to other dogs (keep a distance)",
-];
+  { key: "excitable", value: "Friendly but excitable (pulls to say hello)" },
+  { key: "calm", value: "Calm and keeps to themselves" },
+  { key: "cats", value: "Wary of cats / may bark" },
+  { key: "reactive", value: "Reactive to other dogs (keep a distance)" },
+] as const;
 
 type Brand = "Visa" | "Mastercard" | "Amex";
 const BRANDS: Brand[] = ["Visa", "Mastercard", "Amex"];
@@ -148,20 +151,20 @@ function expiryValid(v: string) {
   return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
 }
 
-function petDetails(p: Pet) {
+type T = ReturnType<typeof useTranslations<"booking.checkout">>;
+
+function petDetails(p: Pet, t: T) {
   const parts: string[] = [];
-  if (p.sex) parts.push(p.sex === "FEMALE" ? "Female" : "Male");
-  if (p.neutered) parts.push(p.sex === "FEMALE" ? "Spayed" : "Neutered");
-  if (p.rabiesVaccinated) parts.push("Rabies & core vaccines up to date");
-  if (p.microchip) parts.push(`Microchip: ${p.microchip}`);
+  if (p.sex) parts.push(p.sex === "FEMALE" ? t("pet.female") : t("pet.male"));
+  if (p.neutered) parts.push(p.sex === "FEMALE" ? t("pet.spayed") : t("pet.neutered"));
+  if (p.rabiesVaccinated) parts.push(t("pet.vaccines"));
+  if (p.microchip) parts.push(t("pet.microchip", { id: p.microchip }));
   return parts.join(" • ");
 }
 
-function defaultFeeding(names: string, hasAllergy: boolean) {
-  const name = names || "your pet";
-  return hasAllergy
-    ? `Please only give the lamb treats packed in ${name}'s bag — no more than 2 per walk.`
-    : `Treats are packed in ${name}'s bag — no more than 2 per walk, please.`;
+function defaultFeeding(names: string, hasAllergy: boolean, t: T) {
+  const name = names || t("feeding.yourPet");
+  return hasAllergy ? t("feeding.allergy", { name }) : t("feeding.normal", { name });
 }
 
 const inlineInput =
@@ -181,6 +184,8 @@ export function CheckoutForm({
   earnRateBps,
   notReady,
 }: Props) {
+  const t = useTranslations("booking.checkout");
+  const locale = useLocale();
   const [state, formAction, pending] = useActionState(createBooking.bind(null, sitter.slug), undefined);
   const [petIds, setPetIds] = useState(initialPetIds);
   const canUsePoints = owner.wagPointsCents > 0;
@@ -194,7 +199,10 @@ export function CheckoutForm({
   const pet = selected[0];
   const blockedPet = selected.find((p) => p.blocked);
   const overLimit = selected.length > service.petLimit;
-  const names = petNames(selected.map((p) => p.name));
+  const names = petNames(
+    selected.map((p) => p.name),
+    locale,
+  );
   const warning = selected.flatMap((p) => p.traits).find((t) => t.tone === "warning");
   const multi = service.petLimit > 1;
   const togglePet = (id: string) =>
@@ -238,38 +246,44 @@ export function CheckoutForm({
   const totalCents = price.totalCents + restCents;
   const conflicts = schedule.conflictsByCount[Math.max(1, selected.length)] ?? schedule.conflictsByCount[1] ?? [];
   const pointsOff = Math.min(fees.wagPointsDiscountCents, owner.wagPointsCents);
-  const total = formatMoney(totalCents, { exact: true });
+  const money = (c: number) => formatMoney(c, { exact: true, locale });
+  const total = money(totalCents);
   const unavailable = conflicts.length > 0;
   const stay = service.type === "BOARDING" || service.type === "DAY_CARE";
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     let msg: string | null = null;
-    if (!pet) msg = "Please add a pet to your profile before booking.";
+    if (!pet) msg = t("errors.noPet");
     else if (blockedPet) msg = `${blockedPet.name}: ${blockedPet.blocked}.`;
-    else if (overLimit) msg = service.oneNote ? `${service.oneNote}.` : `You can book at most ${service.petLimit} pets for this service.`;
-    else if (!brand) msg = "Please enter a Visa, Mastercard or Amex card number.";
-    else if (cardDigits.length !== maxLen || !luhn(cardDigits)) msg = "That card number doesn't look right — please check it.";
-    else if (!expiryValid(expiry)) msg = "Please enter a valid expiry date (MM/YY).";
-    else if (!new RegExp(`^\\d{${brand === "Amex" ? 4 : 3}}$`).test(cvc)) msg = `Please enter the ${brand === "Amex" ? 4 : 3}-digit security code.`;
+    else if (overLimit) msg = service.oneNote ? `${service.oneNote}.` : t("errors.maxPets", { count: service.petLimit });
+    else if (!brand) msg = t("errors.cardBrand");
+    else if (cardDigits.length !== maxLen || !luhn(cardDigits)) msg = t("errors.cardNumber");
+    else if (!expiryValid(expiry)) msg = t("errors.expiry");
+    else if (!new RegExp(`^\\d{${brand === "Amex" ? 4 : 3}}$`).test(cvc)) msg = t("errors.cvc", { digits: brand === "Amex" ? 4 : 3 });
     setClientError(msg);
     if (msg) e.preventDefault();
   }
 
   const error = clientError ?? state?.error;
   const detailService = { ...service, priceCents: service.unitPriceCents };
-  const feeText = feeExplanations(fees, taxRateBps, "HST", provinceCode);
-  const per = unitWord(service.unit);
+  const feeText = feeExplanations(fees, taxRateBps, "HST", provinceCode, locale);
+  const tax = taxName("HST", locale);
+  const per = unitWord(service.unit, locale);
   // "Adding Biscuit: +$12 per walk" for every pet after the first, plus puppy surcharges.
   const addNotes = selected.flatMap((p, i) => {
     const out: string[] = [];
     if (i > 0 && service.additionalPetPriceCents != null) {
-      out.push(service.additionalPetPriceCents ? `Adding ${p.name}: +${formatMoney(service.additionalPetPriceCents)} per ${per}` : `Adding ${p.name}: no extra charge`);
+      out.push(
+        service.additionalPetPriceCents
+          ? t("pets.adding", { name: p.name, price: formatMoney(service.additionalPetPriceCents, { locale }), per })
+          : t("pets.addingFree", { name: p.name }),
+      );
     }
-    if (service.puppyPriceCents && isPuppy(p)) out.push(`${p.name} is a puppy: +${formatMoney(service.puppyPriceCents)} per ${per}`);
+    if (service.puppyPriceCents && isPuppy(p)) out.push(t("pets.puppy", { name: p.name, price: formatMoney(service.puppyPriceCents, { locale }), per }));
     return out;
   });
   const limitReached = multi && selected.length >= service.petLimit && pets.filter((p) => !p.blocked).length > service.petLimit;
-  const doneWord = service.type === "DOG_WALKING" ? "walks" : "bookings";
+  const phrase = perBookingPhrase(service.type, service.petLimit, locale);
 
   return (
     <form action={formAction} onSubmit={onSubmit} className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin py-space-lg md:py-space-xl">
@@ -293,7 +307,7 @@ export function CheckoutForm({
                 <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-xl">pets</span>
                 </div>
-                <h2 className="font-title-md text-title-md text-on-surface">Who&apos;s Getting the Care?</h2>
+                <h2 className="font-title-md text-title-md text-on-surface">{t("pets.title")}</h2>
               </div>
               {pets.length > 0 && (
                 <Link
@@ -301,14 +315,14 @@ export function CheckoutForm({
                   href={addPetHref}
                 >
                   <span className="material-symbols-outlined text-base">add_circle</span>
-                  <span>Add a pet</span>
+                  <span>{t("pets.addPet")}</span>
                 </Link>
               )}
             </div>
 
             {pets.length > 1 && (
               <div className="flex flex-col gap-space-xs">
-                <div aria-label={multi ? "Choose the pets for this booking" : "Choose a pet"} className="flex flex-wrap gap-space-xs" role="group">
+                <div aria-label={multi ? t("pets.choosePets") : t("pets.choosePet")} className="flex flex-wrap gap-space-xs" role="group">
                   {pets.map((p) => {
                     const on = petIds.includes(p.id);
                     const full = multi && !on && selected.length >= service.petLimit;
@@ -329,7 +343,7 @@ export function CheckoutForm({
                         disabled={disabled && !on}
                         key={p.id}
                         onClick={() => togglePet(p.id)}
-                        title={p.blocked ?? (full ? `Up to ${service.petLimit} pets per booking` : undefined)}
+                        title={p.blocked ?? (full ? t("pets.upTo", { count: service.petLimit }) : undefined)}
                         type="button"
                       >
                         <span className="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shrink-0">
@@ -357,7 +371,7 @@ export function CheckoutForm({
                     {limitReached && (
                       <li className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface-variant">
                         <span className="material-symbols-outlined text-base text-secondary">info</span>
-                        {sitter.firstName} takes up to {service.petLimit} {perBookingPhrase(service.type, service.petLimit)}.
+                        {t("pets.limitReached", { name: sitter.firstName, count: service.petLimit, phrase })}
                       </li>
                     )}
                   </ul>
@@ -365,8 +379,16 @@ export function CheckoutForm({
                 <p className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface-variant">
                   <span className="material-symbols-outlined text-base text-primary">info</span>
                   {multi
-                    ? `Up to ${service.petLimit} ${perBookingPhrase(service.type, service.petLimit)} · ${service.additionalPetPriceCents ? `+${formatMoney(service.additionalPetPriceCents)} per ${per} for each extra ${service.type === "DOG_WALKING" ? "dog" : "pet"}` : "extra pets at no charge"}.`
-                    : `${service.oneNote ?? `${sitter.firstName} takes one pet per booking for this service`}.`}
+                    ? service.additionalPetPriceCents
+                      ? t("pets.multiNote", {
+                          count: service.petLimit,
+                          phrase,
+                          price: formatMoney(service.additionalPetPriceCents, { locale }),
+                          per,
+                          pet: petWord(service.type, 1, locale),
+                        })
+                      : t("pets.multiNoteFree", { count: service.petLimit, phrase })
+                    : `${service.oneNote ?? t("pets.oneOnly", { name: sitter.firstName })}.`}
                 </p>
               </div>
             )}
@@ -374,7 +396,7 @@ export function CheckoutForm({
             {blockedPet && (
               <p className="flex items-start gap-space-xs p-space-sm px-space-md rounded-xl bg-error-container text-on-error-container font-body-sm text-body-sm" role="alert">
                 <span className="material-symbols-outlined text-base">block</span>
-                {blockedPet.name}: {blockedPet.blocked} — choose another pet{pets.some((p) => !p.blocked) ? "" : " or sitter"}.
+                {t(pets.some((p) => !p.blocked) ? "pets.blocked" : "pets.blockedAll", { name: blockedPet.name, reason: blockedPet.blocked ?? "" })}
               </p>
             )}
             {selected.length > 0 ? (
@@ -384,14 +406,14 @@ export function CheckoutForm({
                     <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 shadow-sm relative bg-primary-fixed flex items-center justify-center">
                       {pet.photoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img alt={`${pet.name}, ${pet.breed ?? "pet"}`} className="w-full h-full object-cover" src={pet.photoUrl} />
+                        <img alt={pet.breed ? t("pet.photoAlt", { name: pet.name, breed: pet.breed }) : t("pet.photoAltPet", { name: pet.name })} className="w-full h-full object-cover" src={pet.photoUrl} />
                       ) : (
                         <span className="material-symbols-outlined text-primary text-5xl">pets</span>
                       )}
                       {pet.microchip && (
                         <span className="absolute bottom-1 right-1 bg-surface-container-lowest/90 px-1.5 py-0.5 rounded-full font-label-sm text-label-sm text-primary flex items-center gap-0.5 shadow-sm">
                           <span className="material-symbols-outlined text-xs">verified</span>
-                          Chipped
+                          {t("pet.chipped")}
                         </span>
                       )}
                     </div>
@@ -403,11 +425,11 @@ export function CheckoutForm({
                         )}
                         {pet.ageYears != null && (
                           <span className="bg-surface-container text-on-surface-variant px-space-sm py-0.5 rounded-full font-label-sm text-label-sm">
-                            {pet.ageYears < 1 ? "Puppy · <1 yr" : `${pet.ageYears} ${pet.ageYears === 1 ? "yr" : "yrs"}`}
+                            {pet.ageYears < 1 ? t("pet.puppyAge") : t("pet.age", { count: pet.ageYears })}
                           </span>
                         )}
                       </div>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">{petDetails(pet)}</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{petDetails(pet, t)}</p>
                       {pet.traits.length > 0 && (
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-space-xs pt-space-xs">
                           {pet.traits.map((t) => (
@@ -432,13 +454,13 @@ export function CheckoutForm({
               </div>
             ) : (
               <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm font-body-sm text-body-sm text-on-surface-variant">
-                <span>You haven&apos;t added any pets yet. Add a pet to your profile to continue booking.</span>
+                <span>{t("pets.none")}</span>
                 <Link
                   className="inline-flex items-center justify-center gap-1 h-9 px-space-md rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors whitespace-nowrap"
                   href={addPetHref}
                 >
                   <span className="material-symbols-outlined text-base">add</span>
-                  Add a new pet
+                  {t("pets.addNew")}
                 </Link>
               </div>
             )}
@@ -447,7 +469,7 @@ export function CheckoutForm({
               <div className="bg-surface-container p-space-md rounded-xl flex flex-col gap-space-xs">
                 <span className="font-label-sm text-label-sm uppercase font-bold text-on-surface-variant flex items-center gap-1">
                   <span className="material-symbols-outlined text-base text-secondary">emergency</span>
-                  Emergency Contact Number
+                  {t("contacts.emergency")}
                 </span>
                 <div className="flex items-center gap-space-sm mt-1">
                   <div className="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
@@ -455,19 +477,19 @@ export function CheckoutForm({
                   </div>
                   <div className="flex-1 min-w-0">
                     <input
-                      aria-label="Emergency contact phone"
+                      aria-label={t("contacts.emergencyPhone")}
                       className={`font-label-lg text-label-lg text-on-surface ${inlineInput}`}
                       defaultValue="+1 (416) 555-0163"
                       name="emergencyPhone"
-                      placeholder="Phone number"
+                      placeholder={t("contacts.phonePlaceholder")}
                       type="tel"
                     />
                     <input
-                      aria-label="Emergency contact name"
+                      aria-label={t("contacts.emergencyName")}
                       className={`font-body-sm text-body-sm text-on-surface-variant ${inlineInput}`}
-                      defaultValue="Daniel Young (secondary contact – brother)"
+                      defaultValue={t("contacts.emergencyNameDefault")}
                       name="emergencyName"
-                      placeholder="Contact name"
+                      placeholder={t("contacts.namePlaceholder")}
                       type="text"
                     />
                   </div>
@@ -476,7 +498,7 @@ export function CheckoutForm({
               <div className="bg-surface-container p-space-md rounded-xl flex flex-col gap-space-xs">
                 <span className="font-label-sm text-label-sm uppercase font-bold text-on-surface-variant flex items-center gap-1">
                   <span className="material-symbols-outlined text-base text-primary">local_hospital</span>
-                  Your Veterinary Clinic
+                  {t("contacts.vet")}
                 </span>
                 <div className="flex items-center gap-space-sm mt-1">
                   <div className="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
@@ -484,19 +506,19 @@ export function CheckoutForm({
                   </div>
                   <div className="flex-1 min-w-0">
                     <input
-                      aria-label="Vet clinic"
+                      aria-label={t("contacts.vetClinic")}
                       className={`font-label-lg text-label-lg text-on-surface ${inlineInput}`}
                       defaultValue="Kew Paws Veterinary Clinic"
                       name="vetClinic"
-                      placeholder="Clinic name"
+                      placeholder={t("contacts.clinicPlaceholder")}
                       type="text"
                     />
                     <input
-                      aria-label="Vet name and phone"
+                      aria-label={t("contacts.vetPhone")}
                       className={`font-body-sm text-body-sm text-on-surface-variant ${inlineInput}`}
                       defaultValue="Dr. Kevin Walsh • (416) 555-0187"
                       name="vetPhone"
-                      placeholder="Vet name & phone"
+                      placeholder={t("contacts.vetPhonePlaceholder")}
                       type="text"
                     />
                   </div>
@@ -512,9 +534,9 @@ export function CheckoutForm({
                 <span className="material-symbols-outlined text-xl">checklist</span>
               </div>
               <div>
-                <h2 className="font-title-md text-title-md text-on-surface">Care &amp; Walk Instructions</h2>
+                <h2 className="font-title-md text-title-md text-on-surface">{t("care.title")}</h2>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Your sitter {sitter.firstName} will follow these guidelines before heading out with {names || "your pet"}.
+                  {t("care.intro", { name: sitter.firstName, pets: names || t("care.yourPet") })}
                 </p>
               </div>
             </div>
@@ -522,27 +544,27 @@ export function CheckoutForm({
               <div className="flex flex-col gap-space-xs">
                 <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1" htmlFor="leash">
                   <span className="material-symbols-outlined text-base text-primary">hiking</span>
-                  Leash &amp; Gear Preference
+                  {t("care.leash")}
                 </label>
                 <Select
                   className="w-full h-12 pl-space-md pr-10 rounded-xl bg-surface-container-lowest font-body-md text-body-md text-on-surface text-left shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-                  defaultValue={LEASH_OPTIONS[0]}
+                  defaultValue={LEASH_OPTIONS[0].value}
                   id="leash"
                   name="leashPreference"
-                  options={LEASH_OPTIONS.map((o) => ({ value: o, label: o }))}
+                  options={LEASH_OPTIONS.map((o) => ({ value: o.value, label: t(`care.leashOptions.${o.key}`) }))}
                 />
               </div>
               <div className="flex flex-col gap-space-xs">
                 <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1" htmlFor="reaction">
                   <span className="material-symbols-outlined text-base text-primary">diversity_1</span>
-                  Reaction to Other Animals
+                  {t("care.reaction")}
                 </label>
                 <Select
                   className="w-full h-12 pl-space-md pr-10 rounded-xl bg-surface-container-lowest font-body-md text-body-md text-on-surface text-left shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-                  defaultValue={REACTION_OPTIONS[0]}
+                  defaultValue={REACTION_OPTIONS[0].value}
                   id="reaction"
                   name="otherAnimalsReaction"
-                  options={REACTION_OPTIONS.map((o) => ({ value: o, label: o }))}
+                  options={REACTION_OPTIONS.map((o) => ({ value: o.value, label: t(`care.reactionOptions.${o.key}`) }))}
                 />
               </div>
             </div>
@@ -550,15 +572,15 @@ export function CheckoutForm({
             <div className="flex flex-col gap-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1" htmlFor="feeding">
                 <span className="material-symbols-outlined text-base text-primary">restaurant</span>
-                Feeding &amp; Treat Rules
+                {t("care.feeding")}
               </label>
               <div className="bg-surface-container-low p-space-md rounded-xl flex items-start gap-space-sm">
                 <span className={`material-symbols-outlined text-xl mt-0.5 ${warning ? "text-secondary" : "text-primary"}`}>info</span>
                 <div className="flex-1 text-on-surface-variant font-body-sm text-body-sm leading-relaxed">
-                  {warning && <strong className="text-secondary font-semibold block">{plainTrait(warning.label)} — please take note! </strong>}
+                  {warning && <strong className="text-secondary font-semibold block">{t("care.takeNote", { trait: plainTrait(warning.label) })}</strong>}
                   <textarea
                     className="w-full bg-transparent resize-none rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary leading-relaxed [field-sizing:content]"
-                    defaultValue={defaultFeeding(names, !!warning)}
+                    defaultValue={defaultFeeding(names, !!warning, t)}
                     id="feeding"
                     key={petIds.join()}
                     name="feedingRules"
@@ -571,14 +593,14 @@ export function CheckoutForm({
             <div className="flex flex-col gap-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1" htmlFor="care-notes">
                 <span className="material-symbols-outlined text-base text-primary">edit_note</span>
-                Special Notes &amp; Message to Your Sitter
+                {t("care.notes")}
               </label>
               <textarea
                 className="w-full p-space-md rounded-xl bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-outline"
-                defaultValue="Please don't let him off-leash on the grass at Kew Gardens — always keep him on the long line. There's a water bowl in the backpack; he loves a drink when you rest around the 20-minute mark."
+                defaultValue={t("care.notesDefault")}
                 id="care-notes"
                 name="notes"
-                placeholder="e.g. Never off-leash at the park. We'd love it if you wiped his paws with the damp cloth by the door when you get back…"
+                placeholder={t("care.notesPlaceholder")}
                 rows={3}
               />
             </div>
@@ -589,14 +611,12 @@ export function CheckoutForm({
                   <span className="material-symbols-outlined text-lg">explore</span>
                 </div>
                 <div>
-                  <div className="font-label-lg text-label-lg text-on-surface">Live GPS Tracking &amp; Photo Updates</div>
-                  <div className="font-body-sm text-body-sm text-on-surface-variant">
-                    Get a live map of the route plus at least 3 adorable photos or videos, sent by text and in the app.
-                  </div>
+                  <div className="font-label-lg text-label-lg text-on-surface">{t("care.gpsTitle")}</div>
+                  <div className="font-body-sm text-body-sm text-on-surface-variant">{t("care.gpsText")}</div>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input aria-label="Live GPS tracking and photo updates" className="sr-only peer" defaultChecked name="gpsUpdates" type="checkbox" />
+                <input aria-label={t("care.gpsLabel")} className="sr-only peer" defaultChecked name="gpsUpdates" type="checkbox" />
                 <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
               </label>
             </div>
@@ -609,11 +629,11 @@ export function CheckoutForm({
                 <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
                   <span className="material-symbols-outlined text-xl">credit_card</span>
                 </div>
-                <h2 className="font-title-md text-title-md text-on-surface">Secure Payment Method</h2>
+                <h2 className="font-title-md text-title-md text-on-surface">{t("payment.title")}</h2>
               </div>
               <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-space-sm py-1 rounded-full font-label-sm text-label-sm font-semibold">
                 <span className="material-symbols-outlined text-sm">lock</span>
-                256-Bit SSL &amp; 3D Secure
+                {t("payment.ssl")}
               </div>
             </div>
 
@@ -623,10 +643,12 @@ export function CheckoutForm({
                   <span className="material-symbols-outlined text-base">savings</span>
                 </div>
                 <div>
-                  <span className="font-label-lg text-label-lg text-on-surface block">WagPoints Wallet</span>
+                  <span className="font-label-lg text-label-lg text-on-surface block">{t("payment.wallet")}</span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    Available balance:{" "}
-                    <strong className="text-secondary font-bold">{formatMoney(owner.wagPointsCents, { exact: true })}</strong>
+                    {t.rich("payment.balance", {
+                      amount: money(owner.wagPointsCents),
+                      b: (c) => <strong className="text-secondary font-bold">{c}</strong>,
+                    })}
                   </span>
                 </div>
               </div>
@@ -645,7 +667,7 @@ export function CheckoutForm({
                   type="checkbox"
                 />
                 <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  Apply {formatMoney(canUsePoints ? pointsOff : fees.wagPointsDiscountCents, { exact: true })} off
+                  {t("payment.applyOff", { amount: money(canUsePoints ? pointsOff : fees.wagPointsDiscountCents) })}
                 </span>
               </label>
             </div>
@@ -653,7 +675,7 @@ export function CheckoutForm({
             <div className="flex flex-col gap-space-md">
               <div className="flex flex-col gap-space-xs">
                 <label className="font-label-md text-label-md text-on-surface font-semibold" htmlFor="card-holder">
-                  Cardholder Name
+                  {t("payment.cardholder")}
                 </label>
                 <input
                   autoComplete="cc-name"
@@ -661,14 +683,14 @@ export function CheckoutForm({
                   defaultValue={owner.fullName}
                   id="card-holder"
                   name="cardholderName"
-                  placeholder="Full name"
+                  placeholder={t("payment.fullName")}
                   required
                   type="text"
                 />
               </div>
               <div className="flex flex-col gap-space-xs">
                 <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="card-number">
-                  <span>Card Number</span>
+                  <span>{t("payment.cardNumber")}</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2">
                     {BRANDS.map((b) => (
                       <span
@@ -703,7 +725,7 @@ export function CheckoutForm({
               <div className="grid grid-cols-2 gap-space-md">
                 <div className="flex flex-col gap-space-xs">
                   <label className="font-label-md text-label-md text-on-surface font-semibold" htmlFor="card-expiry">
-                    Expiry Date
+                    {t("payment.expiry")}
                   </label>
                   <input
                     autoComplete="cc-exp"
@@ -714,17 +736,17 @@ export function CheckoutForm({
                       const d = e.target.value.replace(/\D/g, "").slice(0, 4);
                       setExpiry(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d);
                     }}
-                    placeholder="MM/YY"
+                    placeholder={t("payment.expiryPlaceholder")}
                     type="text"
                     value={expiry}
                   />
                 </div>
                 <div className="flex flex-col gap-space-xs">
                   <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="card-cvv">
-                    <span>CVV / CVC</span>
+                    <span>{t("payment.cvv")}</span>
                     <span
                       className="material-symbols-outlined text-sm text-on-surface-variant cursor-help"
-                      title="The 3-digit security code on the back of your card (4 digits on the front for Amex)"
+                      title={t("payment.cvvHelp")}
                     >
                       help_outline
                     </span>
@@ -736,7 +758,7 @@ export function CheckoutForm({
                     inputMode="numeric"
                     maxLength={4}
                     onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    placeholder={brand === "Amex" ? "4 digits" : "3 digits"}
+                    placeholder={t("payment.digits", { count: brand === "Amex" ? 4 : 3 })}
                     type="password"
                     value={cvc}
                   />
@@ -747,9 +769,9 @@ export function CheckoutForm({
             <div className="bg-surface-container-low p-space-md rounded-xl flex items-start gap-space-sm">
               <span className="material-symbols-outlined text-primary text-xl mt-0.5">event_available</span>
               <div>
-                <div className="font-label-md text-label-md text-primary font-bold">Flexible Cancellation Policy</div>
+                <div className="font-label-md text-label-md text-primary font-bold">{t("payment.cancelTitle")}</div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Cancel in one tap for a 100% refund, no fees, up to 24 hours before your <strong>{schedule.cancelLabel}</strong> start time.
+                  {t.rich("payment.cancelText", { when: schedule.cancelLabel, b: (c) => <strong>{c}</strong> })}
                 </p>
               </div>
             </div>
@@ -759,7 +781,7 @@ export function CheckoutForm({
         {/* RIGHT COLUMN: summary */}
         <div className="lg:col-span-4 lg:sticky top-24 flex flex-col gap-space-md min-w-0 scroll-mt-24" id="booking-summary">
           <div className="bg-surface-container-lowest rounded-2xl p-space-lg shadow-md flex flex-col gap-space-md">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface pb-space-xs">Booking Summary</h2>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface pb-space-xs">{t("summary.title")}</h2>
             <div className="bg-surface-container-low p-space-md rounded-xl flex items-center gap-space-md">
               <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 ring-2 ring-primary relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -770,21 +792,21 @@ export function CheckoutForm({
                   <Link className="hover:text-primary transition-colors truncate" href={`/sitters/${sitter.slug}`}>
                     <h3 className="font-title-md text-title-md text-on-surface font-bold truncate">{sitter.displayName}</h3>
                   </Link>
-                  <span className="material-symbols-outlined text-primary text-base" title="Verified sitter">
+                  <span className="material-symbols-outlined text-primary text-base" title={t("summary.verified")}>
                     verified
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
-                  <span className="flex items-center text-tertiary-container font-bold">★ {formatRating(sitter.rating)}</span>
+                  <span className="flex items-center text-tertiary-container font-bold">★ {formatRating(sitter.rating, locale)}</span>
                   {sitter.isSuperSitter && (
                     <>
                       <span>•</span>
-                      <span className="bg-secondary/10 text-secondary px-1.5 py-0.5 rounded font-semibold text-xs">Super Sitter</span>
+                      <span className="bg-secondary/10 text-secondary px-1.5 py-0.5 rounded font-semibold text-xs">{t("summary.superSitter")}</span>
                     </>
                   )}
                 </div>
                 <div className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  {sitter.completedBookings}+ {doneWord} completed
+                  {t(service.type === "DOG_WALKING" ? "summary.completedWalks" : "summary.completedBookings", { count: sitter.completedBookings })}
                 </div>
               </div>
             </div>
@@ -793,14 +815,14 @@ export function CheckoutForm({
               <div className="flex items-start gap-space-sm text-on-surface-variant">
                 <span className="material-symbols-outlined text-primary text-lg mt-0.5">{SERVICE_ICONS[service.type] ?? "pets"}</span>
                 <div>
-                  <span className="font-semibold text-on-surface block">Service</span>
+                  <span className="font-semibold text-on-surface block">{t("summary.service")}</span>
                   <span>{service.line}</span>
                 </div>
               </div>
               <div className="flex items-start gap-space-sm text-on-surface-variant">
                 <span className="material-symbols-outlined text-primary text-lg mt-0.5">calendar_month</span>
                 <div>
-                  <span className="font-semibold text-on-surface block">Date &amp; Time</span>
+                  <span className="font-semibold text-on-surface block">{t("summary.dateTime")}</span>
                   <span>{schedule.dateLabel}</span>
                   <span className="block text-primary font-medium">{schedule.timeLabel}</span>
                   {schedule.seriesLabel && (
@@ -809,10 +831,10 @@ export function CheckoutForm({
                       {schedule.seriesLabel}
                     </span>
                   )}
-                  {schedule.meet && <span className="block">Free Meet &amp; Greet requested</span>}
+                  {schedule.meet && <span className="block">{t("summary.meet")}</span>}
                   <Link className="inline-flex items-center gap-0.5 text-primary font-semibold hover:underline mt-0.5" href={schedule.changeHref}>
                     <span className="material-symbols-outlined text-sm">edit_calendar</span>
-                    Change dates
+                    {t("summary.changeDates")}
                   </Link>
                 </div>
               </div>
@@ -822,13 +844,13 @@ export function CheckoutForm({
                   <div className="min-w-0 flex flex-col gap-0.5">
                     <span className="font-semibold">
                       {schedule.occurrenceCount > 1
-                        ? `${conflicts.length} of ${schedule.occurrenceCount} weekly dates aren't available`
-                        : "This time isn't available"}
+                        ? t("summary.conflictsSeries", { count: conflicts.length, total: schedule.occurrenceCount })
+                        : t("summary.conflictOne")}
                     </span>
                     {conflicts.slice(0, 6).map((c) => (
                       <span key={c.date}>{schedule.occurrenceCount > 1 ? `${c.date}: ${c.error}` : c.error}</span>
                     ))}
-                    {conflicts.length > 6 && <span>and {conflicts.length - 6} more</span>}
+                    {conflicts.length > 6 && <span>{t("summary.more", { count: conflicts.length - 6 })}</span>}
                   </div>
                 </div>
               )}
@@ -836,7 +858,7 @@ export function CheckoutForm({
                 <span className="material-symbols-outlined text-primary text-lg mt-0.5">location_on</span>
                 <div className="flex-1 min-w-0">
                   <label className="font-semibold text-on-surface block" htmlFor="meeting-address">
-                    Meeting &amp; Drop-off Address
+                    {t("summary.address")}
                   </label>
                   <textarea
                     className="w-full bg-transparent resize-none rounded-md px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -855,12 +877,12 @@ export function CheckoutForm({
             <div className="flex flex-col gap-space-xs">
               {series && (
                 <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
-                  Per {stay ? "booking" : "visit"} · {schedule.weeks} weekly occurrences
+                  {t(stay ? "summary.perBookingSeries" : "summary.perVisitSeries", { weeks: schedule.weeks })}
                 </span>
               )}
               {selected.length > 1 && (
                 <span className="font-label-md text-label-md text-on-surface" data-testid="summary-pets">
-                  {selected.length} pets · {names}
+                  {t("summary.petsCount", { count: selected.length, names })}
                 </span>
               )}
               {quote.lines.map((l, i) => (
@@ -870,54 +892,56 @@ export function CheckoutForm({
                   key={`${l.label}-${i}`}
                 >
                   <span className="min-w-0">
-                    {i === 0 && !stay ? `${quote.units}x ${service.line}` : l.label}{" "}
-                    <InfoTip {...explainLine(l, i, { firstName: sitter.firstName, service: detailService, provinceCode, units: quote.units })} />
+                    {i === 0 && !stay ? t("summary.firstLine", { units: quote.units, service: service.line }) : priceLineLabel(l, i, locale)}{" "}
+                    <InfoTip {...explainLine(l, i, { firstName: sitter.firstName, service: detailService, provinceCode, units: quote.units }, locale)} />
                   </span>
-                  <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents, { exact: true })}</span>
+                  <span className="font-semibold text-on-surface whitespace-nowrap">{money(l.amountCents)}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
                 <span className="flex items-center gap-1">
-                  WagShield Vet Protection
+                  {t("summary.wagShield")}
                   <InfoTip {...feeText.wagShield} />
                 </span>
-                <span className="font-semibold text-on-surface">{formatMoney(price.protectionFeeCents, { exact: true })}</span>
+                <span className="font-semibold text-on-surface">{money(price.protectionFeeCents)}</span>
               </div>
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
                 <span className="flex items-center gap-1">
-                  Platform Service Fee
+                  {t("summary.serviceFee")}
                   <InfoTip {...feeText.serviceFee} />
                 </span>
-                <span className="font-semibold text-on-surface">{formatMoney(price.serviceFeeCents, { exact: true })}</span>
+                <span className="font-semibold text-on-surface">{money(price.serviceFeeCents)}</span>
               </div>
               {price.discountCents > 0 && (
                 <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-secondary font-medium">
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">local_offer</span>
-                    WagPoints Discount{series ? " (first visit)" : ""}
+                    {series ? t("summary.discountFirst") : t("summary.discount")}
                     <InfoTip {...feeText.wagPoints} />
                   </span>
-                  <span>-{formatMoney(price.discountCents, { exact: true })}</span>
+                  <span>-{money(price.discountCents)}</span>
                 </div>
               )}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
                 <span className="flex items-center gap-1">
-                  HST ({taxRateBps / 100}%)
+                  {t("summary.tax", { label: tax, pct: (taxRateBps / 100).toLocaleString(intlLocale(locale), { maximumFractionDigits: 3 }) })}
                   <InfoTip {...feeText.tax} />
                 </span>
-                <span className="font-semibold text-on-surface">{formatMoney(price.taxCents, { exact: true })}</span>
+                <span className="font-semibold text-on-surface">{money(price.taxCents)}</span>
               </div>
               {series && (
                 <>
                   <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface border-t border-surface-container-high pt-space-xs">
-                    <span>First {stay ? "booking" : "visit"}</span>
-                    <span className="font-semibold">{formatMoney(price.totalCents, { exact: true })}</span>
+                    <span>{t(stay ? "summary.firstBooking" : "summary.firstVisit")}</span>
+                    <span className="font-semibold">{money(price.totalCents)}</span>
                   </div>
                   <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface">
                     <span>
-                      {schedule.weeks - 1} more{restSame ? ` × ${formatMoney(prices[1]?.totalCents ?? 0, { exact: true })}` : " (holiday rates vary)"}
+                      {restSame
+                        ? t("summary.moreSame", { count: schedule.weeks - 1, price: money(prices[1]?.totalCents ?? 0) })
+                        : t("summary.moreVary", { count: schedule.weeks - 1 })}
                     </span>
-                    <span className="font-semibold">{formatMoney(restCents, { exact: true })}</span>
+                    <span className="font-semibold">{money(restCents)}</span>
                   </div>
                 </>
               )}
@@ -925,9 +949,9 @@ export function CheckoutForm({
 
             <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline gap-space-sm mt-space-xs">
               <div>
-                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold block">Total Due</span>
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold block">{t("summary.totalDue")}</span>
                 <span className="font-label-sm text-label-sm text-primary font-medium">
-                  {series ? `${schedule.weeks} weekly ${stay ? "bookings" : "visits"} · incl. HST` : "Incl. HST & WagShield"}
+                  {series ? t(stay ? "summary.seriesBookings" : "summary.seriesVisits", { weeks: schedule.weeks, tax }) : t("summary.inclTax", { tax })}
                 </span>
               </div>
               <div className="font-headline-lg text-headline-lg text-primary font-extrabold tracking-tight" data-testid="checkout-total">
@@ -942,7 +966,7 @@ export function CheckoutForm({
               target="_blank"
             >
               <span className="material-symbols-outlined text-sm">help</span>
-              How pricing works
+              {t("summary.pricingLink")}
             </Link>
 
             <button
@@ -954,12 +978,12 @@ export function CheckoutForm({
               <span className="material-symbols-outlined text-xl transition-transform group-hover:scale-110">
                 {pending ? "progress_activity" : "shield_lock"}
               </span>
-              <span>{pending ? "Processing…" : `Confirm & Pay (${total}) 🐾`}</span>
+              <span>{pending ? t("summary.processing") : t("summary.pay", { total })}</span>
             </button>
             {notReady && !error && (
               <a className="font-body-sm text-body-sm text-on-surface-variant text-center flex items-center justify-center gap-1 hover:text-primary" href="#before-booking">
                 <span className="material-symbols-outlined text-base">checklist</span>
-                Finish the &ldquo;Before your first booking&rdquo; steps to book.
+                {t("summary.finishSteps")}
               </a>
             )}
             {error && (
@@ -972,25 +996,27 @@ export function CheckoutForm({
               </div>
             )}
             <p className="font-label-sm text-label-sm text-center text-on-surface-variant/80">
-              By clicking &lsquo;Confirm &amp; Pay&rsquo;, you agree to our{" "}
-              <Link className="underline hover:text-primary" href="#">
-                Terms of Service
-              </Link>
-              .
+              {t.rich("summary.terms", {
+                link: (c) => (
+                  <Link className="underline hover:text-primary" href="#">
+                    {c}
+                  </Link>
+                ),
+              })}
             </p>
 
             <div className="flex flex-col gap-space-xs pt-space-xs">
               <div className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
                 <span className="material-symbols-outlined text-primary text-base">verified_user</span>
-                <span>100% Money-Back Guarantee</span>
+                <span>{t("summary.moneyBack")}</span>
               </div>
               <div className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
                 <span className="material-symbols-outlined text-primary text-base">local_hospital</span>
-                <span>Up to {formatMoney(fees.vetCoverageCents)} Emergency Vet Coverage</span>
+                <span>{t("summary.vetCoverage", { amount: formatMoney(fees.vetCoverageCents, { locale }) })}</span>
               </div>
               <div className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
                 <span className="material-symbols-outlined text-primary text-base">support_agent</span>
-                <span>24/7 Pet Parent Support Line</span>
+                <span>{t("summary.support")}</span>
               </div>
             </div>
           </div>
@@ -999,7 +1025,7 @@ export function CheckoutForm({
               <span className="material-symbols-outlined text-xl">favorite</span>
             </div>
             <div className="font-body-sm text-body-sm text-on-surface-variant">
-              Every booking helps us donate shelter and food to a rescue pet in need.
+              {t("summary.donate")}
             </div>
           </div>
         </div>
@@ -1008,7 +1034,7 @@ export function CheckoutForm({
       {/* Mobile: the summary and pay button sit below a long form — keep the total and a way there in reach. */}
       <MobileStickyBar targetId="booking-summary">
         <div className="flex flex-col min-w-0">
-          <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Total due</span>
+          <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{t("summary.stickyTotal")}</span>
           <span className="font-headline-sm text-headline-sm text-primary leading-tight">{total}</span>
         </div>
         <button
@@ -1017,7 +1043,7 @@ export function CheckoutForm({
           type="button"
         >
           <span className="material-symbols-outlined text-lg">shield_lock</span>
-          Review &amp; Pay
+          {t("summary.reviewPay")}
         </button>
       </MobileStickyBar>
     </form>

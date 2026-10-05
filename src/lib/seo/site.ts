@@ -20,3 +20,16 @@ export function absoluteUrl(path = "/"): string {
 }
 
 export const SITE_NAME = "WagStays";
+
+/**
+ * `alternates` metadata for a page that exists in every site language: canonical points at this language's URL and
+ * hreflang links point at the others. `path` is the English path ("/sitters/x").
+ *   alternates: localeAlternates("/pricing", locale)
+ */
+export function localeAlternates(path: string, locale: string) {
+  const fr = `/fr${path === "/" ? "" : path}`;
+  return {
+    canonical: locale === "fr" ? fr : path,
+    languages: { "en-CA": path, "fr-CA": fr, "x-default": path },
+  };
+}

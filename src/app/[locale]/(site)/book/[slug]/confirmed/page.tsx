@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -11,14 +11,22 @@ import { SERVICE_ICONS, serviceLine } from "../_lib";
 import { getPlatformSettings } from "@/lib/settings";
 import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 import { bookingPriceLines } from "@/lib/quote";
+import { priceLineLabel, taxName } from "@/lib/price-details";
 import { bookingPets, petNames } from "@/lib/pets";
 import { localizedPath } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Booking Requested" };
+export async function generateMetadata() {
+  const t = await getTranslations("booking.confirmed");
+  return { title: t("metaTitle") };
+}
 
 export default async function BookingConfirmedPage({ params, searchParams }: PageProps<"/[locale]/book/[slug]/confirmed">) {
   const { slug } = await params;
   const { id } = await searchParams;
+  const locale = await getLocale();
+  const t = await getTranslations("booking.confirmed");
+  const tc = await getTranslations("booking.checkout");
+  const money = (c: number) => formatMoney(c, { exact: true, locale });
   const bookingId = Array.isArray(id) ? id[0] : id;
 
   const user = await getCurrentUser();
@@ -45,29 +53,31 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
   const end = toZonedParts(booking.endAt);
   const slot = TIME_SLOTS.find((s) => s.start === start.hhmm);
   const timeLabel = stay
-    ? `Drop-off ${formatClock(start.hhmm)} · ${quantityLabel(booking.service.type, booking.quantity)}`
+    ? tc("schedule.dropOffQty", { time: formatClock(start.hhmm, locale), qty: quantityLabel(booking.service.type, booking.quantity, locale) })
     : slot
-      ? slotRange(slot)
-      : `${formatClock(start.hhmm)} – ${formatClock(end.hhmm)}`;
+      ? slotRange(slot, locale)
+      : `${formatClock(start.hhmm, locale)} – ${formatClock(end.hhmm, locale)}`;
   const seriesTotal = series.reduce((n, b) => n + b.totalCents, 0);
   const ref = `#WS-${booking.id.slice(-6).toUpperCase()}`;
 
   const rows = [
-    { icon: SERVICE_ICONS[booking.service.type] ?? "pets", label: "Service", value: serviceLine(booking.service) },
+    { icon: SERVICE_ICONS[booking.service.type] ?? "pets", label: t("service"), value: serviceLine(booking.service, locale) },
     pets.length > 1
-      ? { icon: "pets", label: `${pets.length} Pets`, value: petNames(pets.map((p) => p.name)) }
-      : { icon: "pets", label: "Pet", value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
+      ? { icon: "pets", label: t("pets", { count: pets.length }), value: petNames(pets.map((p) => p.name), locale) }
+      : { icon: "pets", label: t("pet"), value: `${booking.pet.name}${booking.pet.breed ? ` (${booking.pet.breed})` : ""}` },
     {
       icon: "calendar_month",
-      label: "Date & Time",
-      value: stay ? `${formatDayLong(start.iso)} → ${formatDayLong(end.iso)}` : formatLongDate(start.iso),
-      extra: `${timeLabel}${series.length > 1 ? ` · Weekly, ${series.length} weeks` : booking.recurringWeekly ? " · Repeats weekly" : ""}`,
+      label: t("dateTime"),
+      value: stay
+        ? tc("schedule.dateRange", { from: formatDayLong(start.iso, locale), to: formatDayLong(end.iso, locale) })
+        : formatLongDate(start.iso, locale),
+      extra: `${timeLabel}${series.length > 1 ? ` · ${t("weekly", { count: series.length })}` : booking.recurringWeekly ? ` · ${t("repeats")}` : ""}`,
     },
-    { icon: "location_on", label: "Meeting Address", value: booking.meetingAddress ?? "—" },
+    { icon: "location_on", label: t("address"), value: booking.meetingAddress ?? "—" },
     {
       icon: "credit_card",
-      label: "Payment",
-      value: booking.cardBrand && booking.cardLast4 ? `${booking.cardBrand} ending in ${booking.cardLast4}` : "Card on file",
+      label: t("payment"),
+      value: booking.cardBrand && booking.cardLast4 ? t("card", { brand: booking.cardBrand, last4: booking.cardLast4 }) : t("cardOnFile"),
     },
   ];
 
@@ -79,11 +89,10 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
             <span className="material-symbols-outlined text-4xl">check_circle</span>
           </div>
           <div className="flex flex-col gap-space-xs">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Booking Requested · {ref}</span>
-            <h1 className="font-headline-md text-headline-md text-on-surface">You&apos;re all set, {user.firstName}! 🐾</h1>
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">{t("requested", { ref })}</span>
+            <h1 className="font-headline-md text-headline-md text-on-surface">{t("allSet", { name: user.firstName })}</h1>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
-              We&apos;ve sent your request to {booking.sitter.displayName}. Your card is only charged once {booking.sitter.displayName.split(" ")[0]}{" "}
-              confirms — funds are held securely until after the booking.
+              {t("sent", { sitter: booking.sitter.displayName, first: booking.sitter.displayName.split(" ")[0] })}
             </p>
           </div>
         </section>
@@ -100,18 +109,18 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
                 <span className="material-symbols-outlined text-primary text-base">verified</span>
               </div>
               <div className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mt-0.5">
-                <span className="text-tertiary-container font-bold">★ {formatRating(booking.sitter.rating)}</span>
+                <span className="text-tertiary-container font-bold">★ {formatRating(booking.sitter.rating, locale)}</span>
                 {booking.sitter.isSuperSitter && (
                   <>
                     <span>•</span>
-                    <span className="bg-secondary/10 text-secondary px-1.5 py-0.5 rounded font-semibold text-xs">Super Sitter</span>
+                    <span className="bg-secondary/10 text-secondary px-1.5 py-0.5 rounded font-semibold text-xs">{tc("summary.superSitter")}</span>
                   </>
                 )}
               </div>
             </div>
             <span className="hidden sm:inline-flex items-center gap-1 bg-secondary-fixed/60 text-secondary px-space-sm py-1 rounded-full font-label-sm text-label-sm font-semibold">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              Awaiting confirmation
+              {t("awaiting")}
             </span>
           </div>
 
@@ -132,55 +141,56 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
 
           <div className="flex flex-col gap-space-xs font-body-md text-body-md text-on-surface-variant">
             {series.length > 1 && (
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">First of {series.length} weekly bookings</span>
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{t("firstOfSeries", { count: series.length })}</span>
             )}
             {lines.map((l, i) => (
               <div className="flex justify-between gap-space-sm" data-price-line key={`${l.label}-${i}`}>
-                <span className="min-w-0">{l.label}</span>
-                <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents, { exact: true })}</span>
+                <span className="min-w-0">{priceLineLabel(l, i, locale)}</span>
+                <span className="font-semibold text-on-surface whitespace-nowrap">{money(l.amountCents)}</span>
               </div>
             ))}
             <div className="flex justify-between">
-              <span>WagShield Vet Protection</span>
-              <span className="font-semibold text-on-surface">{formatMoney(booking.protectionFeeCents, { exact: true })}</span>
+              <span>{tc("summary.wagShield")}</span>
+              <span className="font-semibold text-on-surface">{money(booking.protectionFeeCents)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Platform Service Fee</span>
-              <span className="font-semibold text-on-surface">{formatMoney(booking.serviceFeeCents, { exact: true })}</span>
+              <span>{tc("summary.serviceFee")}</span>
+              <span className="font-semibold text-on-surface">{money(booking.serviceFeeCents)}</span>
             </div>
             {booking.discountCents > 0 && (
               <div className="flex justify-between text-secondary font-medium">
-                <span>WagPoints Discount</span>
-                <span>-{formatMoney(booking.discountCents, { exact: true })}</span>
+                <span>{tc("summary.discount")}</span>
+                <span>-{money(booking.discountCents)}</span>
               </div>
             )}
             <div className="flex justify-between">
-              <span>HST</span>
-              <span className="font-semibold text-on-surface">{formatMoney(booking.taxCents, { exact: true })}</span>
+              <span>{taxName("HST", locale)}</span>
+              <span className="font-semibold text-on-surface">{money(booking.taxCents)}</span>
             </div>
           </div>
           <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{series.length > 1 ? "First booking" : "Total"}</span>
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{series.length > 1 ? t("firstBooking") : t("total")}</span>
             <span className="font-headline-md text-headline-md text-primary font-extrabold" data-testid="confirmed-total">
-              {formatMoney(booking.totalCents, { exact: true })}
+              {money(booking.totalCents)}
             </span>
           </div>
           {series.length > 1 && (
             <div className="flex flex-col gap-space-sm">
-              <h3 className="font-title-md text-title-md text-on-surface">Your weekly schedule</h3>
+              <h3 className="font-title-md text-title-md text-on-surface">{t("schedule")}</h3>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
                 {series.map((b, i) => (
                   <li className="flex items-center justify-between gap-space-sm bg-surface-container-low rounded-xl px-space-md py-space-xs" key={b.id}>
                     <span>
-                      <span className="font-semibold text-on-surface">Week {i + 1}</span> · {formatDayLong(zonedParts(b.startAt.getTime(), booking.sitter.city.timeZone).iso)}
+                      <span className="font-semibold text-on-surface">{t("week", { n: i + 1 })}</span> ·{" "}
+                      {formatDayLong(zonedParts(b.startAt.getTime(), booking.sitter.city.timeZone).iso, locale)}
                     </span>
-                    <span className="font-semibold text-on-surface">{formatMoney(b.totalCents, { exact: true })}</span>
+                    <span className="font-semibold text-on-surface">{money(b.totalCents)}</span>
                   </li>
                 ))}
               </ul>
               <div className="bg-surface-container p-space-md rounded-xl flex justify-between items-baseline">
-                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">All {series.length} weeks</span>
-                <span className="font-headline-sm text-headline-sm text-primary font-extrabold">{formatMoney(seriesTotal, { exact: true })}</span>
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{t("allWeeks", { count: series.length })}</span>
+                <span className="font-headline-sm text-headline-sm text-primary font-extrabold">{money(seriesTotal)}</span>
               </div>
             </div>
           )}
@@ -193,21 +203,21 @@ export default async function BookingConfirmedPage({ params, searchParams }: Pag
             href="/"
           >
             <span className="material-symbols-outlined text-xl">home</span>
-            Back to Home
+            {t("backHome")}
           </Link>
           <Link
             className="w-full sm:w-auto py-3 px-space-lg rounded-full bg-surface-container-lowest text-primary ring-1 ring-primary/30 font-label-lg text-label-lg font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-space-xs"
             href={`/sitters/${booking.sitter.slug}`}
           >
             <span className="material-symbols-outlined text-xl">person</span>
-            View Sitter
+            {t("viewSitter")}
           </Link>
           <Link
             className="w-full sm:w-auto py-3 px-space-lg rounded-full bg-primary text-on-primary font-label-lg text-label-lg font-bold hover:bg-primary-container transition-all flex items-center justify-center gap-space-xs"
             href="/account/bookings"
           >
             <span className="material-symbols-outlined text-xl">event_note</span>
-            View my bookings
+            {t("viewBookings")}
           </Link>
         </div>
       </div>

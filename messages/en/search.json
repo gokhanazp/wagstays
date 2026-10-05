@@ -1,1 +1,148 @@
-{}
+{
+  "meta": {
+    "title": "Find a Trusted Pet Sitter",
+    "description": "Search verified dog walkers, boarding hosts and drop-in sitters near you. Filter by price, dog size, home and qualifications."
+  },
+  "page": {
+    "liveArea": "Live area: {city} / {hood}",
+    "guaranteeTitle": "WagStays 100% Trust Guarantee",
+    "guaranteeText": "Every walk and stay is protected by {amount} in WagShield emergency vet coverage.",
+    "learnMore": "Learn More",
+    "resultsTitle": "<hl>{count, plural, one {# trusted sitter} other {# trusted sitters}}</hl> found around {hood}",
+    "list": "List",
+    "map": "Map",
+    "emptyTitle": "No sitters match these filters",
+    "emptyDates": "No sitters are free for those dates with these filters — try other dates or remove a filter or two.",
+    "emptyFilters": "Try widening your price range or removing a filter or two.",
+    "resetFilters": "Reset Filters",
+    "showing": "Showing {first} – {last} of {total} results",
+    "routesTitle": "Kew Gardens & Ashbridges Bay Park",
+    "routesNote": "Most popular walking routes for dogs"
+  },
+  "sort": {
+    "label": "Sort:",
+    "aria": "Sort results",
+    "recommended": "Recommended",
+    "priceAsc": "Price: low to high",
+    "priceDesc": "Price: high to low",
+    "rating": "Top rated",
+    "distance": "Nearest"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "prev": "Previous page",
+    "next": "Next page"
+  },
+  "petCount": {
+    "label": "Number of pets",
+    "short": "Pets",
+    "fewer": "One pet fewer",
+    "more": "One pet more",
+    "many": "Showing sitters who take {count} pets in one booking.",
+    "one": "In one booking. Extra pets usually cost a little more."
+  },
+  "filters": {
+    "title": "Filters",
+    "reset": "Reset",
+    "rate": {
+      "DOG_WALKING": "Hourly Rate",
+      "BOARDING": "Nightly Rate",
+      "DAY_CARE": "Daily Rate",
+      "DROP_IN": "Per-Visit Rate"
+    },
+    "priceMax": "{amount}+",
+    "maxPrice": "Maximum price",
+    "serviceType": "Service Type",
+    "medical": "Medication & Medical Care",
+    "petType": "Pet Type",
+    "dogSize": "Dog Size",
+    "home": "Home & Environment",
+    "homeRows": {
+      "yard": "Home with a Yard",
+      "smokeFree": "Smoke-Free Home",
+      "noPets": "No Other Pets",
+      "noKids": "Quiet Home, No Kids"
+    },
+    "qualifications": "Sitter Qualifications",
+    "quals": {
+      "superSitter": "Super Sitter",
+      "vet": "Vet Knowledge",
+      "trainer": "Professional Trainer",
+      "idVerified": "ID Verified"
+    },
+    "availability": "Availability",
+    "select": "Select"
+  },
+  "topBar": {
+    "service": "Service",
+    "anyService": "Any Service",
+    "location": "Location",
+    "neighbourhood": "Neighbourhood",
+    "dateRange": "Date Range",
+    "petType": "Pet Type",
+    "petTypeAria": "Pet type",
+    "petsPrefix": "{count} pets · ",
+    "dogAnySize": "Dog · Any Size",
+    "dogsGroup": "Dogs",
+    "otherPetsGroup": "Other pets",
+    "update": "Update Filters"
+  },
+  "dates": {
+    "range": "{from} – {to}",
+    "from": "From {date}",
+    "until": "Until {date}",
+    "add": "Add dates"
+  },
+  "pets": {
+    "anyPet": "Any Pet",
+    "other": "Other",
+    "types": "{count} pet types",
+    "anyDogSize": "Any Dog Size",
+    "oneDog": "1 {dog}",
+    "dogs": "{sizes} Dogs",
+    "sizedDog": {
+      "SMALL": "Small Dog",
+      "MEDIUM": "Medium Dog",
+      "LARGE": "Large Dog",
+      "GIANT": "Giant Dog"
+    },
+    "sizePlural": {
+      "SMALL": "Small",
+      "MEDIUM": "Medium",
+      "LARGE": "Large",
+      "GIANT": "Giant"
+    }
+  },
+  "card": {
+    "viewProfileAria": "View {name}'s profile",
+    "saveFavorite": "Save {name} to favourites",
+    "verified": "ID & background verified",
+    "superSitter": "Super Sitter",
+    "away": "{distance} away",
+    "perUnit": {
+      "WALK": "/ per hour",
+      "NIGHT": "/ per night",
+      "DAY": "/ per day",
+      "VISIT": "/ per visit"
+    },
+    "message": "Message",
+    "viewProfile": "View Profile"
+  },
+  "map": {
+    "recentre": "Recentre map",
+    "nearby": "Nearby",
+    "unitShort": {
+      "WALK": "hr",
+      "NIGHT": "night",
+      "DAY": "day",
+      "VISIT": "visit"
+    }
+  },
+  "petKinds": {
+    "caresFor": "Cares for {kinds}"
+  },
+  "favorite": {
+    "save": "Save to favourites"
+  },
+  "availableRange": "Available {range}"
+}

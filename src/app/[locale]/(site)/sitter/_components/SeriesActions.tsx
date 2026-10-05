@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { sitterSeriesAction, type SeriesState } from "@/app/actions/booking-series";
 import { BTN, TEXTAREA } from "@/components/ui";
@@ -7,6 +8,8 @@ import { Feedback } from "./Feedback";
 
 /** Weekly series controls on the sitter's booking page: accept all pending, cancel this & later weeks. */
 export function SeriesActions({ bookingId, pendingCount, laterCount }: { bookingId: string; pendingCount: number; laterCount: number }) {
+  const t = useTranslations("sitter.seriesActions");
+  const tc = useTranslations("common.actions");
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<SeriesState, FormData>(async (prev, fd) => {
     const res = await sitterSeriesAction(prev, fd);
@@ -25,14 +28,14 @@ export function SeriesActions({ bookingId, pendingCount, laterCount }: { booking
               <input name="intent" type="hidden" value="accept-all" />
               <button className={BTN.sage} disabled={pending} type="submit">
                 <span className="material-symbols-outlined text-lg">done_all</span>
-                Accept all {pendingCount} weekly requests
+                {t("acceptAll", { count: pendingCount })}
               </button>
             </form>
           )}
           {laterCount > 1 && (
             <button className={`${BTN.ghost} border border-[#EFE7DE] text-error`} disabled={pending} onClick={() => setOpen(true)} type="button">
               <span className="material-symbols-outlined text-lg">event_repeat</span>
-              Cancel all future in series ({laterCount})
+              {t("cancelFuture", { count: laterCount })}
             </button>
           )}
         </div>
@@ -43,20 +46,20 @@ export function SeriesActions({ bookingId, pendingCount, laterCount }: { booking
           <input name="intent" type="hidden" value="cancel-later" />
           <label className="flex flex-col gap-space-xs">
             <span className="font-label-lg text-label-lg text-on-surface">
-              Why are you cancelling this and the later weeks? <span className="text-error">*</span>
+              {t("whyCancel")} <span className="text-error">*</span>
             </span>
-            <textarea className={`${TEXTAREA} min-h-[88px]`} maxLength={500} minLength={5} name="reason" placeholder="e.g. I'm moving out of the neighbourhood next month." required />
+            <textarea className={`${TEXTAREA} min-h-[88px]`} maxLength={500} minLength={5} name="reason" placeholder={t("placeholder")} required />
             {state?.fieldErrors?.reason && <span className="font-body-sm text-body-sm text-error">{state.fieldErrors.reason[0]}</span>}
           </label>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Confirmed weeks are cancelled and pending requests declined — {laterCount} booking{laterCount === 1 ? "" : "s"} in total. Earlier weeks stay as they are.
+            {t("explain", { count: laterCount })}
           </p>
           <div className="flex flex-wrap gap-space-sm">
             <button className={BTN.danger} disabled={pending} type="submit">
-              {pending ? "Saving…" : `Cancel ${laterCount} bookings`}
+              {pending ? tc("saving") : t("submit", { count: laterCount })}
             </button>
             <button className={BTN.ghost} disabled={pending} onClick={() => setOpen(false)} type="button">
-              Back
+              {tc("back")}
             </button>
           </div>
         </form>

@@ -1,3 +1,4 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { bookingPets, petKindLabel, petNames } from "@/lib/pets";
 import type { Prisma } from "@prisma/client";
@@ -5,7 +6,7 @@ import { StatusChip } from "@/components/ui";
 import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { allowedTransitions } from "@/lib/booking-lifecycle";
-import { bookingWhen, hasStarted, ownerShortName, petSizeLabel, SERVICE_ICONS, serviceLabel } from "../_lib";
+import { bookingWhen, hasStarted, ownerShortName, petSizeKey, SERVICE_ICONS, serviceKey } from "../_lib";
 import { BookingActions } from "./BookingActions";
 import { OwnerReputation } from "./OwnerReputation";
 import { PetPhoto } from "./PetPhoto";
@@ -22,9 +23,7 @@ export const bookingCardInclude = {
 
 export type BookingCardData = Prisma.BookingGetPayload<{ include: typeof bookingCardInclude }>;
 
-const STATUS_LABEL_SITTER: Partial<Record<BookingStatus, string>> = { PENDING: "Needs your response" };
-
-export function BookingCard({
+export async function BookingCard({
   booking: b,
   tz,
   withActions = false,
@@ -36,8 +35,11 @@ export function BookingCard({
   /** position in a weekly series ("Week 2 of 6"), from seriesPositions() */
   series?: { index: number; total: number };
 }) {
-  const status = BOOKING_STATUS_LABELS[b.status as BookingStatus] ?? BOOKING_STATUS_LABELS.DRAFT;
-  const size = petSizeLabel(b.pet.size);
+  const [t, tc, locale] = await Promise.all([getTranslations("sitter"), getTranslations("common"), getLocale()]);
+  const statusKey = (b.status in BOOKING_STATUS_LABELS ? b.status : "DRAFT") as BookingStatus;
+  const status = BOOKING_STATUS_LABELS[statusKey];
+  const size = b.pet.size ? tc(petSizeKey(b.pet.size)) : null;
+  const actorLabel = (a: string | null) => (a === "OWNER" || a === "SITTER" || a === "ADMIN" ? t(`actor.${a}`) : (a ?? "").toLowerCase() || "—");
   const pets = bookingPets(b);
   const multi = pets.length > 1;
   return (
@@ -46,53 +48,56 @@ export function BookingCard({
         <PetPhoto className="w-16 h-16 rounded-2xl" name={b.pet.name} url={b.pet.photoUrl} />
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-space-xs">
-            <h3 className="font-title-md text-title-md text-on-surface">{petNames(pets.map((p) => p.name))}</h3>
+            <h3 className="font-title-md text-title-md text-on-surface">{petNames(pets.map((p) => p.name), locale)}</h3>
             {multi ? (
               <span className="inline-flex items-center gap-0.5 px-space-sm py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold" data-testid="pet-count">
                 <span className="material-symbols-outlined text-sm">pets</span>
-                {pets.length} pets
+                {t("petCount", { count: pets.length })}
               </span>
             ) : (
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                {[b.pet.species === "OTHER" && petKindLabel(b.pet), b.pet.breed, size].filter(Boolean).join(" · ")}
+                {[b.pet.species === "OTHER" && petKindLabel(b.pet, locale), b.pet.breed, size].filter(Boolean).join(" · ")}
               </span>
             )}
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Pet parent: <span className="text-on-surface font-semibold">{ownerShortName(b.owner)}</span>
+            {t.rich("bookingCard.petParent", {
+              name: ownerShortName(b.owner),
+              b: (c) => <span className="text-on-surface font-semibold">{c}</span>,
+            })}
           </p>
           <OwnerReputation ownerId={b.owner.id} />
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className="font-title-md text-title-md text-primary">{formatMoney(b.subtotalCents)}</span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">you earn</span>
+          <span className="font-title-md text-title-md text-primary">{formatMoney(b.subtotalCents, { locale })}</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">{t("bookingCard.youEarn")}</span>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-space-xs">
-        <StatusChip tone={status.tone}>{STATUS_LABEL_SITTER[b.status as BookingStatus] ?? status.label}</StatusChip>
+        <StatusChip tone={status.tone}>{statusKey === "PENDING" ? t("needsResponse") : tc(`enums.bookingStatus.${statusKey}`)}</StatusChip>
         <StatusChip icon={SERVICE_ICONS[b.service.type]}>
-          {serviceLabel(b.service.type)}
-          {b.service.durationMins ? ` · ${b.service.durationMins} min` : ""}
+          {tc(serviceKey(b.service.type))}
+          {b.service.durationMins ? ` · ${t("durationMins", { mins: b.service.durationMins })}` : ""}
         </StatusChip>
         {b.meetAndGreet && (
           <StatusChip icon="handshake" tone="primary">
-            Meet &amp; Greet first
+            {t("bookingCard.meetGreetFirst")}
           </StatusChip>
         )}
-        {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity)}</StatusChip>}
+        {(isStayService(b.service.type) || b.quantity > 1) && <StatusChip icon="date_range">{quantityLabel(b.service.type, b.quantity, locale)}</StatusChip>}
         {series ? (
           <StatusChip icon="repeat" tone="primary">
-            Week {series.index} of {series.total}
+            {t("bookingCard.weekOf", { index: series.index, total: series.total })}
           </StatusChip>
         ) : (
-          b.recurringWeekly && <StatusChip icon="repeat">Weekly</StatusChip>
+          b.recurringWeekly && <StatusChip icon="repeat">{t("bookingCard.weekly")}</StatusChip>
         )}
       </div>
 
       <p className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
         <span className="material-symbols-outlined text-xl text-secondary">calendar_month</span>
-        {bookingWhen(b.startAt, b.endAt, tz)}
+        {bookingWhen(b.startAt, b.endAt, tz, locale)}
       </p>
 
       {pets.some((p) => p.traits.length > 0) && (
@@ -115,7 +120,7 @@ export function BookingCard({
       )}
       {(b.status === "DECLINED" || b.status === "CANCELLED") && b.cancelReason && (
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          {b.status === "CANCELLED" ? `Cancelled by ${(b.cancelledBy ?? "").toLowerCase() || "—"}: ` : "Reason: "}
+          {b.status === "CANCELLED" ? t("bookingCard.cancelledBy", { who: actorLabel(b.cancelledBy) }) : t("bookingCard.reason")}
           {b.cancelReason}
         </p>
       )}
@@ -135,7 +140,7 @@ export function BookingCard({
           <span />
         )}
         <Link className="inline-flex items-center gap-1 font-label-lg text-label-lg text-primary hover:underline shrink-0" href={`/sitter/bookings/${b.id}`}>
-          View details<span className="material-symbols-outlined text-lg">arrow_forward</span>
+          {t("bookingCard.viewDetails")}<span className="material-symbols-outlined text-lg">arrow_forward</span>
         </Link>
       </div>
     </article>

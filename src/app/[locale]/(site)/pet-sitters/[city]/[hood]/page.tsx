@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { getFees } from "@/lib/settings";
 import { buildLanding, getLandingCity, landingMetadata } from "@/lib/seo/landing";
 import { LandingView } from "../../_components/LandingView";
@@ -16,7 +17,7 @@ async function load(params: PageProps<"/[locale]/pet-sitters/[city]/[hood]">["pa
 }
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/pet-sitters/[city]/[hood]">): Promise<Metadata> {
-  return landingMetadata(await load(params));
+  return landingMetadata(await load(params), await getLocale());
 }
 
 export default async function HoodLandingPage({ params }: PageProps<"/[locale]/pet-sitters/[city]/[hood]">) {

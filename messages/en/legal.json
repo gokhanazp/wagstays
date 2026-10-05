@@ -1,1 +1,213 @@
-{}
+{
+  "doc": {
+    "navAria": "Legal documents",
+    "docs": {
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "pipeda": "PIPEDA Privacy Notice"
+    },
+    "kicker": "Legal",
+    "lastUpdated": "Last updated: {date}",
+    "translationNotice": "This translation is provided for information only. In case of any discrepancy, the English version prevails.",
+    "draftTitle": "Draft — to be reviewed by legal counsel before launch",
+    "draftText": "This is placeholder text prepared for product development. It is not legal advice and is not yet a binding agreement.",
+    "contents": "Contents",
+    "backToTop": "Back to top"
+  },
+  "terms": {
+    "meta": {
+      "title": "Terms of Service",
+      "description": "The terms that apply when you use WagStays to find, book or work as a pet sitter in Canada."
+    },
+    "intro": "Please read these terms carefully. They explain how WagStays works, what we expect from Owners and Sitters, and your rights if something goes wrong.",
+    "about": {
+      "title": "About these terms",
+      "p1": "These Terms of Service (the \"Terms\") form an agreement between you and <b>WagStays Technologies Inc.</b> (\"WagStays\", \"we\", \"us\"), a corporation based in Toronto, Ontario. They apply to our website, apps and related services (the \"Platform\").",
+      "p2": "By creating an account or making a booking you agree to these Terms and to our <privacy>Privacy Policy</privacy>. If you don't agree, please don't use the Platform."
+    },
+    "marketplace": {
+      "title": "WagStays is a marketplace",
+      "p1": "WagStays connects pet parents (\"Owners\") with independent pet care providers (\"Sitters\"). Sitters are independent contractors, not employees or agents of WagStays. Each booking is a contract directly between the Owner and the Sitter; WagStays provides the tools to find, book, pay and communicate.",
+      "p2": "We verify Sitters as described on our site (for example government-issued photo ID and a Police Vulnerable Sector Check), but we don't guarantee the quality, safety or legality of any service."
+    },
+    "accounts": {
+      "title": "Accounts and eligibility",
+      "li1": "You must be at least 18 years old and able to enter into a binding contract in your province or territory.",
+      "li2": "Keep your account details accurate and your password confidential. You're responsible for activity on your account.",
+      "li3": "One person, one account. We may suspend accounts that are fake, duplicated or used in breach of these Terms."
+    },
+    "bookings": {
+      "title": "Bookings, payments and fees",
+      "p1": "Prices are set by Sitters and are shown in Canadian dollars <b>before tax</b>. Applicable sales tax (for example 13% HST in Ontario) appears as a separate line at checkout. Each booking also includes a WagStays service fee (currently {serviceFee}) and WagShield Protection (currently {wagShieldFee}).",
+      "p2": "Payments are processed by our payment partner using Secure Hold Payments: your card is authorised when you book, charged once the Sitter accepts, and funds are released to the Sitter after the service is completed.",
+      "p3": "WagPoints are promotional credits with no cash value. They can't be transferred or redeemed for cash and may expire."
+    },
+    "cancellations": {
+      "title": "Cancellations and refunds",
+      "p1": "Owners may cancel a pending request at any time at no cost. Cancellation terms for confirmed bookings are shown before you pay. If a Sitter cancels a confirmed booking, you receive a full refund and any WagPoints used are returned.",
+      "p2": "Nothing in these Terms limits any rights you have under the Ontario <em>Consumer Protection Act, 2002</em> or other applicable consumer protection law."
+    },
+    "conduct": {
+      "title": "Your responsibilities",
+      "owners": "<b>Owners</b> agree to describe their pets honestly (including health, behaviour and vaccination status), keep pets licensed where required by local by-laws, and provide emergency and veterinary contacts.",
+      "sitters": "<b>Sitters</b> agree to provide services with reasonable care and skill, follow the Owner's care instructions, comply with local by-laws (for example leash and stoop-and-scoop rules) and keep their verification documents up to date.",
+      "everyone": "Everyone agrees not to:",
+      "li1": "take payments or arrange bookings off the Platform for people met through WagStays;",
+      "li2": "harass, discriminate against or threaten other users;",
+      "li3": "post false, misleading or infringing content, including fake reviews;",
+      "li4": "misuse messaging, for example by sending spam or sharing someone else's personal information."
+    },
+    "messaging": {
+      "title": "Messages and reviews",
+      "p1": "Use WagStays messaging to discuss bookings. To protect the community, we may review messages that are reported to us or flagged by automated safety tools. Reviews must reflect a genuine experience. We may remove content that breaks these Terms."
+    },
+    "wagshield": {
+      "title": "WagShield Protection",
+      "p1": "WagShield Protection may reimburse eligible veterinary costs up to {coverage} per booking, subject to the WagShield terms, exclusions and claim process published separately. WagShield is not an insurance policy and does not replace your own pet or liability insurance."
+    },
+    "liability": {
+      "title": "Disclaimers and limitation of liability",
+      "p1": "The Platform is provided \"as is\". To the extent permitted by law, WagStays is not liable for indirect or consequential losses, or for the acts or omissions of Owners and Sitters. Our total liability to you for any claim is limited to the fees you paid to WagStays for the booking concerned in the previous 12 months.",
+      "p2": "Some jurisdictions do not allow these limits, so they may not apply to you."
+    },
+    "termination": {
+      "title": "Suspension and termination",
+      "p1": "You can close your account at any time from your account settings or by contacting us. We may suspend or close accounts that breach these Terms, put pets or people at risk, or are required to be closed by law. Bookings already in progress will be handled fairly."
+    },
+    "law": {
+      "title": "Governing law and disputes",
+      "p1": "These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada that apply there. Please contact us first so we can try to resolve any issue informally; otherwise disputes will be heard by the courts of Ontario, sitting in Toronto, unless your local consumer protection law gives you the right to bring a claim where you live."
+    },
+    "changes": {
+      "title": "Changes and contact",
+      "p1": "We may update these Terms from time to time. If a change is material, we will notify you by email or in the app at least 30 days before it takes effect.",
+      "p2": "Questions? Email <mail>{email}</mail> or call {phone}."
+    }
+  },
+  "privacy": {
+    "meta": {
+      "title": "Privacy Policy",
+      "description": "How WagStays collects, uses, shares and protects personal information."
+    },
+    "intro": "Your trust matters — you're letting us into your home and your pet's life. Here's what we collect, why, and the choices you have.",
+    "scope": {
+      "title": "Who we are and what this covers",
+      "p1": "This Privacy Policy explains how <b>WagStays Technologies Inc.</b> (\"WagStays\") handles personal information when you use our website and apps. We comply with Canada's <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA). Our <pipeda>PIPEDA Privacy Notice</pipeda> summarises how we apply its ten fair information principles."
+    },
+    "collect": {
+      "title": "Information we collect",
+      "given": "Information you give us",
+      "given1": "Account details: name, email, phone number, password and profile photo.",
+      "given2": "Pet profiles: name, species, breed, age, care notes, vaccination and microchip details.",
+      "given3": "Booking details: dates, addresses, emergency and veterinary contacts, and messages with Sitters.",
+      "given4": "For Sitters: government-issued photo ID, Police Vulnerable Sector Check results, certifications, home photos and payout details.",
+      "auto": "Information collected automatically",
+      "auto1": "Device and usage information, such as browser type, pages viewed and approximate location.",
+      "auto2": "GPS walk routes when a Sitter shares live updates during a booking.",
+      "auto3": "Cookies needed to keep you signed in and remember your preferences.",
+      "cards": "Card numbers are handled by our payment processor; WagStays only stores the card brand and last four digits."
+    },
+    "use": {
+      "title": "How we use it",
+      "li1": "To create and run your account, and to show Sitter profiles and search results.",
+      "li2": "To process bookings, payments, refunds and WagPoints.",
+      "li3": "To verify Sitters and keep the community safe, including fraud prevention.",
+      "li4": "To provide customer support and send service messages about your bookings.",
+      "li5": "With your consent, to send The Monthly Wag newsletter and offers. You can unsubscribe at any time.",
+      "li6": "To improve the Platform using aggregated or de-identified data."
+    },
+    "share": {
+      "title": "How we share it",
+      "p1": "We don't sell your personal information. We share it only as needed:",
+      "li1": "<b>Between Owners and Sitters</b> for a booking — for example a Sitter sees your first name, pet details and the meeting address.",
+      "li2": "<b>Service providers</b> who act on our behalf (hosting, payments, background checks, email) under contracts that protect your information.",
+      "li3": "<b>Legal reasons</b>, when required by law or to protect the safety of people or animals.",
+      "li4": "<b>Business transfers</b>, such as a merger, subject to this policy."
+    },
+    "transfers": {
+      "title": "Storage and cross-border transfers",
+      "p1": "Some of our service providers may store or process information outside your province or outside Canada, including in the United States. When that happens, your information may be accessible to courts and authorities in those countries. We use contractual and technical safeguards to protect it."
+    },
+    "retention": {
+      "title": "How long we keep it",
+      "p1": "We keep personal information only as long as needed for the purposes above or as required by law (for example tax records). Sitter verification documents are deleted or archived once they are no longer required. When you close your account, we delete or anonymise your information straight away, except where we must keep it (such as booking and payment records)."
+    },
+    "security": {
+      "title": "Security",
+      "p1": "We use safeguards appropriate to the sensitivity of the information, including encryption in transit, access controls and staff training. No system is perfectly secure; if a breach creates a real risk of significant harm, we will notify you and the Office of the Privacy Commissioner of Canada as required by law."
+    },
+    "rights": {
+      "title": "Your choices and rights",
+      "li1": "Access and correct your information from your <settings>account settings</settings>. You can <export>download a copy of your data</export> (a JSON file) at any time, or ask us for one.",
+      "li2": "Withdraw consent to marketing at any time; some processing is needed to provide the service.",
+      "li3": "Close your account yourself from <settings>account settings</settings>. We delete your login, photos and contact details and anonymise the rest; past bookings and payments are kept without your name as a financial record, and reviews you wrote stay up as \"Former member\".",
+      "li4": "Complain to the Office of the Privacy Commissioner of Canada if you're not satisfied with our response."
+    },
+    "children": {
+      "title": "Children",
+      "p1": "WagStays is intended for adults. We don't knowingly collect personal information from anyone under 18."
+    },
+    "contact": {
+      "title": "Changes and contact",
+      "p1": "We'll post any changes here and update the date above. For material changes we'll also notify you by email or in the app.",
+      "p2": "Questions or requests: our Privacy Officer at <mail>{email}</mail> or {phone}."
+    }
+  },
+  "pipeda": {
+    "meta": {
+      "title": "PIPEDA Privacy Notice",
+      "description": "How WagStays applies the ten fair information principles of Canada's PIPEDA."
+    },
+    "intro": "The <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA) sets out ten fair information principles. This notice summarises how WagStays applies each of them.",
+    "accountability": {
+      "title": "Accountability",
+      "p1": "WagStays Technologies Inc. is responsible for personal information under its control and has designated a Privacy Officer who is accountable for our compliance. Service providers who process information for us are bound by contract to protect it."
+    },
+    "purposes": {
+      "title": "Identifying purposes",
+      "p1": "We explain why we collect personal information at or before the time we collect it — to run accounts, process bookings and payments, verify Sitters, keep the community safe and provide support. Details are in our <privacy>Privacy Policy</privacy>."
+    },
+    "consent": {
+      "title": "Consent",
+      "p1": "We obtain meaningful consent for the collection, use and disclosure of personal information. We ask for express consent for sensitive information, such as Sitter background checks, and for marketing. You may withdraw consent at any time, subject to legal or contractual restrictions; we'll explain the consequences, for example that a booking can't proceed without a meeting address."
+    },
+    "limitingCollection": {
+      "title": "Limiting collection",
+      "p1": "We collect only the information needed for the purposes we have identified, and we collect it by fair and lawful means."
+    },
+    "limitingUse": {
+      "title": "Limiting use, disclosure and retention",
+      "p1": "We use and disclose personal information only for the purposes it was collected for, unless you consent or the law requires otherwise. We keep it only as long as necessary and securely destroy or anonymise it afterwards."
+    },
+    "accuracy": {
+      "title": "Accuracy",
+      "p1": "We keep personal information as accurate, complete and up to date as needed. You can update most details yourself from your account settings."
+    },
+    "safeguards": {
+      "title": "Safeguards",
+      "p1": "We protect personal information with security safeguards appropriate to its sensitivity — physical, organisational and technical measures such as encryption in transit, role-based access and staff confidentiality obligations."
+    },
+    "openness": {
+      "title": "Openness",
+      "p1": "Our privacy policies and practices are available on this site in plain language, and we'll answer questions about them on request."
+    },
+    "access": {
+      "title": "Individual access",
+      "p1": "Signed-in members can <export>download a copy of their data</export> and close their account at any time from <settings>account settings</settings>. Closing an account deletes your login, photos and contact details and anonymises the rest; booking and payment records are kept without your name, as the law requires.",
+      "p2": "You can also make a written request: we'll tell you whether we hold personal information about you, how it has been used and to whom it has been disclosed, and give you access to it — normally within 30 days and at no cost. You can challenge its accuracy and ask for corrections."
+    },
+    "challenging": {
+      "title": "Challenging compliance",
+      "p1": "You can raise any concern about our compliance with these principles with our Privacy Officer (below). If you're not satisfied with our response, you may contact the <opc>Office of the Privacy Commissioner of Canada</opc>."
+    },
+    "privacyOfficer": {
+      "title": "Contact our Privacy Officer",
+      "name": "Privacy Officer, WagStays Technologies Inc.",
+      "location": "Toronto, Ontario, Canada",
+      "email": "Email: <mail>{email}</mail>",
+      "phone": "Phone: {phone}",
+      "mailSubject": "Privacy request",
+      "subjectHint": "Please include \"Privacy request\" in the subject line and the email address on your account."
+    }
+  }
+}

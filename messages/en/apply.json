@@ -1,1 +1,421 @@
-{}
+{
+  "meta": {
+    "title": "Become a Sitter",
+    "description": "Join WagStays' verified sitter network. Set your own hours, pets and rates — and earn up to $3,500 a month."
+  },
+  "breadcrumb": {
+    "aria": "Breadcrumb",
+    "home": "Home",
+    "join": "Join Our Pack",
+    "application": "Sitter Application",
+    "status": "Application Status"
+  },
+  "landing": {
+    "badge": "WagStays Verified Sitter Network",
+    "title": "Earn <hl>up to $3,500 a month</hl> doing what you love 🐾",
+    "subtitle": "Join {city}'s most trusted pet care community. Choose your own hours, the pets you welcome and your rates — all on your terms.",
+    "chips": {
+      "free": "100% Free",
+      "coverage": "{amount} Coverage",
+      "payouts": "Weekly Payouts",
+      "support": "24/7 Support"
+    },
+    "newest": {
+      "alt": "Megan R., a recently joined WagStays sitter, hugging a golden retriever and a ginger cat",
+      "label": "Newest Sitter",
+      "bookings": "({count} bookings)"
+    }
+  },
+  "sidebar": {
+    "earningsTitle": "Estimated Monthly Earnings",
+    "live": "Live",
+    "commission": "Industry-low commission: <b>just 15%</b>",
+    "vetCare": "Every booking includes <b>{coverage} WagShield vet care</b>",
+    "approvalTitle": "How Approval Works",
+    "approval": {
+      "review": {
+        "title": "Online Form & Document Review",
+        "text": "Our safety team verifies your details within 12 hours."
+      },
+      "meet": {
+        "title": "15-Minute Video Meet & Greet",
+        "text": "We chat about your love for animals and how you'd handle emergencies."
+      },
+      "live": {
+        "title": "Your Profile Goes Live & First Bookings!",
+        "text": "Start getting requests from pet families in your neighbourhood."
+      }
+    },
+    "faqTitle": "Frequently Asked Questions",
+    "faq": {
+      "rates": {
+        "q": "Can I set my own rates?",
+        "a": "Absolutely! The amounts in the form are just your area's market averages. Enter any rate you like and update it whenever you want."
+      },
+      "paid": {
+        "q": "When do I get paid?",
+        "a": "Earnings are paid by direct deposit the business day after each completed booking — or, if you prefer, in one weekly payout every Tuesday."
+      },
+      "wrong": {
+        "q": "What if something goes wrong?",
+        "a": "Our 24/7 on-call emergency vet line and up to {coverage} in WagShield vet care coverage per booking have your back. You're never on your own."
+      }
+    },
+    "support": {
+      "alt": "WagStays sitter support specialist",
+      "question": "Have questions?",
+      "team": "Sitter Support Team",
+      "chat": "Chat with us"
+    }
+  },
+  "estimator": {
+    "monthlyIncome": "Your Estimated Monthly Income",
+    "perMonth": "/ mo",
+    "perWeek": "≈ {amount} per week",
+    "daysLabel": "Days per week?",
+    "days": "{count, plural, one {# Day} other {# Days}}",
+    "daysMin": "1 day",
+    "daysMid": "Weekends",
+    "daysMax": "Full-time (7 days)",
+    "walksLabel": "Walks / visits per day?",
+    "pets": "{count, plural, one {# Pet} other {# Pets}}",
+    "petsMin": "1 pet",
+    "petsMid": "3 pets",
+    "petsMax": "6 pets (max)"
+  },
+  "form": {
+    "stepsAria": "Application steps",
+    "steps": {
+      "personal": "Personal Info",
+      "services": "Services & Pricing",
+      "experience": "Experience & Home",
+      "verification": "ID & Verification"
+    },
+    "stepStatus": {
+      "done": "Done",
+      "current": "Current",
+      "upNext": "Up Next"
+    },
+    "stepLabel": "Step {n} • {status}",
+    "progressLabel": "Application progress",
+    "progressSummary": "{pct}% Complete — {next}",
+    "readyToSubmit": "Ready to submit!",
+    "lastStep": "Last step!",
+    "stepsToGo": "{count} steps to go!",
+    "section": "Section {n} / 5",
+    "personal": {
+      "label": "Getting Started",
+      "title": "Tell Us About You",
+      "text": "We'll use these details to set up your sitter profile and reach you about your application.",
+      "fromAccount": "From your account",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Megan",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Robinson",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Mobile phone",
+      "phonePlaceholder": "(416) 555-0123",
+      "neighbourhood": "Your neighbourhood",
+      "neighbourhoodPlaceholder": "Choose where you'll host and walk…"
+    },
+    "services": {
+      "title": "Services You'll Offer & Pricing",
+      "text": "You can change these anytime. Suggested market rates for your area are filled in.",
+      "badge": "Set Your Rates",
+      "dropInTitle": "Cat & Home Visits",
+      "offerAria": "Offer {service}",
+      "rateAria": "{service} rate in dollars",
+      "types": {
+        "DOG_WALKING": { "blurb": "45–60 min brisk walk", "rateLabel": "Hourly Base Rate:", "unit": "/hour" },
+        "BOARDING": { "blurb": "Overnight stays in your home", "rateLabel": "Nightly Base Rate:", "unit": "/night" },
+        "DROP_IN": { "blurb": "Food, litter & 30–40 min of play", "rateLabel": "Per-Visit Rate:", "unit": "/visit" },
+        "DAY_CARE": { "blurb": "8:30 AM – 6:30 PM", "rateLabel": "Daily Base Rate:", "unit": "/day" }
+      }
+    },
+    "experience": {
+      "title": "Experience & Pet Preferences",
+      "text": "Share the expertise that will help pet parents book you with confidence.",
+      "yearsQuestion": "How many years of pet care experience do you have?",
+      "years": {
+        "1-3": "1 – 3 Years",
+        "3-6": "3 – 6 Years ⭐",
+        "6+": "6+ Years",
+        "VET": "Vet / Trainer"
+      },
+      "petsQuestion": "Which pets will you care for?",
+      "petsHint": "Pick every kind you're comfortable with — owners can only book you for these.",
+      "dogsLocked": "Dogs stay selected while you offer Dog Walking.",
+      "lockedHint": "You're offering Dog Walking",
+      "sizesTitle": "Dog sizes you can welcome",
+      "sizesHint": "Tick the options that suit your home and physical strength.",
+      "sizes": {
+        "SMALL": "Small Breed",
+        "MEDIUM": "Medium Breed",
+        "LARGE": "Large Breed",
+        "GIANT": "Giant Breed"
+      },
+      "giantExample": " (Great Dane, etc.)",
+      "certsTitle": "Special Skills & Certifications",
+      "certs": {
+        "certFirstAid": { "title": "Vet / Pet First Aid & CPR Certificate", "blurb": "Know exactly what to do in an emergency" },
+        "certMedication": { "title": "Oral & Liquid Medication", "blurb": "For pets on a regular medication routine" },
+        "certPuppy": { "title": "Puppy & Kitten Care Specialist", "blurb": "House-training and high-energy handling" },
+        "certBehaviour": { "title": "Behaviour / Reactive Dog Training", "blurb": "Working with anxious or reactive pets" }
+      }
+    },
+    "home": {
+      "title": "Home & Living Environment",
+      "text": "For boarding and day care especially, the details of your home matter a lot to pet parents.",
+      "whereTitle": "Where Pets Will Stay",
+      "types": {
+        "HOUSE_WITH_YARD": { "title": "House with Yard", "blurb": "Private space with secure fencing" },
+        "APARTMENT": { "title": "Apartment", "blurb": "Spacious living room, elevator building" },
+        "CONDO_BALCONY": { "title": "Condo with Netted Balcony", "blurb": "Cat-safe balcony netting installed" }
+      },
+      "safetyTitle": "Home Safety & Suitability",
+      "criteria": {
+        "smokeFree": "Strictly smoke-free home",
+        "noChildren": "No children aged 0–10 at home",
+        "ownPets": "I have my own friendly pet(s)",
+        "fencedYard": "Fully enclosed, fenced yard"
+      }
+    },
+    "photos": {
+      "title": "Photos of Your Home & Resting Areas",
+      "hint": "Add at least 3 clear photos — it boosts your approval rate by 65%.",
+      "added": "{count}/3 Added",
+      "addAria": "Add home photos",
+      "removeAria": "Remove photo",
+      "addPhotos": "Add Photos",
+      "slotHints": {
+        "living": "Living room & bed",
+        "yard": "Yard or outdoor space",
+        "sleep": "Where pets sleep"
+      },
+      "formats": "PNG, JPG (Max 10 MB)",
+      "skipped": "Some files were skipped — use PNG or JPG images up to 10 MB."
+    },
+    "bio": {
+      "title": "Introduce Yourself (Bio)",
+      "text": "Pet parents read this part of your profile first. The warmer and more detailed it is, the faster you'll land your first booking.",
+      "aria": "Your bio",
+      "placeholder": "e.g. Hi! I grew up with cats and dogs and have been caring for my neighbours' pets for six years. I have a calm, fully vaccinated tabby at home, I send photo and video updates every day, and I'm careful with special diets and medication routines…",
+      "great": "Great bio — pet parents will love it!",
+      "aim": "Aim for at least {min} characters",
+      "more": "{count} more characters to go",
+      "counter": "{count} / {max} characters",
+      "tip": "<b>Tip:</b> Mention how often you can walk each day, your nearest emergency vet and how much time you can give pets during the day — it doubles your approval speed."
+    },
+    "verification": {
+      "title": "Verification & Safety Declaration",
+      "text": "To keep the WagStays community 100% safe, every sitter applicant goes through ID and background screening.",
+      "idTitle": "Government-Issued Photo ID",
+      "idDescription": "Encrypted with 256-bit SSL and handled under PIPEDA",
+      "idButton": "Upload Document",
+      "vscTitle": "Police Vulnerable Sector Check",
+      "vscDescription": "Issued by your local police service within the last 6 months",
+      "vscButton": "Upload PDF",
+      "agreeTerms": "I have read and agree to the WagStays <agreement>Sitter Service Agreement</agreement> and <standards>Pet Safety Standards</standards>.",
+      "agreeAccuracy": "I confirm that all the experience and home details I've provided are complete and accurate, and I agree to an in-home check if required."
+    },
+    "previousStep": "Previous Step",
+    "submitting": "Submitting your application…",
+    "submit": "Submit Application & Send for Review",
+    "sticky": {
+      "complete": "{pct}% complete",
+      "next": "Next: {step}",
+      "submitting": "Submitting…",
+      "submit": "Submit",
+      "continue": "Continue"
+    }
+  },
+  "uploads": {
+    "uploading": "Uploading securely…",
+    "replace": "Replace",
+    "tooLarge": "That file is over 10 MB — please choose a smaller one.",
+    "failed": "Upload failed — please try again.",
+    "invalid": "That file can't be uploaded.",
+    "imageType": "Please use a JPG, PNG or WebP image.",
+    "documentType": "Please upload a PDF, JPG or PNG.",
+    "unavailable": "Upload is unavailable right now — please try again."
+  },
+  "errors": {
+    "firstName": "Please enter your first name.",
+    "lastName": "Please enter your last name.",
+    "email": "Please enter a valid email.",
+    "phone": "Please enter a 10-digit phone number.",
+    "neighbourhood": "Please choose your neighbourhood.",
+    "experience": "Please choose your experience level.",
+    "kindInvalid": "Please choose from the listed pets.",
+    "kindMin": "Choose at least one kind of pet you'll care for.",
+    "homeType": "Please choose your home type.",
+    "bioMin": "Tell pet parents a bit more — at least 80 characters.",
+    "bioMax": "Please keep your bio under 500 characters.",
+    "idDocument": "Please upload a government-issued photo ID.",
+    "agreeTerms": "Please accept the Sitter Service Agreement to continue.",
+    "agreeAccuracy": "Please confirm your information is accurate.",
+    "rateRange": "Enter a rate between {min} and {max}.",
+    "dogWalkingNeedsDog": "Dog Walking means caring for dogs — tick Dog or turn off Dog Walking.",
+    "dogSize": "Tick at least one dog size you can welcome.",
+    "noService": "Turn on at least one service you'd like to offer.",
+    "idMissing": "We couldn't find your ID upload — please upload it again.",
+    "fixFields": "Please fix the highlighted fields below.",
+    "suspended": "Your account is suspended, so you can't apply right now. Please contact support.",
+    "saveFailed": "Something went wrong saving your application. Please try again."
+  },
+  "meetGreet": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "dayTime": "{day}, {time}",
+    "errors": {
+      "invalidCode": "Invalid tracking code.",
+      "pickSlot": "Please pick one of the suggested times.",
+      "unavailable": "That time is no longer available. Please refresh and pick another slot.",
+      "notFound": "We couldn't find that application.",
+      "closed": "This application is no longer booking a Meet & Greet."
+    },
+    "picker": {
+      "booked": "Booked: <b>{label}</b>",
+      "change": "Change time",
+      "emailNote": "We'll email you a Google Meet link and a reminder 30 minutes before.",
+      "suggested": "Suggested times for tomorrow:",
+      "keep": "Keep current time",
+      "another": "Need another time?",
+      "groupAria": "Meet & Greet time",
+      "selected": "Selected time: <b>Tomorrow, {time}</b>",
+      "booking": "Booking…",
+      "confirm": "Confirm Appointment"
+    }
+  },
+  "copyCode": {
+    "title": "Copy tracking code",
+    "aria": "Copy tracking code {code}",
+    "copied": "Copied!",
+    "label": "Tracking code"
+  },
+  "submitted": {
+    "metaTitle": "Application Status",
+    "status": {
+      "IN_REVIEW": "In review",
+      "MEET_GREET": "Meet & Greet booked",
+      "APPROVED": "Approved",
+      "REJECTED": "Not approved"
+    },
+    "stepPill": "Step 4/4 completed",
+    "hero": {
+      "badgeApproved": "You're approved!",
+      "badgeRejected": "Application update",
+      "badgeReceived": "We've got your application!",
+      "titleApproved": "Welcome to the pack! You're now an <hl>official WagStays sitter</hl> 🐾🎉",
+      "titleRejected": "Thank you for applying to WagStays",
+      "titleReceived": "Congratulations! You've taken your <hl>first step</hl> into the <nowrap>WagStays family 🐾🎉</nowrap>",
+      "textApproved": "Your profile is live for pet parents in {hood}. Set up your services, photos and availability to start receiving requests.",
+      "textRejected": "After careful review, we're not able to approve your application right now. This is often about missing documents or experience we couldn't verify — our Sitter Support team can tell you more and help you re-apply.",
+      "textReceived": "Your application and documents are safely in our system. You're only a few steps away from sharing lots of love with the furry friends of {hood} and beyond!",
+      "dashboard": "Go to my Sitter Dashboard",
+      "publicProfile": "View my public profile",
+      "estimatedReview": "Estimated review",
+      "estimatedReviewValue": "12 – 24 hours",
+      "reviewComplete": "Review complete",
+      "securityPassed": "Security check passed",
+      "securityStarted": "Security check started",
+      "imageAlt": "A cheerful young woman hugging a fluffy golden retriever in a sunlit park",
+      "preApproval": "Pre-approval match",
+      "matchScore": "94% match score"
+    },
+    "journey": {
+      "title": "Your Approval Journey",
+      "subtitle": "Become an official WagStays Badge Sitter in 4 steps",
+      "complete": "Complete",
+      "closed": "Closed",
+      "inProgress": "In progress"
+    },
+    "badges": {
+      "underReview": "Under review now",
+      "upNext": "Up next",
+      "completed": "Completed",
+      "pending": "Pending",
+      "notApproved": "Not approved",
+      "notAvailable": "Not available",
+      "bookingOpen": "Up next • Booking open",
+      "booked": "Booked",
+      "finalStep": "Final step"
+    },
+    "step1": {
+      "title": "1. Document & Security Review",
+      "text": "Our team is carefully reviewing your government ID, Police Vulnerable Sector Check and proof of address, in line with PIPEDA.",
+      "reviewPassed": "Review passed",
+      "estDone": "Est. done: {eta}",
+      "docs": "{count}/2 documents uploaded"
+    },
+    "step2": {
+      "title": "2. 15-Minute Online Meet & Greet",
+      "text": "Have a short, friendly Google Meet chat with our WagStays community coordinator and ask anything you're curious about."
+    },
+    "step3": {
+      "title": "3. WagStays Badge & Profile Activation",
+      "text": "Right after your Meet & Greet, your profile goes live for pet parents in {hood} and nearby, and you can start accepting bookings."
+    },
+    "step4": {
+      "title": "4. Welcome Kit & First Booking Support",
+      "text": "We'll ship a WagStays reflective walking leash, a pet first aid handbook, a treat pouch and an emergency info card right to your door."
+    },
+    "summary": {
+      "title": "Application Summary",
+      "edit": "Edit",
+      "services": "Selected services",
+      "serviceLine": "{service} ({price}/{unit})",
+      "pets": "Pets",
+      "sizes": "Accepted sizes",
+      "availability": "Availability",
+      "availabilityValue": "Weekdays & weekends",
+      "target": "Target monthly earnings",
+      "sessions": "With ~14 sessions a week",
+      "perMonth": "/ month",
+      "coverage": "Every service is covered by up to {amount} in WagShield vet care."
+    },
+    "community": {
+      "activeSitters": "1,200+ Active Sitters",
+      "happyPets": "28,000+ happy pets cared for across {city}"
+    },
+    "wait": {
+      "kicker": "Get a head start",
+      "title": "What Can You Do While You Wait?",
+      "text": "Boost your profile score with these mini tasks before your Meet & Greet",
+      "academy": {
+        "duration": "15 min",
+        "points": "+100 profile points",
+        "title": "Wag Academy: Behaviour Basics & First Aid Guide",
+        "text": "A short video series on managing leash tension, first contact with shy dogs and handling emergencies.",
+        "cta": "Watch the Lessons"
+      },
+      "community": {
+        "badge": "Community",
+        "group": "{hood} group",
+        "title": "Join the Sitter WhatsApp & Discord Community",
+        "text": "Meet experienced sitters near you, learn the best park routes and swap stories from the field.",
+        "cta": "Join the Group"
+      },
+      "photos": {
+        "badge": "35% more requests",
+        "title": "Enrich Your Photos & Home Setup",
+        "text": "Add happy photos from past time with pets and, if you have them, the safe resting spots in your home.",
+        "cta": "Upload Photos"
+      }
+    },
+    "support": {
+      "title": "Got a question on your mind?",
+      "text": "Our Sitter Support team is happy to help 7 days a week, from 9:00 AM to 9:00 PM.",
+      "chat": "Chat with us",
+      "email": "Email us"
+    },
+    "dock": {
+      "back": "Back to Home",
+      "booked": "Meet & Greet: {label}",
+      "next": "Next up: pick your 15-min Meet & Greet",
+      "view": "View My Meet & Greet",
+      "pick": "Pick My Meet & Greet Time"
+    }
+  }
+}

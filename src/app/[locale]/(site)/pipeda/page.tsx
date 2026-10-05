@@ -1,144 +1,67 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { localePrefix } from "@/i18n/routing";
+import { localeAlternates } from "@/lib/seo/site";
 import { getPlatformSettings } from "@/lib/settings";
 import { LegalDocument, type LegalSection } from "../terms/_components/LegalDocument";
 
-export const metadata: Metadata = {
-  title: "PIPEDA Privacy Notice",
-  description: "How WagStays applies the ten fair information principles of Canada's PIPEDA.",
-  alternates: { canonical: "/pipeda" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [t, locale] = await Promise.all([getTranslations("legal.pipeda.meta"), getLocale()]);
+  return { title: t("title"), description: t("description"), alternates: localeAlternates("/pipeda", locale) };
+}
 
 export default async function PipedaPage() {
-  const { supportEmail: email, supportPhone: phone } = await getPlatformSettings();
+  const [{ supportEmail: email, supportPhone: phone }, t, locale] = await Promise.all([getPlatformSettings(), getTranslations("legal.pipeda"), getLocale()]);
+  const tags = {
+    em: (c: ReactNode) => <em>{c}</em>,
+    privacy: (c: ReactNode) => <Link href="/privacy">{c}</Link>,
+    settings: (c: ReactNode) => <Link href="/account/settings">{c}</Link>,
+    // Route handler (JSON file download), so a plain link rather than client-side navigation
+    export: (c: ReactNode) => <a href={`${localePrefix(locale)}/account/data-export`}>{c}</a>,
+    opc: (c: ReactNode) => (
+      <a href="https://www.priv.gc.ca" rel="noopener noreferrer" target="_blank">
+        {c}
+      </a>
+    ),
+    mail: (c: ReactNode) => <a href={`mailto:${email}?subject=${encodeURIComponent(t("privacyOfficer.mailSubject"))}`}>{c}</a>,
+  };
 
   const sections: LegalSection[] = [
-    {
-      id: "accountability",
-      title: "Accountability",
-      body: (
-        <p>
-          WagStays Technologies Inc. is responsible for personal information under its control and has designated a Privacy Officer who is
-          accountable for our compliance. Service providers who process information for us are bound by contract to protect it.
-        </p>
-      ),
-    },
-    {
-      id: "purposes",
-      title: "Identifying purposes",
-      body: (
-        <p>
-          We explain why we collect personal information at or before the time we collect it — to run accounts, process bookings and payments,
-          verify Sitters, keep the community safe and provide support. Details are in our <Link href="/privacy">Privacy Policy</Link>.
-        </p>
-      ),
-    },
-    {
-      id: "consent",
-      title: "Consent",
-      body: (
-        <p>
-          We obtain meaningful consent for the collection, use and disclosure of personal information. We ask for express consent for sensitive
-          information, such as Sitter background checks, and for marketing. You may withdraw consent at any time, subject to legal or contractual
-          restrictions; we&apos;ll explain the consequences, for example that a booking can&apos;t proceed without a meeting address.
-        </p>
-      ),
-    },
-    {
-      id: "limiting-collection",
-      title: "Limiting collection",
-      body: <p>We collect only the information needed for the purposes we have identified, and we collect it by fair and lawful means.</p>,
-    },
-    {
-      id: "limiting-use",
-      title: "Limiting use, disclosure and retention",
-      body: (
-        <p>
-          We use and disclose personal information only for the purposes it was collected for, unless you consent or the law requires
-          otherwise. We keep it only as long as necessary and securely destroy or anonymise it afterwards.
-        </p>
-      ),
-    },
-    {
-      id: "accuracy",
-      title: "Accuracy",
-      body: <p>We keep personal information as accurate, complete and up to date as needed. You can update most details yourself from your account settings.</p>,
-    },
-    {
-      id: "safeguards",
-      title: "Safeguards",
-      body: (
-        <p>
-          We protect personal information with security safeguards appropriate to its sensitivity — physical, organisational and technical
-          measures such as encryption in transit, role-based access and staff confidentiality obligations.
-        </p>
-      ),
-    },
-    {
-      id: "openness",
-      title: "Openness",
-      body: <p>Our privacy policies and practices are available on this site in plain language, and we&apos;ll answer questions about them on request.</p>,
-    },
+    { id: "accountability", title: t("accountability.title"), body: <p>{t("accountability.p1")}</p> },
+    { id: "purposes", title: t("purposes.title"), body: <p>{t.rich("purposes.p1", tags)}</p> },
+    { id: "consent", title: t("consent.title"), body: <p>{t("consent.p1")}</p> },
+    { id: "limiting-collection", title: t("limitingCollection.title"), body: <p>{t("limitingCollection.p1")}</p> },
+    { id: "limiting-use", title: t("limitingUse.title"), body: <p>{t("limitingUse.p1")}</p> },
+    { id: "accuracy", title: t("accuracy.title"), body: <p>{t("accuracy.p1")}</p> },
+    { id: "safeguards", title: t("safeguards.title"), body: <p>{t("safeguards.p1")}</p> },
+    { id: "openness", title: t("openness.title"), body: <p>{t("openness.p1")}</p> },
     {
       id: "access",
-      title: "Individual access",
+      title: t("access.title"),
       body: (
         <>
-          <p>
-            Signed-in members can <a href="/account/data-export">download a copy of their data</a> and close their account at any time from{" "}
-            <Link href="/account/settings">account settings</Link>. Closing an account deletes your login, photos and contact details and
-            anonymises the rest; booking and payment records are kept without your name, as the law requires.
-          </p>
-          <p>
-            You can also make a written request: we&apos;ll tell you whether we hold personal information about you, how it has been used and to
-            whom it has been disclosed, and give you access to it — normally within 30 days and at no cost. You can challenge its accuracy and
-            ask for corrections.
-          </p>
+          <p>{t.rich("access.p1", tags)}</p>
+          <p>{t("access.p2")}</p>
         </>
       ),
     },
-    {
-      id: "challenging",
-      title: "Challenging compliance",
-      body: (
-        <p>
-          You can raise any concern about our compliance with these principles with our Privacy Officer (below). If you&apos;re not satisfied with
-          our response, you may contact the{" "}
-          <a href="https://www.priv.gc.ca" rel="noopener noreferrer" target="_blank">
-            Office of the Privacy Commissioner of Canada
-          </a>
-          .
-        </p>
-      ),
-    },
+    { id: "challenging", title: t("challenging.title"), body: <p>{t.rich("challenging.p1", tags)}</p> },
     {
       id: "privacy-officer",
-      title: "Contact our Privacy Officer",
+      title: t("privacyOfficer.title"),
       body: (
         <div className="bg-surface-container-lowest rounded-2xl border border-[#EFE7DE] p-space-lg flex flex-col gap-space-xs">
-          <strong className="font-title-md text-title-md">Privacy Officer, WagStays Technologies Inc.</strong>
-          <span>Toronto, Ontario, Canada</span>
-          <span>
-            Email: <a href={`mailto:${email}?subject=Privacy%20request`}>{email}</a>
-          </span>
-          <span>Phone: {phone}</span>
-          <span className="font-body-sm text-body-sm">Please include &quot;Privacy request&quot; in the subject line and the email address on your account.</span>
+          <strong className="font-title-md text-title-md">{t("privacyOfficer.name")}</strong>
+          <span>{t("privacyOfficer.location")}</span>
+          <span>{t.rich("privacyOfficer.email", { ...tags, email })}</span>
+          <span>{t("privacyOfficer.phone", { phone })}</span>
+          <span className="font-body-sm text-body-sm">{t("privacyOfficer.subjectHint")}</span>
         </div>
       ),
     },
   ];
 
-  return (
-    <LegalDocument
-      current="/pipeda"
-      intro={
-        <p>
-          The <em>Personal Information Protection and Electronic Documents Act</em> (PIPEDA) sets out ten fair information principles. This
-          notice summarises how WagStays applies each of them.
-        </p>
-      }
-      sections={sections}
-      title="PIPEDA Privacy Notice"
-    />
-  );
+  return <LegalDocument current="/pipeda" intro={<p>{t.rich("intro", tags)}</p>} sections={sections} title={t("meta.title")} />;
 }

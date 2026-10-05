@@ -5,13 +5,17 @@ import { getCurrentUser } from "@/lib/session";
 import { SitterResultCard } from "../sitters/_components/SitterResultCard";
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/i18n/server";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = { title: "Favourites", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("misc.favourites");
+  return { title: t("metaTitle"), robots: { index: false } };
+}
 
 export default async function FavouritesPage() {
   const user = await getCurrentUser();
   if (!user) redirect(await localizedPath("/login?next=/favourites"));
-  const sitters = await getFavoriteSitters(user.id);
+  const [sitters, t, tn] = await Promise.all([getFavoriteSitters(user.id), getTranslations("misc.favourites"), getTranslations("common.nav")]);
 
   return (
     <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
@@ -19,10 +23,10 @@ export default async function FavouritesPage() {
         <div className="flex flex-col gap-space-xs">
           <div className="inline-flex items-center gap-2 px-space-md py-1.5 rounded-full bg-surface-container-low text-primary w-fit">
             <span className="material-symbols-outlined text-lg text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-            <span className="font-label-md text-label-md tracking-wide uppercase">Your Saved Sitters</span>
+            <span className="font-label-md text-label-md tracking-wide uppercase">{t("eyebrow")}</span>
           </div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">Favourites</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">Sitters you&apos;ve saved, ready to book whenever you need them.</p>
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">{t("title")}</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">{t("subtitle")}</p>
         </div>
         {sitters.length ? (
           <div className="flex flex-col gap-space-lg">
@@ -35,12 +39,12 @@ export default async function FavouritesPage() {
             <div className="w-16 h-16 rounded-2xl bg-secondary-fixed flex items-center justify-center text-secondary">
               <span className="material-symbols-outlined text-3xl">heart_plus</span>
             </div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">No favourites yet</h2>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">{t("emptyTitle")}</h2>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-md">
-              Tap the heart on any sitter to save them here.
+              {t("emptyText")}
             </p>
             <Link className="px-space-lg py-space-sm rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all" href="/sitters">
-              Find a Sitter
+              {tn("findSitter")}
             </Link>
           </div>
         )}

@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { AuthShell } from "../AuthShell";
 import { ForgotForm } from "./ForgotForm";
 
-export const metadata: Metadata = { title: "Reset your password", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth.forgot");
+  return { title: t("metaTitle"), robots: { index: false } };
+}
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  const t = await getTranslations("auth.forgot");
   return (
-    <AuthShell eyebrow="Account security" subtitle="Enter the email you use for WagStays and we'll send you a reset link." title="Forgot your password?">
+    <AuthShell eyebrow={t("eyebrow")} subtitle={t("subtitle")} title={t("title")}>
       <ForgotForm />
     </AuthShell>
   );

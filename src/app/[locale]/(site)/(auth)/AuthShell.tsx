@@ -1,7 +1,9 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 /** Two-column auth layout in the Warm Paw style: photo panel left, form card right. */
 export function AuthShell({ eyebrow, title, subtitle, children }: { eyebrow: string; title: string; subtitle: string; children: React.ReactNode }) {
+  const t = useTranslations("auth.shell");
   return (
     <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
       <section className="relative w-full -mt-20 pt-space-lg md:pt-28 pb-space-xl md:pb-16 bg-gradient-to-b from-surface-container via-surface to-background overflow-hidden">
@@ -9,15 +11,15 @@ export function AuthShell({ eyebrow, title, subtitle, children }: { eyebrow: str
         <div className="absolute top-48 -right-20 w-[480px] h-[480px] rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none" />
         <div className="max-w-[1100px] mx-auto px-margin-mobile md:px-margin relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-space-xl items-center">
           <div className="hidden lg:block relative w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-xl bg-surface-container-high">
-            <Image alt="A happy Golden Retriever playing with a dog walker in a sunny park" className="object-cover" fill sizes="550px" src="/images/img-06.jpg" priority />
+            <Image alt={t("imageAlt")} className="object-cover" fill sizes="550px" src="/images/img-06.jpg" priority />
             <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/95 backdrop-blur-md p-space-md rounded-2xl shadow-lg flex items-center gap-space-sm">
               <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
               </div>
               <div>
-                <div className="font-title-md text-title-md text-on-surface">Every booking is protected</div>
-                <div className="font-body-sm text-body-sm text-on-surface-variant">$5,000 WagShield vet care coverage included</div>
+                <div className="font-title-md text-title-md text-on-surface">{t("protectedTitle")}</div>
+                <div className="font-body-sm text-body-sm text-on-surface-variant">{t("protectedText")}</div>
               </div>
             </div>
           </div>

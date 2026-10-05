@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Prisma } from "@prisma/client";
 import { BTN, Card, EmptyState, PageHeader, Pager, StatCard, StatusChip, formatDate } from "@/components/ui";
@@ -6,18 +7,22 @@ import { requireSitter } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatRating, timeAgo } from "@/lib/format";
 import { canEditReply } from "@/lib/review-rules";
+import { intlLocale } from "@/i18n/routing";
 import { ReviewReply } from "../_components/ReviewReply";
 
-export const metadata: Metadata = { title: "Reviews | WagStays" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("sitter.meta");
+  return { title: `${t("reviews")}` };
+}
 
 const PAGE_SIZE = 10;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 const TABS = {
-  all: { label: "All", icon: "reviews", where: {} },
-  "needs-reply": { label: "Needs a reply", icon: "mark_chat_unread", where: { sitterReply: null, hidden: false } },
-  replied: { label: "Replied", icon: "mark_chat_read", where: { sitterReply: { not: null } } },
-} satisfies Record<string, { label: string; icon: string; where: Prisma.ReviewWhereInput }>;
+  all: { label: "all", icon: "reviews", where: {} },
+  "needs-reply": { label: "needsReply", icon: "mark_chat_unread", where: { sitterReply: null, hidden: false } },
+  replied: { label: "replied", icon: "mark_chat_read", where: { sitterReply: { not: null } } },
+} satisfies Record<string, { label: "all" | "needsReply" | "replied"; icon: string; where: Prisma.ReviewWhereInput }>;
 type TabKey = keyof typeof TABS;
 
 export default async function SitterReviewsPage({ searchParams }: PageProps<"/[locale]/sitter/reviews">) {
@@ -26,6 +31,7 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
   const tab: TabKey = (one(sp.tab) as TabKey) in TABS ? (one(sp.tab) as TabKey) : "all";
   const page = Math.max(1, Number.parseInt(one(sp.page) ?? "1", 10) || 1);
   const tz = profile.city.timeZone;
+  const [t, locale] = await Promise.all([getTranslations("sitter"), getLocale()]);
   const base = { sitterId: profile.id };
 
   const [all, needsReply, replied, total] = await Promise.all([
@@ -51,22 +57,22 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
       <PageHeader
         actions={
           <Link className={BTN.secondary} href={`/sitters/${profile.slug}#reviews`}>
-            <span className="material-symbols-outlined text-lg">visibility</span>See them on your profile
+            <span className="material-symbols-outlined text-lg">visibility</span>{t("reviews.seeOnProfile")}
           </Link>
         }
-        description="Thank pet parents for their kind words or add context. Replies appear under the review on your public profile and can be edited for 7 days."
-        eyebrow="Sitter Dashboard"
-        title="Reviews"
+        description={t("reviews.description")}
+        eyebrow={t("eyebrow")}
+        title={t("meta.reviews")}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-space-md [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
-        <StatCard hint={`${profile.reviewCount} review${profile.reviewCount === 1 ? "" : "s"}`} icon="star" label="Rating" tone="tertiary" value={profile.reviewCount ? formatRating(profile.rating) : "—"} />
-        <StatCard hint="Visible reviews without a reply" icon="mark_chat_unread" label="Awaiting reply" tone="secondary" value={needsReply} />
-        <StatCard hint="Of visible reviews" icon="forum" label="Reply rate" value={visible ? `${replyRate}%` : "—"} />
+        <StatCard hint={t("reviews.ratingHint", { count: profile.reviewCount })} icon="star" label={t("reviews.rating")} tone="tertiary" value={profile.reviewCount ? formatRating(profile.rating, locale) : "—"} />
+        <StatCard hint={t("reviews.awaitingHint")} icon="mark_chat_unread" label={t("reviews.awaiting")} tone="secondary" value={needsReply} />
+        <StatCard hint={t("reviews.replyRateHint")} icon="forum" label={t("reviews.replyRate")} value={visible ? new Intl.NumberFormat(intlLocale(locale), { style: "percent" }).format(replyRate / 100) : "—"} />
       </div>
 
       <Card>
-        <nav aria-label="Review filter" className="flex gap-space-xs overflow-x-auto p-space-sm border-b border-[#EFE7DE]">
+        <nav aria-label={t("reviews.filterLabel")} className="flex gap-space-xs overflow-x-auto p-space-sm border-b border-[#EFE7DE]">
           {(Object.keys(TABS) as TabKey[]).map((k) => {
             const active = k === tab;
             return (
@@ -79,7 +85,7 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
                 key={k}
               >
                 <span className="material-symbols-outlined text-lg">{TABS[k].icon}</span>
-                {TABS[k].label}
+                {t(`reviews.tabs.${TABS[k].label}`)}
                 <span className={`min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center font-label-sm text-label-sm ${active ? "bg-white/20" : "bg-surface-container-high"}`}>
                   {counts[k]}
                 </span>
@@ -106,24 +112,24 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-space-sm gap-y-1">
                       <span className="font-label-lg text-label-lg text-on-surface">{r.authorName}</span>
-                      <span aria-label={`${r.rating} out of 5`} className="text-tertiary-container tracking-tight">
+                      <span aria-label={t("outOfFive", { rating: r.rating })} className="text-tertiary-container tracking-tight">
                         {"★".repeat(r.rating)}
                         <span className="text-outline-variant">{"★".repeat(5 - r.rating)}</span>
                       </span>
                       {r.hidden && (
                         <StatusChip icon="visibility_off" tone="danger">
-                          Hidden
+                          {t("reviews.hidden")}
                         </StatusChip>
                       )}
                     </div>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
                       {r.petLabel ? `${r.petLabel} · ` : ""}
-                      <span title={formatDate(r.createdAt, tz)}>{timeAgo(r.createdAt)}</span>
+                      <span title={formatDate(r.createdAt, tz, locale)}>{timeAgo(r.createdAt, undefined, locale)}</span>
                       {r.bookingId && (
                         <>
                           {" · "}
                           <Link className="text-primary hover:underline" href={`/sitter/bookings/${r.bookingId}`}>
-                            View booking
+                            {t("reviews.viewBooking")}
                           </Link>
                         </>
                       )}
@@ -134,7 +140,7 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
                 <ReviewReply
                   canEdit={canEditReply(r.sitterRepliedAt)}
                   hidden={r.hidden}
-                  repliedAgo={r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt) : null}
+                  repliedAgo={r.sitterRepliedAt ? timeAgo(r.sitterRepliedAt, undefined, locale) : null}
                   reply={r.sitterReply}
                   reviewId={r.id}
                 />
@@ -143,8 +149,8 @@ export default async function SitterReviewsPage({ searchParams }: PageProps<"/[l
           ) : (
             <EmptyState
               icon={TABS[tab].icon}
-              text={tab === "needs-reply" ? "You've replied to every review. Nice work!" : "Reviews from completed bookings will appear here."}
-              title={tab === "needs-reply" ? "All caught up" : "No reviews yet"}
+              text={tab === "needs-reply" ? t("reviews.caughtUpText") : t("reviews.noReviewsText")}
+              title={tab === "needs-reply" ? t("reviews.caughtUpTitle") : t("reviews.noReviewsTitle")}
             />
           )}
         </div>

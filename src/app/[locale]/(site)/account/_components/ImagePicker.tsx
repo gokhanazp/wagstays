@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -40,6 +41,8 @@ export function ImagePicker({
   fallbackIcon: string;
   error?: string;
 }) {
+  const t = useTranslations("account.imagePicker");
+  const tc = useTranslations("common.actions");
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(initialUrl);
   const [removed, setRemoved] = useState(false);
@@ -57,12 +60,12 @@ export function ImagePicker({
     setLocalError(null);
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setLocalError("Please upload a JPG, PNG or WebP image.");
+      setLocalError(t("badType"));
       input.value = "";
       return;
     }
     if (file.size > MAX_BYTES) {
-      setLocalError("Images must be 5 MB or smaller.");
+      setLocalError(t("tooBig"));
       input.value = "";
       return;
     }
@@ -79,7 +82,7 @@ export function ImagePicker({
       setPreview(objectUrl.current);
       setRemoved(false);
     } catch {
-      setLocalError("We couldn't read that image — please try another.");
+      setLocalError(t("unreadable"));
       input.value = "";
     } finally {
       setBusy(false);
@@ -103,7 +106,7 @@ export function ImagePicker({
         <div className={`w-24 h-24 ${radius} overflow-hidden bg-primary-fixed flex items-center justify-center shrink-0 border border-[#EFE7DE]`}>
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img alt="Preview" className="w-full h-full object-cover" src={preview} />
+            <img alt={t("preview")} className="w-full h-full object-cover" src={preview} />
           ) : (
             <span className="material-symbols-outlined text-primary text-4xl">{fallbackIcon}</span>
           )}
@@ -112,17 +115,17 @@ export function ImagePicker({
           <div className="flex flex-wrap gap-space-xs">
             <label className="inline-flex items-center justify-center gap-1 h-9 px-space-md rounded-full font-label-md text-label-md bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4] cursor-pointer transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary">
               <span className={`material-symbols-outlined text-base ${busy ? "animate-spin" : ""}`}>{busy ? "autorenew" : "upload"}</span>
-              {preview ? "Change photo" : "Upload photo"}
+              {preview ? t("change") : t("upload")}
               <input accept="image/jpeg,image/png,image/webp" className="sr-only" name={name} onChange={onChange} ref={inputRef} type="file" />
             </label>
             {preview && (
               <button className="inline-flex items-center justify-center gap-1 h-9 px-space-md rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-all" onClick={remove} type="button">
                 <span className="material-symbols-outlined text-base">delete</span>
-                Remove
+                {tc("remove")}
               </button>
             )}
           </div>
-          <span className="font-body-sm text-body-sm text-on-surface-variant">JPG, PNG or WebP, up to 5 MB.</span>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">{t("help")}</span>
         </div>
       </div>
       {removed && <input name={removeName} type="hidden" value="1" />}

@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -16,9 +17,12 @@ import type { AdminActionState } from "./admin-bookings";
 
 const id = z.string().trim().min(1).max(64);
 
-function firstError(err: z.ZodError) {
+// Sitter-side messages are translated (account.errors); admin moderation stays English.
+type T = Awaited<ReturnType<typeof getTranslations<"account.errors">>>;
+
+function firstError(err: z.ZodError, fallback = "Please check the form.") {
   const fieldErrors = z.flattenError(err).fieldErrors as Record<string, string[] | undefined>;
-  return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
+  return { error: Object.values(fieldErrors).flat()[0] ?? fallback, fieldErrors };
 }
 
 function revalidateReviewPages(slug: string, bookingId?: string | null) {
@@ -30,42 +34,44 @@ function revalidateReviewPages(slug: string, bookingId?: string | null) {
 
 /* ─────────────────────────── Sitter: reply to a review ─────────────────────────── */
 
-const ReplySchema = z.object({
-  reviewId: id,
-  body: z
-    .string()
-    .trim()
-    .min(1, "Please write a reply.")
-    .max(REPLY_MAX, `Please keep your reply under ${REPLY_MAX} characters.`),
-});
+const replySchema = (t: T) =>
+  z.object({
+    reviewId: id,
+    body: z
+      .string()
+      .trim()
+      .min(1, t("reviews.writeReply"))
+      .max(REPLY_MAX, t("reviews.replyLength", { max: REPLY_MAX })),
+  });
 
 /** Post (once) or edit (within 7 days) the sitter's public reply to a review of their profile. */
 export async function replyToReview(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const parsed = ReplySchema.safeParse({ reviewId: formData.get("reviewId"), body: formData.get("body") ?? "" });
-  if (!parsed.success) return firstError(parsed.error);
+  const t = await getTranslations("account.errors");
+  const parsed = replySchema(t).safeParse({ reviewId: formData.get("reviewId"), body: formData.get("body") ?? "" });
+  if (!parsed.success) return firstError(parsed.error, t("checkForm"));
   const { reviewId, body } = parsed.data;
 
   const review = await db.review.findFirst({
     where: { id: reviewId, sitterId: profile.id },
     select: { id: true, hidden: true, sitterReply: true, sitterRepliedAt: true, bookingId: true },
   });
-  if (!review) return { error: "We couldn't find that review." };
-  if (review.hidden) return { error: "This review has been hidden by WagStays, so it can't be replied to." };
+  if (!review) return { error: t("reviews.reviewNotFound") };
+  if (review.hidden) return { error: t("reviews.hidden") };
 
   if (review.sitterReply) {
     if (!canEditReply(review.sitterRepliedAt)) {
-      return { error: `Replies can only be edited within ${REPLY_EDIT_WINDOW_MS / 86_400_000} days of posting.` };
+      return { error: t("reviews.editWindow", { days: REPLY_EDIT_WINDOW_MS / 86_400_000 }) };
     }
-    if (review.sitterReply === body) return { ok: "No changes to save." };
+    if (review.sitterReply === body) return { ok: t("reviews.noChanges") };
     // Conditional update: guards against a moderator removing the reply in the meantime.
     const res = await db.review.updateMany({
       where: { id: review.id, sitterId: profile.id, hidden: false, sitterReply: { not: null } },
       data: { sitterReply: body },
     });
-    if (!res.count) return { error: "This reply can no longer be edited." };
+    if (!res.count) return { error: t("reviews.cantEdit") };
     revalidateReviewPages(profile.slug, review.bookingId);
-    return { ok: "Reply updated." };
+    return { ok: t("reviews.updated") };
   }
 
   // One reply per review — only set it if nobody else got there first.
@@ -73,44 +79,46 @@ export async function replyToReview(_: SitterActionState, formData: FormData): P
     where: { id: review.id, sitterId: profile.id, hidden: false, sitterReply: null },
     data: { sitterReply: body, sitterRepliedAt: new Date() },
   });
-  if (!res.count) return { error: "You've already replied to this review." };
+  if (!res.count) return { error: t("reviews.alreadyReplied") };
   revalidateReviewPages(profile.slug, review.bookingId);
-  return { ok: "Reply posted — it's now visible on your public profile." };
+  return { ok: t("reviews.posted") };
 }
 
 /* ─────────────────────── Sitter: private rating of a pet parent ─────────────────────── */
 
-const OwnerReviewSchema = z.object({
-  bookingId: id,
-  rating: z.coerce.number("Please choose a star rating.").int().min(1, "Please choose a star rating.").max(5, "Please choose a star rating."),
-  tags: z.array(z.enum(OWNER_REVIEW_TAGS)).max(OWNER_REVIEW_TAGS.length),
-  note: z
-    .string()
-    .trim()
-    .max(OWNER_NOTE_MAX, `Please keep your note under ${OWNER_NOTE_MAX} characters.`)
-    .transform((v) => v || null),
-});
+const ownerReviewSchema = (t: T) =>
+  z.object({
+    bookingId: id,
+    rating: z.coerce.number(t("starRating")).int().min(1, t("starRating")).max(5, t("starRating")),
+    tags: z.array(z.enum(OWNER_REVIEW_TAGS)).max(OWNER_REVIEW_TAGS.length),
+    note: z
+      .string()
+      .trim()
+      .max(OWNER_NOTE_MAX, t("reviews.noteLength", { max: OWNER_NOTE_MAX }))
+      .transform((v) => v || null),
+  });
 
 /** Sitter rates the pet parent of one of their COMPLETED bookings. One rating per booking; not editable. */
 export async function rateOwner(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { user, profile } = await requireSitter();
-  const parsed = OwnerReviewSchema.safeParse({
+  const t = await getTranslations("account.errors");
+  const parsed = ownerReviewSchema(t).safeParse({
     bookingId: formData.get("bookingId"),
     rating: formData.get("rating") ?? undefined,
     tags: formData.getAll("tags").map(String),
     note: formData.get("note") ?? "",
   });
-  if (!parsed.success) return firstError(parsed.error);
+  if (!parsed.success) return firstError(parsed.error, t("checkForm"));
   const input = parsed.data;
 
   const booking = await db.booking.findFirst({
     where: { id: input.bookingId, sitterId: profile.id },
     select: { id: true, status: true, ownerId: true, ownerReview: { select: { id: true } } },
   });
-  if (!booking) return { error: "We couldn't find that booking." };
-  if (booking.status !== "COMPLETED") return { error: "You can rate the pet parent once the booking is completed." };
-  if (booking.ownerReview) return { error: "You've already rated this pet parent for this booking." };
-  if (booking.ownerId === user.id) return { error: "You can't rate yourself." };
+  if (!booking) return { error: t("reviews.bookingNotFound") };
+  if (booking.status !== "COMPLETED") return { error: t("reviews.notCompleted") };
+  if (booking.ownerReview) return { error: t("reviews.alreadyRated") };
+  if (booking.ownerId === user.id) return { error: t("reviews.self") };
 
   try {
     await db.ownerReview.create({
@@ -123,13 +131,13 @@ export async function rateOwner(_: SitterActionState, formData: FormData): Promi
       },
     });
   } catch {
-    return { error: "You've already rated this pet parent for this booking." }; // unique bookingId race
+    return { error: t("reviews.alreadyRated") }; // unique bookingId race
   }
   revalidatePath("/sitter", "layout");
   revalidatePath(`/admin/bookings/${booking.id}`);
   revalidatePath(`/admin/users/${booking.ownerId}`);
   revalidatePath("/admin/reviews");
-  return { ok: "Thanks! Your rating helps other sitters." };
+  return { ok: t("reviews.thanks") };
 }
 
 /* ─────────────────────────────── Admin moderation ─────────────────────────────── */

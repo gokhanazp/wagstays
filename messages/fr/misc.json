@@ -1,1 +1,36 @@
-{}
+{
+  "logo": {
+    "home": "Accueil WagStays"
+  },
+  "favourites": {
+    "metaTitle": "Favoris",
+    "eyebrow": "Vos gardiens enregistrés",
+    "title": "Favoris",
+    "subtitle": "Les gardiens que vous avez enregistrés, prêts à être réservés dès que vous en avez besoin.",
+    "emptyTitle": "Aucun favori pour l'instant",
+    "emptyText": "Touchez le cœur sur le profil d'un gardien pour l'enregistrer ici."
+  },
+  "suspended": {
+    "metaTitle": "Compte suspendu",
+    "titleSuspended": "Votre compte est suspendu",
+    "titleOk": "Votre compte est en règle",
+    "textSuspended": "Nous avons suspendu l'accès à votre compte WagStays pendant que notre équipe Confiance et sécurité examine la situation. Vous ne pouvez pas faire ni gérer de réservations entre-temps. Si vous croyez qu'il s'agit d'une erreur, notre équipe de soutien se fera un plaisir de vous aider.",
+    "textOk": "Aucune inquiétude à avoir — votre compte n'est pas suspendu."
+  },
+  "accountClosed": {
+    "metaTitle": "Compte fermé",
+    "title": "Votre compte est fermé",
+    "text": "Nous avons supprimé vos identifiants, vos photos et vos coordonnées, et anonymisé le reste. Les réservations et paiements passés sont conservés sans votre nom à titre de registre financier. Merci d'avoir fait partie de WagStays — donnez une caresse à vos animaux de notre part.",
+    "privacy": "Politique de confidentialité"
+  },
+  "pwa": {
+    "iosTitle": "Recevez les mises à jour de vos réservations sur votre iPhone",
+    "pushTitle": "Ne manquez aucune mise à jour de réservation",
+    "iosText": "Touchez <icon></icon> Partager, puis <b>Sur l'écran d'accueil</b>. Ouvrez WagStays depuis votre écran d'accueil pour activer les notifications.",
+    "pushText": "Recevez une notification quand un gardien répond ou que votre réservation change. Vous pouvez la désactiver en tout temps dans les paramètres du compte.",
+    "turnOn": "Activer",
+    "notNow": "Pas maintenant",
+    "gotIt": "Compris",
+    "dismiss": "Fermer"
+  }
+}

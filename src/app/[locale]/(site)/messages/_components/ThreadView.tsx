@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/routing";
 import { useRealtimeRefresh } from "@/components/useRealtimeRefresh";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { markConversationRead, sendMessage } from "@/app/actions/messages";
@@ -20,6 +22,8 @@ export function ThreadView({
   otherFirstName: string;
   tz: string;
 }) {
+  const t = useTranslations("chat.thread");
+  const locale = useLocale();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -90,9 +94,9 @@ export function ThreadView({
             <span className="w-14 h-14 rounded-2xl bg-surface-container-low text-secondary flex items-center justify-center">
               <span className="material-symbols-outlined text-3xl">waving_hand</span>
             </span>
-            <p className="font-title-md text-title-md text-on-surface">Say hello to {otherFirstName}</p>
+            <p className="font-title-md text-title-md text-on-surface">{t("sayHello", { name: otherFirstName })}</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
-              Share your pet&apos;s routine, ask about availability or suggest a Meet &amp; Greet.
+              {t("helloText")}
             </p>
           </div>
         ) : (
@@ -106,7 +110,7 @@ export function ThreadView({
                     <div className="flex items-center gap-space-md my-space-sm" role="separator">
                       <span className="flex-1 h-px bg-[#EFE7DE]" />
                       <span className="font-label-sm text-label-sm text-on-surface-variant px-space-sm py-0.5 rounded-full bg-surface-container-low" suppressHydrationWarning>
-                        {dayLabel(d, tz)}
+                        {dayLabel(d, tz, undefined, locale)}
                       </span>
                       <span className="flex-1 h-px bg-[#EFE7DE]" />
                     </div>
@@ -122,7 +126,7 @@ export function ThreadView({
                       {m.body}
                     </div>
                     <time className="mt-1 px-1 font-label-sm text-label-sm text-outline" dateTime={m.createdAt} suppressHydrationWarning>
-                      {m.sending ? "Sending…" : clockTime(d, tz)}
+                      {m.sending ? t("sending") : clockTime(d, tz, locale)}
                     </time>
                   </div>
                 </li>
@@ -146,7 +150,7 @@ export function ThreadView({
         )}
         <div className="flex items-end gap-space-sm">
           <label className="sr-only" htmlFor="composer">
-            Message {otherFirstName}
+            {t("composerLabel", { name: otherFirstName })}
           </label>
           <textarea
             className="flex-1 min-h-[48px] max-h-40 resize-none px-space-md py-3 rounded-2xl bg-surface-container-lowest border-[1.5px] border-[#EFE7DE] font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-[3px] focus:ring-primary-container/15 transition-all disabled:opacity-60"
@@ -160,13 +164,13 @@ export function ThreadView({
                 send();
               }
             }}
-            placeholder={`Message ${otherFirstName}…`}
+            placeholder={t("composerPlaceholder", { name: otherFirstName })}
             ref={input}
             rows={1}
             value={text}
           />
           <button
-            aria-label="Send message"
+            aria-label={t("send")}
             className="w-12 h-12 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center hover:bg-primary-container transition-all disabled:opacity-50"
             disabled={!canSend}
             type="submit"
@@ -175,9 +179,9 @@ export function ThreadView({
           </button>
         </div>
         <div className="flex items-center justify-between gap-space-sm font-label-sm text-label-sm text-outline">
-          <span className="hidden sm:inline">Enter to send · Shift + Enter for a new line</span>
+          <span className="hidden sm:inline">{t("hint")}</span>
           <span className={`ml-auto ${tooLong ? "text-error font-bold" : ""}`}>
-            {trimmed.length > MAX - 300 ? `${trimmed.length.toLocaleString("en-CA")} / ${MAX.toLocaleString("en-CA")}` : ""}
+            {trimmed.length > MAX - 300 ? `${trimmed.length.toLocaleString(intlLocale(locale))} / ${MAX.toLocaleString(intlLocale(locale))}` : ""}
           </span>
         </div>
       </form>

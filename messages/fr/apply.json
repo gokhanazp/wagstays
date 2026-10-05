@@ -1,1 +1,421 @@
-{}
+{
+  "meta": {
+    "title": "Devenir gardien",
+    "description": "Joignez-vous au réseau de gardiens vérifiés de WagStays. Choisissez vos heures, vos animaux et vos tarifs — et gagnez jusqu'à 3 500 $ par mois."
+  },
+  "breadcrumb": {
+    "aria": "Fil d'Ariane",
+    "home": "Accueil",
+    "join": "Rejoignez la meute",
+    "application": "Candidature de gardien",
+    "status": "Suivi de la candidature"
+  },
+  "landing": {
+    "badge": "Réseau de gardiens vérifiés WagStays",
+    "title": "Gagnez <hl>jusqu'à 3 500 $ par mois</hl> en faisant ce que vous aimez 🐾",
+    "subtitle": "Joignez-vous à la communauté de soins pour animaux la plus fiable de {city}. Choisissez vos heures, les animaux que vous accueillez et vos tarifs — selon vos conditions.",
+    "chips": {
+      "free": "100 % gratuit",
+      "coverage": "Couverture de {amount}",
+      "payouts": "Versements hebdo",
+      "support": "Soutien 24/7"
+    },
+    "newest": {
+      "alt": "Megan R., gardienne WagStays récemment inscrite, qui serre dans ses bras un golden retriever et un chat roux",
+      "label": "Nouvelle gardienne",
+      "bookings": "({count} réservations)"
+    }
+  },
+  "sidebar": {
+    "earningsTitle": "Revenus mensuels estimés",
+    "live": "En direct",
+    "commission": "Commission parmi les plus basses: <b>seulement 15 %</b>",
+    "vetCare": "Chaque réservation comprend <b>{coverage} de soins vétérinaires WagShield</b>",
+    "approvalTitle": "Le processus d'approbation",
+    "approval": {
+      "review": {
+        "title": "Formulaire en ligne et examen des documents",
+        "text": "Notre équipe de sécurité vérifie vos renseignements en moins de 12 heures."
+      },
+      "meet": {
+        "title": "Rencontre préalable vidéo de 15 minutes",
+        "text": "Nous discutons de votre amour des animaux et de votre façon de gérer les urgences."
+      },
+      "live": {
+        "title": "Votre profil est en ligne et vos premières réservations arrivent!",
+        "text": "Recevez des demandes de familles d'animaux de votre quartier."
+      }
+    },
+    "faqTitle": "Questions fréquentes",
+    "faq": {
+      "rates": {
+        "q": "Puis-je fixer mes propres tarifs?",
+        "a": "Absolument! Les montants du formulaire ne sont que les moyennes du marché dans votre secteur. Entrez le tarif de votre choix et modifiez-le quand vous le voulez."
+      },
+      "paid": {
+        "q": "Quand suis-je payé?",
+        "a": "Vos revenus sont versés par dépôt direct le jour ouvrable suivant chaque réservation terminée — ou, si vous préférez, en un versement hebdomadaire chaque mardi."
+      },
+      "wrong": {
+        "q": "Et si quelque chose tourne mal?",
+        "a": "Notre ligne vétérinaire d'urgence 24 h/24, 7 j/7 et jusqu'à {coverage} de soins vétérinaires WagShield par réservation vous protègent. Vous n'êtes jamais seul."
+      }
+    },
+    "support": {
+      "alt": "Spécialiste du soutien aux gardiens WagStays",
+      "question": "Des questions?",
+      "team": "Équipe de soutien aux gardiens",
+      "chat": "Écrivez-nous"
+    }
+  },
+  "estimator": {
+    "monthlyIncome": "Vos revenus mensuels estimés",
+    "perMonth": "/ mois",
+    "perWeek": "≈ {amount} par semaine",
+    "daysLabel": "Jours par semaine?",
+    "days": "{count, plural, one {# jour} other {# jours}}",
+    "daysMin": "1 jour",
+    "daysMid": "Fins de semaine",
+    "daysMax": "Temps plein (7 jours)",
+    "walksLabel": "Promenades / visites par jour?",
+    "pets": "{count, plural, one {# animal} other {# animaux}}",
+    "petsMin": "1 animal",
+    "petsMid": "3 animaux",
+    "petsMax": "6 animaux (max.)"
+  },
+  "form": {
+    "stepsAria": "Étapes de la candidature",
+    "steps": {
+      "personal": "Vos infos",
+      "services": "Services et tarifs",
+      "experience": "Expérience et domicile",
+      "verification": "Identité et vérification"
+    },
+    "stepStatus": {
+      "done": "Terminée",
+      "current": "En cours",
+      "upNext": "À venir"
+    },
+    "stepLabel": "Étape {n} • {status}",
+    "progressLabel": "Progression de la candidature",
+    "progressSummary": "{pct} % rempli — {next}",
+    "readyToSubmit": "Prêt à envoyer!",
+    "lastStep": "Dernière étape!",
+    "stepsToGo": "{count, plural, one {Encore # étape!} other {Encore # étapes!}}",
+    "section": "Section {n} / 5",
+    "personal": {
+      "label": "Pour commencer",
+      "title": "Parlez-nous de vous",
+      "text": "Nous utiliserons ces renseignements pour créer votre profil de gardien et vous joindre au sujet de votre candidature.",
+      "fromAccount": "Tiré de votre compte",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Julie",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Tremblay",
+      "email": "Courriel",
+      "emailPlaceholder": "vous@exemple.com",
+      "phone": "Cellulaire",
+      "phonePlaceholder": "(416) 555-0123",
+      "neighbourhood": "Votre quartier",
+      "neighbourhoodPlaceholder": "Choisissez où vous accueillerez et promènerez…"
+    },
+    "services": {
+      "title": "Services offerts et tarifs",
+      "text": "Vous pourrez les modifier en tout temps. Les tarifs suggérés pour votre secteur sont déjà inscrits.",
+      "badge": "Fixez vos tarifs",
+      "dropInTitle": "Visites pour chats et à domicile",
+      "offerAria": "Offrir: {service}",
+      "rateAria": "Tarif en dollars: {service}",
+      "types": {
+        "DOG_WALKING": { "blurb": "Promenade active de 45 à 60 min", "rateLabel": "Tarif horaire de base:", "unit": "/heure" },
+        "BOARDING": { "blurb": "Séjours de nuit chez vous", "rateLabel": "Tarif de base par nuit:", "unit": "/nuit" },
+        "DROP_IN": { "blurb": "Repas, litière et 30 à 40 min de jeu", "rateLabel": "Tarif par visite:", "unit": "/visite" },
+        "DAY_CARE": { "blurb": "8 h 30 – 18 h 30", "rateLabel": "Tarif de base par jour:", "unit": "/jour" }
+      }
+    },
+    "experience": {
+      "title": "Expérience et préférences",
+      "text": "Faites valoir l'expertise qui aidera les propriétaires à vous réserver en toute confiance.",
+      "yearsQuestion": "Combien d'années d'expérience avez-vous en soins aux animaux?",
+      "years": {
+        "1-3": "1 à 3 ans",
+        "3-6": "3 à 6 ans ⭐",
+        "6+": "6 ans et plus",
+        "VET": "Vétérinaire / dresseur"
+      },
+      "petsQuestion": "De quels animaux prendrez-vous soin?",
+      "petsHint": "Choisissez toutes les espèces avec lesquelles vous êtes à l'aise — les propriétaires ne pourront vous réserver que pour celles-ci.",
+      "dogsLocked": "Les chiens restent cochés tant que vous offrez la promenade de chiens.",
+      "lockedHint": "Vous offrez la promenade de chiens",
+      "sizesTitle": "Tailles de chiens acceptées",
+      "sizesHint": "Cochez les options adaptées à votre domicile et à votre force physique.",
+      "sizes": {
+        "SMALL": "Petit chien",
+        "MEDIUM": "Chien moyen",
+        "LARGE": "Grand chien",
+        "GIANT": "Très grand chien"
+      },
+      "giantExample": " (dogue allemand, etc.)",
+      "certsTitle": "Compétences et certifications",
+      "certs": {
+        "certFirstAid": { "title": "Certificat de premiers soins et RCR pour animaux", "blurb": "Savoir exactement quoi faire en cas d'urgence" },
+        "certMedication": { "title": "Médicaments oraux et liquides", "blurb": "Pour les animaux qui suivent un traitement régulier" },
+        "certPuppy": { "title": "Spécialiste chiots et chatons", "blurb": "Propreté et gestion des animaux très énergiques" },
+        "certBehaviour": { "title": "Comportement / chiens réactifs", "blurb": "Travail avec des animaux anxieux ou réactifs" }
+      }
+    },
+    "home": {
+      "title": "Domicile et milieu de vie",
+      "text": "Pour la pension et la garderie surtout, les détails de votre domicile comptent beaucoup pour les propriétaires.",
+      "whereTitle": "Où les animaux séjourneront",
+      "types": {
+        "HOUSE_WITH_YARD": { "title": "Maison avec cour", "blurb": "Espace privé entièrement clôturé" },
+        "APARTMENT": { "title": "Appartement", "blurb": "Salon spacieux, immeuble avec ascenseur" },
+        "CONDO_BALCONY": { "title": "Condo avec balcon grillagé", "blurb": "Filet de balcon sécuritaire pour chats" }
+      },
+      "safetyTitle": "Sécurité et aménagement du domicile",
+      "criteria": {
+        "smokeFree": "Domicile strictement sans fumée",
+        "noChildren": "Aucun enfant de 0 à 10 ans à la maison",
+        "ownPets": "J'ai mon ou mes propres animaux sociables",
+        "fencedYard": "Cour entièrement clôturée"
+      }
+    },
+    "photos": {
+      "title": "Photos de votre domicile et des aires de repos",
+      "hint": "Ajoutez au moins 3 photos claires — votre taux d'approbation augmente de 65 %.",
+      "added": "{count}/3 ajoutées",
+      "addAria": "Ajouter des photos du domicile",
+      "removeAria": "Retirer la photo",
+      "addPhotos": "Ajouter des photos",
+      "slotHints": {
+        "living": "Salon et lit",
+        "yard": "Cour ou espace extérieur",
+        "sleep": "Où dorment les animaux"
+      },
+      "formats": "PNG, JPG (10 Mo max.)",
+      "skipped": "Certains fichiers ont été ignorés — utilisez des images PNG ou JPG de 10 Mo ou moins."
+    },
+    "bio": {
+      "title": "Présentez-vous (bio)",
+      "text": "Les propriétaires lisent cette partie de votre profil en premier. Plus elle est chaleureuse et détaillée, plus vite vous obtiendrez votre première réservation.",
+      "aria": "Votre bio",
+      "placeholder": "p. ex. Bonjour! J'ai grandi avec des chats et des chiens et je garde les animaux de mes voisins depuis six ans. J'ai un chat tigré calme et entièrement vacciné à la maison, j'envoie des photos et des vidéos chaque jour, et je suis attentive aux régimes spéciaux et aux traitements…",
+      "great": "Excellente bio — les propriétaires vont l'adorer!",
+      "aim": "Visez au moins {min} caractères",
+      "more": "{count, plural, one {Encore # caractère} other {Encore # caractères}}",
+      "counter": "{count} / {max} caractères",
+      "tip": "<b>Astuce:</b> Indiquez combien de promenades vous pouvez faire par jour, la clinique vétérinaire d'urgence la plus proche et le temps que vous pouvez consacrer aux animaux pendant la journée — votre approbation sera deux fois plus rapide."
+    },
+    "verification": {
+      "title": "Vérification et déclaration de sécurité",
+      "text": "Pour garder la communauté WagStays 100 % sécuritaire, chaque candidat gardien fait l'objet d'une vérification d'identité et des antécédents.",
+      "idTitle": "Pièce d'identité avec photo émise par le gouvernement",
+      "idDescription": "Chiffrée par SSL 256 bits et traitée conformément à la LPRPDE",
+      "idButton": "Téléverser le document",
+      "vscTitle": "Vérification des antécédents en vue d'un travail auprès de personnes vulnérables",
+      "vscDescription": "Délivrée par votre service de police local au cours des 6 derniers mois",
+      "vscButton": "Téléverser le PDF",
+      "agreeTerms": "J'ai lu et j'accepte l’<agreement>Entente de service des gardiens</agreement> et les <standards>Normes de sécurité des animaux</standards> de WagStays.",
+      "agreeAccuracy": "Je confirme que tous les renseignements fournis sur mon expérience et mon domicile sont complets et exacts, et j'accepte une visite à domicile au besoin."
+    },
+    "previousStep": "Étape précédente",
+    "submitting": "Envoi de votre candidature…",
+    "submit": "Envoyer ma candidature pour examen",
+    "sticky": {
+      "complete": "{pct} % rempli",
+      "next": "Suivant: {step}",
+      "submitting": "Envoi…",
+      "submit": "Envoyer",
+      "continue": "Continuer"
+    }
+  },
+  "uploads": {
+    "uploading": "Téléversement sécurisé…",
+    "replace": "Remplacer",
+    "tooLarge": "Ce fichier dépasse 10 Mo — veuillez en choisir un plus petit.",
+    "failed": "Échec du téléversement — veuillez réessayer.",
+    "invalid": "Ce fichier ne peut pas être téléversé.",
+    "imageType": "Veuillez utiliser une image JPG, PNG ou WebP.",
+    "documentType": "Veuillez téléverser un fichier PDF, JPG ou PNG.",
+    "unavailable": "Le téléversement est indisponible pour le moment — veuillez réessayer."
+  },
+  "errors": {
+    "firstName": "Veuillez entrer votre prénom.",
+    "lastName": "Veuillez entrer votre nom.",
+    "email": "Veuillez entrer un courriel valide.",
+    "phone": "Veuillez entrer un numéro de téléphone à 10 chiffres.",
+    "neighbourhood": "Veuillez choisir votre quartier.",
+    "experience": "Veuillez choisir votre niveau d'expérience.",
+    "kindInvalid": "Veuillez choisir parmi les animaux proposés.",
+    "kindMin": "Choisissez au moins une espèce dont vous prendrez soin.",
+    "homeType": "Veuillez choisir votre type de domicile.",
+    "bioMin": "Dites-en un peu plus aux propriétaires — au moins 80 caractères.",
+    "bioMax": "Votre bio doit compter moins de 500 caractères.",
+    "idDocument": "Veuillez téléverser une pièce d'identité avec photo émise par le gouvernement.",
+    "agreeTerms": "Veuillez accepter l'Entente de service des gardiens pour continuer.",
+    "agreeAccuracy": "Veuillez confirmer que vos renseignements sont exacts.",
+    "rateRange": "Entrez un tarif entre {min} et {max}.",
+    "dogWalkingNeedsDog": "La promenade de chiens implique de garder des chiens — cochez Chien ou désactivez la promenade de chiens.",
+    "dogSize": "Cochez au moins une taille de chien que vous pouvez accueillir.",
+    "noService": "Activez au moins un service que vous souhaitez offrir.",
+    "idMissing": "Nous ne trouvons pas votre pièce d'identité — veuillez la téléverser de nouveau.",
+    "fixFields": "Veuillez corriger les champs en surbrillance ci-dessous.",
+    "suspended": "Votre compte est suspendu; vous ne pouvez donc pas postuler pour le moment. Veuillez communiquer avec le soutien.",
+    "saveFailed": "Un problème est survenu lors de l'enregistrement de votre candidature. Veuillez réessayer."
+  },
+  "meetGreet": {
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "dayTime": "{day}, {time}",
+    "errors": {
+      "invalidCode": "Code de suivi invalide.",
+      "pickSlot": "Veuillez choisir l'une des heures proposées.",
+      "unavailable": "Cette heure n'est plus disponible. Actualisez la page et choisissez une autre plage.",
+      "notFound": "Nous ne trouvons pas cette candidature.",
+      "closed": "Il n'est plus possible de réserver une rencontre préalable pour cette candidature."
+    },
+    "picker": {
+      "booked": "Réservée: <b>{label}</b>",
+      "change": "Changer l'heure",
+      "emailNote": "Nous vous enverrons par courriel un lien Google Meet et un rappel 30 minutes avant.",
+      "suggested": "Heures proposées pour demain:",
+      "keep": "Garder l'heure actuelle",
+      "another": "Besoin d'une autre heure?",
+      "groupAria": "Heure de la rencontre préalable",
+      "selected": "Heure choisie: <b>Demain, {time}</b>",
+      "booking": "Réservation…",
+      "confirm": "Confirmer le rendez-vous"
+    }
+  },
+  "copyCode": {
+    "title": "Copier le code de suivi",
+    "aria": "Copier le code de suivi {code}",
+    "copied": "Copié!",
+    "label": "Code de suivi"
+  },
+  "submitted": {
+    "metaTitle": "Suivi de la candidature",
+    "status": {
+      "IN_REVIEW": "En cours d'examen",
+      "MEET_GREET": "Rencontre préalable réservée",
+      "APPROVED": "Approuvée",
+      "REJECTED": "Non approuvée"
+    },
+    "stepPill": "Étape 4/4 terminée",
+    "hero": {
+      "badgeApproved": "Vous êtes approuvé!",
+      "badgeRejected": "Mise à jour de votre candidature",
+      "badgeReceived": "Nous avons reçu votre candidature!",
+      "titleApproved": "Bienvenue dans la meute! Vous êtes maintenant un <hl>gardien WagStays officiel</hl> 🐾🎉",
+      "titleRejected": "Merci d'avoir postulé chez WagStays",
+      "titleReceived": "Félicitations! Vous avez fait vos <hl>premiers pas</hl> dans la <nowrap>famille WagStays 🐾🎉</nowrap>",
+      "textApproved": "Votre profil est visible par les propriétaires de {hood}. Configurez vos services, vos photos et vos disponibilités pour commencer à recevoir des demandes.",
+      "textRejected": "Après un examen attentif, nous ne pouvons pas approuver votre candidature pour le moment. C'est souvent en raison de documents manquants ou d'une expérience que nous n'avons pas pu vérifier — notre équipe de soutien aux gardiens peut vous en dire plus et vous aider à postuler de nouveau.",
+      "textReceived": "Votre candidature et vos documents sont bien enregistrés dans notre système. Plus que quelques étapes avant de combler d'amour les petites bêtes de {hood} et des environs!",
+      "dashboard": "Aller à mon tableau de bord",
+      "publicProfile": "Voir mon profil public",
+      "estimatedReview": "Examen estimé",
+      "estimatedReviewValue": "12 à 24 heures",
+      "reviewComplete": "Examen terminé",
+      "securityPassed": "Vérification de sécurité réussie",
+      "securityStarted": "Vérification de sécurité en cours",
+      "imageAlt": "Une jeune femme souriante serre dans ses bras un golden retriever au poil touffu dans un parc ensoleillé",
+      "preApproval": "Préapprobation",
+      "matchScore": "Compatibilité de 94 %"
+    },
+    "journey": {
+      "title": "Votre parcours d'approbation",
+      "subtitle": "Devenez gardien WagStays certifié en 4 étapes",
+      "complete": "Terminé",
+      "closed": "Fermé",
+      "inProgress": "En cours"
+    },
+    "badges": {
+      "underReview": "En cours d'examen",
+      "upNext": "À venir",
+      "completed": "Terminée",
+      "pending": "En attente",
+      "notApproved": "Non approuvée",
+      "notAvailable": "Non disponible",
+      "bookingOpen": "À venir • Réservation ouverte",
+      "booked": "Réservée",
+      "finalStep": "Dernière étape"
+    },
+    "step1": {
+      "title": "1. Examen des documents et de la sécurité",
+      "text": "Notre équipe examine attentivement votre pièce d'identité gouvernementale, votre vérification des antécédents en vue d'un travail auprès de personnes vulnérables et votre preuve d'adresse, conformément à la LPRPDE.",
+      "reviewPassed": "Examen réussi",
+      "estDone": "Fin estimée: {eta}",
+      "docs": "{count}/2 documents téléversés"
+    },
+    "step2": {
+      "title": "2. Rencontre préalable en ligne de 15 minutes",
+      "text": "Discutez brièvement sur Google Meet avec notre coordonnatrice de la communauté WagStays et posez-lui toutes vos questions."
+    },
+    "step3": {
+      "title": "3. Badge WagStays et activation du profil",
+      "text": "Tout de suite après votre rencontre préalable, votre profil devient visible par les propriétaires de {hood} et des environs, et vous pouvez commencer à accepter des réservations."
+    },
+    "step4": {
+      "title": "4. Trousse de bienvenue et aide à la première réservation",
+      "text": "Nous vous enverrons à domicile une laisse réfléchissante WagStays, un guide de premiers soins pour animaux, une pochette à gâteries et une carte d'information d'urgence."
+    },
+    "summary": {
+      "title": "Résumé de la candidature",
+      "edit": "Modifier",
+      "services": "Services choisis",
+      "serviceLine": "{service} ({price}/{unit})",
+      "pets": "Animaux",
+      "sizes": "Tailles acceptées",
+      "availability": "Disponibilités",
+      "availabilityValue": "Semaine et fins de semaine",
+      "target": "Revenus mensuels visés",
+      "sessions": "Avec environ 14 séances par semaine",
+      "perMonth": "/ mois",
+      "coverage": "Chaque service est couvert par jusqu'à {amount} de soins vétérinaires WagShield."
+    },
+    "community": {
+      "activeSitters": "1 200+ gardiens actifs",
+      "happyPets": "28 000+ animaux heureux pris en charge à {city}"
+    },
+    "wait": {
+      "kicker": "Prenez de l'avance",
+      "title": "Que faire en attendant?",
+      "text": "Améliorez le score de votre profil avec ces mini-tâches avant votre rencontre préalable",
+      "academy": {
+        "duration": "15 min",
+        "points": "+100 points de profil",
+        "title": "Wag Academy: notions de comportement et guide de premiers soins",
+        "text": "Une courte série vidéo sur la tension de la laisse, le premier contact avec les chiens timides et la gestion des urgences.",
+        "cta": "Voir les leçons"
+      },
+      "community": {
+        "badge": "Communauté",
+        "group": "Groupe {hood}",
+        "title": "Rejoignez la communauté WhatsApp et Discord des gardiens",
+        "text": "Rencontrez des gardiens d'expérience près de chez vous, découvrez les meilleurs trajets dans les parcs et échangez vos anecdotes.",
+        "cta": "Rejoindre le groupe"
+      },
+      "photos": {
+        "badge": "35 % plus de demandes",
+        "title": "Enrichissez vos photos et votre aménagement",
+        "text": "Ajoutez de belles photos de moments passés avec des animaux et, si vous en avez, des coins de repos sécuritaires de votre domicile.",
+        "cta": "Téléverser des photos"
+      }
+    },
+    "support": {
+      "title": "Vous avez une question?",
+      "text": "Notre équipe de soutien aux gardiens est là pour vous aider 7 jours sur 7, de 9 h à 21 h.",
+      "chat": "Écrivez-nous",
+      "email": "Courriel"
+    },
+    "dock": {
+      "back": "Retour à l'accueil",
+      "booked": "Rencontre préalable: {label}",
+      "next": "Prochaine étape: choisissez votre rencontre préalable de 15 min",
+      "view": "Voir ma rencontre préalable",
+      "pick": "Choisir l'heure de ma rencontre"
+    }
+  }
+}

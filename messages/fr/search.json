@@ -1,1 +1,148 @@
-{}
+{
+  "meta": {
+    "title": "Trouvez un gardien d'animaux de confiance",
+    "description": "Trouvez près de chez vous des promeneurs de chiens, des hôtes de pension et des gardiens à domicile vérifiés. Filtrez par prix, taille du chien, domicile et qualifications."
+  },
+  "page": {
+    "liveArea": "Secteur actif: {city} / {hood}",
+    "guaranteeTitle": "Garantie de confiance 100 % WagStays",
+    "guaranteeText": "Chaque promenade et chaque séjour sont protégés par {amount} de couverture vétérinaire d'urgence WagShield.",
+    "learnMore": "En savoir plus",
+    "resultsTitle": "<hl>{count, plural, one {# gardien de confiance} other {# gardiens de confiance}}</hl> autour de {hood}",
+    "list": "Liste",
+    "map": "Carte",
+    "emptyTitle": "Aucun gardien ne correspond à ces filtres",
+    "emptyDates": "Aucun gardien n'est libre à ces dates avec ces filtres — essayez d'autres dates ou retirez un ou deux filtres.",
+    "emptyFilters": "Essayez d'élargir votre fourchette de prix ou de retirer un ou deux filtres.",
+    "resetFilters": "Réinitialiser les filtres",
+    "showing": "Résultats {first} à {last} sur {total}",
+    "routesTitle": "Kew Gardens et parc Ashbridges Bay",
+    "routesNote": "Les parcours de promenade les plus populaires"
+  },
+  "sort": {
+    "label": "Trier:",
+    "aria": "Trier les résultats",
+    "recommended": "Recommandés",
+    "priceAsc": "Prix croissant",
+    "priceDesc": "Prix décroissant",
+    "rating": "Mieux notés",
+    "distance": "Plus proches"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "prev": "Page précédente",
+    "next": "Page suivante"
+  },
+  "petCount": {
+    "label": "Nombre d'animaux",
+    "short": "Animaux",
+    "fewer": "Un animal de moins",
+    "more": "Un animal de plus",
+    "many": "Gardiens qui acceptent {count} animaux par réservation.",
+    "one": "Par réservation. Un animal de plus coûte souvent un peu plus."
+  },
+  "filters": {
+    "title": "Filtres",
+    "reset": "Réinitialiser",
+    "rate": {
+      "DOG_WALKING": "Tarif horaire",
+      "BOARDING": "Tarif par nuit",
+      "DAY_CARE": "Tarif par jour",
+      "DROP_IN": "Tarif par visite"
+    },
+    "priceMax": "{amount}+",
+    "maxPrice": "Prix maximum",
+    "serviceType": "Type de service",
+    "medical": "Médicaments et soins médicaux",
+    "petType": "Type d'animal",
+    "dogSize": "Taille du chien",
+    "home": "Domicile et environnement",
+    "homeRows": {
+      "yard": "Maison avec cour",
+      "smokeFree": "Domicile sans fumée",
+      "noPets": "Aucun autre animal",
+      "noKids": "Maison calme, sans enfants"
+    },
+    "qualifications": "Qualifications du gardien",
+    "quals": {
+      "superSitter": "Super gardien",
+      "vet": "Connaissances vétérinaires",
+      "trainer": "Dresseur professionnel",
+      "idVerified": "Identité vérifiée"
+    },
+    "availability": "Disponibilités",
+    "select": "Choisir"
+  },
+  "topBar": {
+    "service": "Service",
+    "anyService": "Tous les services",
+    "location": "Lieu",
+    "neighbourhood": "Quartier",
+    "dateRange": "Dates",
+    "petType": "Type d'animal",
+    "petTypeAria": "Type d'animal",
+    "petsPrefix": "{count} animaux · ",
+    "dogAnySize": "Chien · Toutes tailles",
+    "dogsGroup": "Chiens",
+    "otherPetsGroup": "Autres animaux",
+    "update": "Filtrer"
+  },
+  "dates": {
+    "range": "{from} – {to}",
+    "from": "À partir du {date}",
+    "until": "Jusqu'au {date}",
+    "add": "Ajouter des dates"
+  },
+  "pets": {
+    "anyPet": "Tous les animaux",
+    "other": "Autre",
+    "types": "{count} types d'animaux",
+    "anyDogSize": "Toutes tailles de chien",
+    "oneDog": "1 {dog}",
+    "dogs": "Chiens {sizes}",
+    "sizedDog": {
+      "SMALL": "petit chien",
+      "MEDIUM": "chien moyen",
+      "LARGE": "grand chien",
+      "GIANT": "très grand chien"
+    },
+    "sizePlural": {
+      "SMALL": "petits",
+      "MEDIUM": "moyens",
+      "LARGE": "grands",
+      "GIANT": "très grands"
+    }
+  },
+  "card": {
+    "viewProfileAria": "Voir le profil de {name}",
+    "saveFavorite": "Ajouter {name} aux favoris",
+    "verified": "Identité et antécédents vérifiés",
+    "superSitter": "Super gardien",
+    "away": "à {distance}",
+    "perUnit": {
+      "WALK": "/ heure",
+      "NIGHT": "/ nuit",
+      "DAY": "/ jour",
+      "VISIT": "/ visite"
+    },
+    "message": "Message",
+    "viewProfile": "Voir le profil"
+  },
+  "map": {
+    "recentre": "Recentrer la carte",
+    "nearby": "À proximité",
+    "unitShort": {
+      "WALK": "h",
+      "NIGHT": "nuit",
+      "DAY": "jour",
+      "VISIT": "visite"
+    }
+  },
+  "petKinds": {
+    "caresFor": "S'occupe des {kinds}"
+  },
+  "favorite": {
+    "save": "Ajouter aux favoris"
+  },
+  "availableRange": "Disponible {range}"
+}

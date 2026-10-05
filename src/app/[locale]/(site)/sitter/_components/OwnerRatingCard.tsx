@@ -1,6 +1,7 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui";
 import { db } from "@/lib/db";
-import { splitOwnerNote } from "@/lib/review-rules";
+import { ownerTagLabel, splitOwnerNote } from "@/lib/review-rules";
 import { RateOwnerForm } from "./RateOwnerForm";
 
 /**
@@ -26,27 +27,28 @@ export async function OwnerRatingCard({
     );
   }
   const { tags, note } = splitOwnerNote(mine.body);
+  const [t, locale] = await Promise.all([getTranslations("sitter"), getLocale()]);
   return (
     <Card className="p-space-lg lg:col-span-2 flex flex-col gap-space-sm">
       <span className="flex items-center gap-1 font-label-md text-label-md text-on-surface-variant">
         <span className="material-symbols-outlined text-base">lock</span>
-        Your private rating of {name}
+        {t("ownerRating.yourRating", { name })}
       </span>
-      <span aria-label={`${mine.rating} out of 5`} className="font-title-md text-title-md text-tertiary-container">
+      <span aria-label={t("outOfFive", { rating: mine.rating })} className="font-title-md text-title-md text-tertiary-container">
         {"★".repeat(mine.rating)}
         <span className="text-outline-variant">{"★".repeat(5 - mine.rating)}</span>
       </span>
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-space-xs">
-          {tags.map((t) => (
-            <span className="inline-flex items-center h-8 px-space-sm rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md" key={t}>
-              {t}
+          {tags.map((tag) => (
+            <span className="inline-flex items-center h-8 px-space-sm rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md" key={tag}>
+              {ownerTagLabel(tag, locale)}
             </span>
           ))}
         </div>
       )}
       {note && <p className="font-body-md text-body-md text-on-surface whitespace-pre-line break-words">{note}</p>}
-      {mine.hidden && <p className="font-body-sm text-body-sm text-on-surface-variant">This rating was hidden by WagStays moderators and doesn&apos;t count towards {name}&apos;s reputation.</p>}
+      {mine.hidden && <p className="font-body-sm text-body-sm text-on-surface-variant">{t("ownerRating.hidden", { name })}</p>}
     </Card>
   );
 }

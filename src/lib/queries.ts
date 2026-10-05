@@ -8,6 +8,12 @@ import { PET_KINDS, normalizeKinds, type PetKind } from "./pets";
 import { freeSittersForRange } from "./availability";
 import { formatDayRange, isIsoDay, todayIn } from "./availability-core";
 import { petLimitBadge, takesPets } from "./price-details";
+import { createTranslator } from "next-intl";
+import searchEn from "../../messages/en/search.json";
+import searchFr from "../../messages/fr/search.json";
+
+const searchT = (locale: string) =>
+  createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { search: locale === "fr" ? searchFr : searchEn }, namespace: "search" });
 
 export const DEFAULT_CITY_SLUG = "toronto";
 
@@ -179,7 +185,7 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
   return s ? `?${s}` : "";
 }
 
-export async function searchSitters(f: SearchFilters) {
+export async function searchSitters(f: SearchFilters, locale = "en") {
   const city = await getActiveCity(f.city);
   const centreHood = city.neighbourhoods.find((n) => n.slug === f.hood) ?? defaultHoodOf(city) ?? city.neighbourhoods[0];
   const [all, favs] = await Promise.all([
@@ -249,7 +255,7 @@ export async function searchSitters(f: SearchFilters) {
       f.service,
       f.petCount ?? 1,
     );
-    const label = `Available ${formatDayRange(from, to)}`;
+    const label = searchT(locale)("availableRange", { range: formatDayRange(from, to, locale) });
     results = results.filter((s) => free.has(s.id)).map((s) => ({ ...s, availableLabel: label }));
   }
 
@@ -276,7 +282,7 @@ export async function searchSitters(f: SearchFilters) {
     pageSize: SEARCH_PAGE_SIZE,
     sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE),
     /** every match, for map pins */
-    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind), petNote: petLimitBadge(s.price!) })),
+    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind), petNote: petLimitBadge(s.price!, locale) })),
     serviceCounts,
     medicalCount,
     kindCounts,

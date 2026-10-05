@@ -112,3 +112,20 @@ Brand names stay in English: WagStays, WagPoints, WagShield, Wag Academy, Super 
 ## Report (short)
 Files converted, namespaces, number of keys, test results (with screenshot paths), anything left in English and why,
 and any new `common` keys you'd like added.
+
+## Shared `src/lib` files with user-facing text
+Each such file has **one owner agent** (listed in its task).
+- **Owner.** Add an optional last parameter, `locale = "en"` (or `{ locale }` in an options object), and translate inside
+  the file with a translator built from the owner's namespace file:
+  ```ts
+  import { createTranslator } from "next-intl";
+  import en from "../../messages/en/booking.json";
+  import fr from "../../messages/fr/booking.json";
+  const tr = (locale = "en") =>
+    createTranslator({ locale, messages: { booking: locale === "fr" ? fr : en }, namespace: "booking.price" });
+  ```
+  - This works on server and client, and existing callers keep working (English).
+  - Don't change return shapes, so other areas aren't broken.
+- **Callers in other areas.** Pass your `locale` *if* the function already accepts it when you get there. Otherwise
+  leave the call as is: the lead wires the remaining call sites at the end. Never edit a lib file you don't own.
+- **Server-generated notifications** (`src/lib/events/notifications.ts`, push texts) stay English for now. Don't touch them.

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localeAlternates } from "@/lib/seo/site";
 import { getFees } from "@/lib/settings";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/format";
@@ -12,15 +14,21 @@ import { SitterResultCard } from "./_components/SitterResultCard";
 import { SortSelect } from "./_components/SortSelect";
 import { withExtras, type SearchExtras } from "./_components/search-url";
 
-export const metadata: Metadata = {
-  title: "Find a Trusted Pet Sitter",
-  description: "Search verified dog walkers, boarding hosts and drop-in sitters near you. Filter by price, dog size, home and qualifications.",
-  alternates: { canonical: "/sitters" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("search.meta");
+  const locale = await getLocale();
+  return {
+    title: t("title"),
+    description: t("description"),
+    alternates: localeAlternates("/sitters", locale),
+  };
+}
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function SittersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const t = await getTranslations("search.page");
+  const locale = await getLocale();
   const { vetCoverageCents } = await getFees();
   const sp = await searchParams;
   const filters = parseSearchParams(sp);
@@ -29,7 +37,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
     return typeof v === "string" && ISO_DATE.test(v) ? v : undefined;
   };
   const extras: SearchExtras = { from: str("from"), to: str("to") };
-  const [result, cities] = await Promise.all([searchSitters(filters), getActiveCities()]);
+  const [result, cities] = await Promise.all([searchSitters(filters, locale), getActiveCities()]);
   const { city, centreHood, total, page, pageCount, pageSize, sitters } = result;
 
   const pins: MapPin[] = result.allMatches;
@@ -39,7 +47,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
   const isMap = filters.view === "map";
   const first = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const last = Math.min(total, page * pageSize);
-  const liveLabel = `Live area: ${city.name} / ${centreHood.name}`;
+  const liveLabel = t("liveArea", { city: city.name, hood: centreHood.name });
 
   const viewBtn = (active: boolean) =>
     `px-space-sm sm:px-space-md py-2 sm:py-1.5 rounded-full font-label-md text-label-md flex items-center gap-1.5 transition-all ${
@@ -53,9 +61,9 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
           <span className="material-symbols-outlined text-3xl">verified_user</span>
         </div>
         <div>
-          <h3 className="font-title-md text-title-md text-on-surface font-bold">WagStays 100% Trust Guarantee</h3>
+          <h3 className="font-title-md text-title-md text-on-surface font-bold">{t("guaranteeTitle")}</h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Every walk and stay is protected by {formatMoney(vetCoverageCents)} in WagShield emergency vet coverage.
+            {t("guaranteeText", { amount: formatMoney(vetCoverageCents, { locale }) })}
           </p>
         </div>
       </div>
@@ -63,7 +71,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
         className="shrink-0 px-space-md py-2.5 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-all"
         href="/#how-it-works"
       >
-        Learn More
+        {t("learnMore")}
       </Link>
     </div>
   );
@@ -97,10 +105,11 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                 <div className="flex items-center gap-space-sm">
                   <div className="w-3 h-3 rounded-full bg-primary animate-pulse shrink-0" />
                   <h1 className="font-headline-sm text-headline-sm text-on-surface font-bold">
-                    <span className="text-primary">
-                      {total} trusted sitter{total === 1 ? "" : "s"}
-                    </span>{" "}
-                    found around {centreHood.name}
+                    {t.rich("resultsTitle", {
+                      count: total,
+                      hood: centreHood.name,
+                      hl: (c) => <span className="text-primary">{c}</span>,
+                    })}
                   </h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-space-sm sm:gap-space-md justify-between md:justify-end">
@@ -109,11 +118,11 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                   <div className="flex items-center p-1 bg-surface-container rounded-full">
                     <Link aria-current={!isMap ? "page" : undefined} className={viewBtn(!isMap)} href={viewHref("list")} replace scroll={false}>
                       <span className="material-symbols-outlined text-base">view_list</span>
-                      <span>List</span>
+                      <span>{t("list")}</span>
                     </Link>
                     <Link aria-current={isMap ? "page" : undefined} className={viewBtn(isMap)} href={viewHref("map")} replace scroll={false}>
                       <span className="material-symbols-outlined text-base">map</span>
-                      <span>Map</span>
+                      <span>{t("map")}</span>
                     </Link>
                   </div>
                 </div>
@@ -125,17 +134,15 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                     {sitters.length === 0 ? (
                       <div className="bg-surface-container-lowest rounded-3xl p-space-xl shadow-sm flex flex-col items-center text-center gap-space-sm">
                         <span className="material-symbols-outlined text-4xl text-primary">search_off</span>
-                        <h2 className="font-title-md text-title-md text-on-surface font-bold">No sitters match these filters</h2>
+                        <h2 className="font-title-md text-title-md text-on-surface font-bold">{t("emptyTitle")}</h2>
                         <p className="font-body-md text-body-md text-on-surface-variant">
-                          {extras.from
-                            ? "No sitters are free for those dates with these filters — try other dates or remove a filter or two."
-                            : "Try widening your price range or removing a filter or two."}
+                          {extras.from ? t("emptyDates") : t("emptyFilters")}
                         </p>
                         <Link
                           className="mt-space-xs px-space-md py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md"
                           href={withExtras(toSearchQuery({ hood: filters.hood }), extras)}
                         >
-                          Reset Filters
+                          {t("resetFilters")}
                         </Link>
                       </div>
                     ) : (
@@ -145,7 +152,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                     {total > 0 && (
                       <div className="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
                         <span className="font-body-sm text-body-sm text-on-surface-variant">
-                          Showing {first} – {last} of {total} results
+                          {t("showing", { first, last, total })}
                         </span>
                         <Pagination hrefFor={hrefFor} page={page} pageCount={pageCount} />
                       </div>
@@ -170,8 +177,8 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
                         <span className="material-symbols-outlined text-xl">park</span>
                       </div>
                       <div>
-                        <div className="font-label-lg text-label-lg text-on-surface font-bold">Kew Gardens &amp; Ashbridges Bay Park</div>
-                        <div className="font-body-sm text-body-sm text-outline">Most popular walking routes for dogs</div>
+                        <div className="font-label-lg text-label-lg text-on-surface font-bold">{t("routesTitle")}</div>
+                        <div className="font-body-sm text-body-sm text-outline">{t("routesNote")}</div>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-outline">info</span>

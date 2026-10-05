@@ -1,1 +1,160 @@
-{}
+{
+  "meta": {
+    "title": "WagStays — Trusted Pet Sitters & Dog Walkers in Toronto",
+    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Background-checked sitters, live GPS walk tracking and vet care coverage on every booking."
+  },
+  "hero": {
+    "badge": "{city}'s Most Loved Pet Care Platform",
+    "titleLine1": "For Your Furry Best Friend",
+    "titleLine2": "Loving & Trusted",
+    "titleLine3": "Sitters Right Next Door",
+    "intro": "Verified pet lovers in your neighbourhood, professional dog walkers and free 24/7 emergency vet support, so you can travel with total peace of mind while your pet is in great hands.",
+    "avatarAlt1": "WagStays sitter holding a tabby kitten",
+    "avatarAlt2": "WagStays sitter with a Golden Retriever",
+    "avatarAlt3": "WagStays sitter with two small dogs",
+    "parents": "+{count}k",
+    "rating": "{rating} / {max}",
+    "bookings": "{count}+ happy bookings completed",
+    "photoAlt": "A happy Golden Retriever playing catch with a dog walker in a sunny park",
+    "liveWalk": "Live Walk in Progress",
+    "vetCovered": "Vet Care Covered"
+  },
+  "search": {
+    "where": "Where are you looking?",
+    "wherePlaceholder": "Type a neighbourhood or area...",
+    "hoods": "Neighbourhoods",
+    "dates": "Dates",
+    "start": "Start",
+    "end": "End",
+    "rangeTitle": "Drop-off → Pick-up",
+    "pets": "Pets",
+    "anyKindCount": "{count, plural, =1 {1 Dog / Cat} other {# Pets}}",
+    "kindCount": "{kind, select, DOG {{count, plural, one {# Dog} other {# Dogs}}} CAT {{count, plural, one {# Cat} other {# Cats}}} RABBIT {{count, plural, one {# Rabbit} other {# Rabbits}}} GUINEA_PIG {{count, plural, one {# Guinea Pig} other {# Guinea Pigs}}} HAMSTER {{count, plural, one {# Hamster} other {# Hamsters}}} BIRD {{count, plural, one {# Bird} other {# Birds}}} FERRET {{count, plural, one {# Ferret} other {# Ferrets}}} REPTILE {{count, plural, one {# Reptile} other {# Reptiles}}} FISH {{count, plural, one {# Fish} other {# Fish}}} other {{count, plural, one {# Pet} other {# Pets}}}}",
+    "petType": "Pet type",
+    "anyPet": "Any pet",
+    "otherGroup": "Other…",
+    "removePet": "Remove a pet",
+    "addPet": "Add a pet",
+    "submit": "Find a Sitter 🐾",
+    "trustVerified": "100% ID & Address Verification",
+    "trustVet": "Free WagShield Vet Cover up to {amount}",
+    "trustUpdates": "Daily Live Photo & Video Updates"
+  },
+  "services": {
+    "eyebrow": "Professional Care Options",
+    "title": "Loving Care for Every Need of Your Furry Friend",
+    "text": "Every pet has their own habits and personality. Pick the service that suits yours best and start with confidence after a free Meet & Greet.",
+    "from": "From",
+    "unit": {
+      "hour": "/hour",
+      "night": "/night",
+      "visit": "/visit",
+      "day": "/day"
+    },
+    "cards": {
+      "DOG_WALKING": {
+        "eyebrow": "Most Popular",
+        "title": "Dog Walking",
+        "body": "Live GPS route tracking, pee & poop updates, fresh-water breaks and plenty of sniffing adventures.",
+        "chip1": "30 / 60 min",
+        "chip2": "GPS Map",
+        "chip3": "Solo Walks"
+      },
+      "BOARDING": {
+        "eyebrow": "Cage-Free Stays",
+        "title": "Overnight Boarding",
+        "body": "While you're away, your pet stays in a sitter's cosy home: cage-free, loved and treated like family all night.",
+        "chip1": "Cosy Home",
+        "chip2": "Overnight Care",
+        "chip3": "Special Diets"
+      },
+      "DROP_IN": {
+        "eyebrow": "Ideal for Cats",
+        "title": "Cat Visits & Play",
+        "body": "In the comfort of their own home: food, fresh water, litter cleaning, brushing and a 30-minute laser play session.",
+        "chip1": "Stays at Home",
+        "chip2": "Litter Cleaning",
+        "chip3": "Photos & Video"
+      },
+      "DAY_CARE": {
+        "eyebrow": "For Office Days",
+        "title": "Doggy Day Care",
+        "body": "No more lonely days at home while you work. Social play sessions, yard zoomies and restful nap times.",
+        "chip1": "8 AM – 7 PM",
+        "chip2": "Social Play",
+        "chip3": "Nap Time"
+      }
+    }
+  },
+  "featured": {
+    "eyebrow": "Top Rated Sitters",
+    "title": "Friendly Pet Lovers in Your Neighbourhood",
+    "text": "Experienced hands, every one interviewed in person, with police and reference checks completed.",
+    "photoAlt": "{name}, WagStays sitter",
+    "reviews": "{rating} ({count} Reviews)",
+    "away": "{hood} ({distance} away)",
+    "priceLabel": {
+      "BOARDING": "Per Night",
+      "DOG_WALKING": "Walk / Hour",
+      "DAY_CARE": "Per Day",
+      "DROP_IN": "Per Visit"
+    },
+    "viewProfile": "View Profile",
+    "saveFavourite": "Save {name} to favourites",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "howItWorks": {
+    "eyebrow": "Peace of Mind in 3 Easy Steps",
+    "title": "How It Works",
+    "text": "Choosing the right sitter for your furry family member has never been this easy, transparent and safe.",
+    "step1": {
+      "title": "Browse Local Sitters",
+      "body": "Filter sitters near you by reviews, experience badges, home photos and calendar availability.",
+      "chip": "Free to Message"
+    },
+    "step2": {
+      "title": "Book a Meet & Greet",
+      "body": "Before you book, meet your sitter at the park or at home for a free <hl>\"Meet & Greet\"</hl> and see the chemistry for yourself.",
+      "chip": "100% Free First Meeting"
+    },
+    "step3": {
+      "title": "Relax with Live Updates",
+      "body": "Adorable photos all day long, GPS walk maps and meal reports let you follow every happy moment as it happens.",
+      "chip": "Daily Live Notifications"
+    },
+    "pricingNote": "Clear prices, no surprises — the sitter's rate plus a flat fee, WagShield vet cover and HST.",
+    "pricingLink": "How pricing works"
+  },
+  "wagshield": {
+    "eyebrow": "🛡️ Protection, No Strings Attached",
+    "title": "Everything's Covered with WagShield Protection",
+    "text": "To us, every pet is family. That's why every booking on our platform is automatically protected by our highest safety standards.",
+    "learnMore": "Learn More About Our Safety Standards",
+    "vetTitle": "Free Vet Care Coverage",
+    "vetText": "If something unexpected happens during a booking, we cover up to {amount} in vet treatment costs.",
+    "lineTitle": "24/7 Emergency Vet Line",
+    "lineText": "You or your sitter can reach our emergency vet video line with a single tap, any time of day or night.",
+    "vettingTitle": "Rigorous Sitter Vetting",
+    "vettingText": "Only 2 in 10 applicants are accepted, after ID verification, a home check and a Police Vulnerable Sector Check.",
+    "paymentsTitle": "Secure Hold Payments",
+    "paymentsText": "Your payment is held securely and only released to the sitter once the stay is complete and you confirm."
+  },
+  "testimonials": {
+    "eyebrow": "Real Reviews, Happy Pets",
+    "title": "What Pet Parents Are Saying",
+    "text": "Just a few of the thousands of families who enjoy the deep peace of mind that comes from knowing their pet is safe.",
+    "stars": "{rating} out of 5 stars"
+  },
+  "cta": {
+    "eyebrow": "🐶 Join the WagStays Pack",
+    "title1": "Do You Love Animals as Much as We Do?",
+    "title2": "Earn Extra Income as a Sitter in Your Neighbourhood!",
+    "text": "Set your own hours, choose the pets you welcome and name your own rates. Spend your days with adorable pets and earn <hl>{min} – {max}</hl> a month.",
+    "become": "Become a Sitter 🐾",
+    "video": "How to Become a Sitter (2-Min Video)",
+    "photoAlt": "A happy pet sitter sitting on the grass with three playful dogs",
+    "avg": "Avg. {amount}",
+    "avgNote": "Monthly earnings of active sitters"
+  }
+}

@@ -1,4 +1,11 @@
+import { createTranslator } from "next-intl";
+import { intlLocale } from "@/i18n/routing";
+import en from "../../messages/en/apply.json";
+import fr from "../../messages/fr/apply.json";
 import { DEFAULT_TIME_ZONE } from "./constants";
+
+const tr = (locale = "en") =>
+  createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { apply: locale === "fr" ? fr : en }, namespace: "apply.meetGreet" });
 // Meet & Greet scheduling helpers (sitter onboarding, step 2).
 // Slots are wall-clock times in the coordinator team's time zone (launch city).
 export const MEET_GREET_TZ = DEFAULT_TIME_ZONE;
@@ -41,31 +48,33 @@ function zonedTime(day: string, hhmm: string, tz = MEET_GREET_TZ) {
   return new Date(guess - tzOffsetMs(new Date(first), tz));
 }
 
-export function formatTime(date: Date, tz = MEET_GREET_TZ) {
+export function formatTime(date: Date, tz = MEET_GREET_TZ, locale = "en") {
+  if (locale === "fr") return new Intl.DateTimeFormat(intlLocale(locale), { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(date);
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true })
     .format(date)
     .replace(/\s?a\.m\./i, " AM")
     .replace(/\s?p\.m\./i, " PM");
 }
 
-/** "Today, 6:30 PM" / "Tomorrow, 4:15 PM" / "Sat, Oct 3, 4:15 PM". */
-export function formatRelativeDayTime(date: Date, now = new Date(), tz = MEET_GREET_TZ) {
+/** "Today, 6:30 PM" / "Tomorrow, 4:15 PM" / "Sat, Oct 3, 4:15 PM" (fr: "Demain, 16 h 15"). */
+export function formatRelativeDayTime(date: Date, now = new Date(), tz = MEET_GREET_TZ, locale = "en") {
+  const t = tr(locale);
   const day = ymd(date, tz);
   let prefix: string;
-  if (day === ymd(now, tz)) prefix = "Today";
-  else if (day === ymd(new Date(now.getTime() + DAY_MS), tz)) prefix = "Tomorrow";
-  else prefix = new Intl.DateTimeFormat("en-CA", { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(date);
-  return `${prefix}, ${formatTime(date, tz)}`;
+  if (day === ymd(now, tz)) prefix = t("today");
+  else if (day === ymd(new Date(now.getTime() + DAY_MS), tz)) prefix = t("tomorrow");
+  else prefix = new Intl.DateTimeFormat(intlLocale(locale), { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(date);
+  return t("dayTime", { day: prefix, time: formatTime(date, tz, locale) });
 }
 
 export type MeetGreetSlot = { iso: string; label: string };
 
 /** The suggested slots for the day `dayOffset` days from `now` (1 = tomorrow). */
-export function getSuggestedSlots(now = new Date(), dayOffset = 1): MeetGreetSlot[] {
+export function getSuggestedSlots(now = new Date(), dayOffset = 1, locale = "en"): MeetGreetSlot[] {
   const day = ymd(new Date(now.getTime() + dayOffset * DAY_MS));
   return MEET_GREET_SLOTS.map((t) => {
     const d = zonedTime(day, t);
-    return { iso: d.toISOString(), label: formatTime(d) };
+    return { iso: d.toISOString(), label: formatTime(d, MEET_GREET_TZ, locale) };
   });
 }
 

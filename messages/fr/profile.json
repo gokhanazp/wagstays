@@ -1,1 +1,272 @@
-{}
+{
+  "meta": {
+    "notFound": "Gardien introuvable",
+    "title": "{name} — {headline} à {hood}",
+    "description": "{name} est gardien d'animaux à {city}, dans le quartier {hood}.",
+    "descriptionRated": "{name} est gardien d'animaux à {city}, dans le quartier {hood}, noté {rating} selon {count, plural, one {# avis} other {# avis}}."
+  },
+  "breadcrumb": {
+    "label": "Fil d'Ariane",
+    "home": "Accueil",
+    "citySitters": "Gardiens à {city}",
+    "cityPetSitters": "Gardiens d'animaux à {city}",
+    "hoodPetSitters": "Gardiens d'animaux à {hood}"
+  },
+  "readiness": {
+    "phone": "Ajoutez votre numéro de téléphone avant de réserver — vous pourrez le faire au paiement.",
+    "pending": "Votre compte est en cours d'examen — vous pourrez réserver une fois qu'il sera approuvé.",
+    "blocked": "Votre compte ne peut pas réserver pour le moment — veuillez contacter le soutien."
+  },
+  "hero": {
+    "portraitAlt": "Portrait de {name}",
+    "verifiedSuper": "Super gardien vérifié",
+    "verified": "Gardien vérifié",
+    "superSitter": "Super gardien",
+    "trainer": "Dresseur certifié",
+    "away": "à {distance}",
+    "reviewCount": "({count, plural, one {# avis} other {# avis}})",
+    "respondsIn": "Répond en: <b>{time}</b>",
+    "respondsInShort": "Répond en <b>{time}</b>",
+    "responseRate": "Taux de réponse de 100 %",
+    "minutes": "{count} min",
+    "hours": "{count, plural, one {# h} other {# h}}",
+    "priceLabel": {
+      "WALK": "Par promenade",
+      "NIGHT": "Par nuit",
+      "DAY": "Par jour",
+      "VISIT": "Par visite"
+    },
+    "from": "À partir de",
+    "priceNote": {
+      "minutes": "{count} minutes",
+      "overnight": "séjour de nuit",
+      "fullDay": "journée complète",
+      "perBooking": "par réservation"
+    }
+  },
+  "photos": {
+    "title": "Photos et lieu de vie",
+    "verifiedCount": "{count, plural, one {# photo vérifiée} other {# photos vérifiées}}",
+    "alt": "Photo du profil de {name}",
+    "more": "+{count} photos",
+    "viewAll": "Voir toutes les photos",
+    "dialog": "Photos de {name}",
+    "prev": "Photo précédente",
+    "next": "Photo suivante"
+  },
+  "trust": {
+    "title": "Normes de sécurité et de vérification WagStays",
+    "notVerified": "Pas encore vérifié",
+    "id": {
+      "title": "Pièce d'identité vérifiée",
+      "note": "Pièce d'identité officielle avec photo"
+    },
+    "police": {
+      "title": "Vérification des antécédents (secteur vulnérable)",
+      "note": "Dossier vierge, délivré par la police"
+    },
+    "firstAid": {
+      "title": "Premiers soins et RCR animaliers",
+      "note": "Certifié en soins d'urgence"
+    },
+    "interview": {
+      "title": "Entrevue réussie",
+      "note": "Évaluation du comportement en personne"
+    }
+  },
+  "about": {
+    "title": "À propos de {name}"
+  },
+  "services": {
+    "title": "Services et tarifs",
+    "covered": "Tous les services sont couverts par WagShield",
+    "feature": {
+      "DOG_WALKING": "Parcours GPS en direct",
+      "BOARDING": "Vidéo en direct 3x par jour",
+      "DAY_CARE": "Jeux en groupe",
+      "DROP_IN": "Litière et eau fraîche"
+    },
+    "fallback": {
+      "DOG_WALKING": "Suivi du parcours GPS en direct, rapport pipi-caca et eau fraîche inclus.",
+      "BOARDING": "Votre animal séjourne dans un foyer aimant, avec promenades quotidiennes et attention jour et nuit.",
+      "DAY_CARE": "Fini les journées seul à la maison. Jeux, exercice et sieste au programme.",
+      "DROP_IN": "Eau et nourriture renouvelées, litière nettoyée, jeux et câlins à la maison."
+    },
+    "perMinutes": "/ {count} min",
+    "perNight": "/ nuit",
+    "perDayCare": "/ jour (8 h – 19 h)",
+    "checkoutNote": "Le paiement ajoute la couverture vétérinaire WagShield, des frais de service fixes et {tax}.",
+    "taxHst": "la TVH",
+    "taxSales": "la taxe de vente",
+    "howPricing": "Comment fonctionnent les prix"
+  },
+  "pets": {
+    "title": "Animaux dont je m'occupe",
+    "dogSizes": "Tailles de chiens: {sizes}",
+    "allSizes": "toutes les tailles sont les bienvenues"
+  },
+  "home": {
+    "title": "Domicile et environnement",
+    "yard": {
+      "title": "Maison avec cour",
+      "note": "Espace extérieur clôturé pour jouer en sécurité"
+    },
+    "condo": {
+      "title": "Condo avec balcon"
+    },
+    "apartment": {
+      "title": "Appartement douillet",
+      "note": "Intérieur sécuritaire pour les animaux, parcs à proximité"
+    },
+    "smokeFree": {
+      "title": "Domicile sans fumée",
+      "note": "Aucune fumée à l'intérieur, purificateur d'air en marche"
+    },
+    "smoking": {
+      "title": "Foyer fumeur",
+      "note": "Renseignez-vous sur les arrangements à l'extérieur"
+    },
+    "children": {
+      "title": "Enfants à la maison",
+      "note": "Idéal pour les chiens qui adorent les petits humains"
+    },
+    "noChildren": {
+      "title": "Aucun enfant à la maison",
+      "note": "Un espace tout en calme pour les chiens sensibles ou timides"
+    },
+    "residentPup": "Chien résident: {name}",
+    "otherPets": {
+      "title": "Partage la maison avec des animaux",
+      "note": "Animaux résidents sociables et entièrement vaccinés"
+    },
+    "noPets": {
+      "title": "Aucun autre animal",
+      "note": "Votre animal reçoit une attention exclusive"
+    },
+    "radius": "Rayon de service: {km} km",
+    "areaNote": "{hood} et les quartiers voisins",
+    "mapAlt": "Carte de {location}"
+  },
+  "reviews": {
+    "outOf": "/ 5,0",
+    "summary": "{count, plural, one {# avis vérifié} other {# avis vérifiés}} de vrais propriétaires d'animaux",
+    "communication": "Communication",
+    "reliability": "Fiabilité",
+    "care": "Amour et soins",
+    "migrating": "Les avis écrits de {count, plural, one {# réservation passée} other {# réservations passées}} sont en cours de transfert vers WagStays et apparaîtront ici bientôt.",
+    "none": "Aucun avis pour le moment. Soyez le premier propriétaire à réserver et à partager votre expérience!",
+    "verifiedBooking": "Réservation vérifiée",
+    "stars": "{rating} étoiles sur 5",
+    "photoAlt": "Photo de la réservation de {name}",
+    "walkSummary": "Résumé de la promenade",
+    "responseFrom": "Réponse de {name}",
+    "showFewer": "Afficher moins d'avis",
+    "readAll": "Lire les {count} avis"
+  },
+  "availability": {
+    "title": "Disponibilités",
+    "nextAvailable": "Prochaine disponibilité: {date}",
+    "anyService": "Tous les services",
+    "legend": {
+      "available": "Disponible",
+      "full": "Complet",
+      "away": "Absent",
+      "closed": "Ne travaille pas"
+    },
+    "usualHours": "Heures habituelles de {name}",
+    "closed": "Fermé",
+    "timeNote": "Heures de {zone} · réservez au moins {hours} h à l'avance."
+  },
+  "booking": {
+    "title": "Réserver avec {name}",
+    "unavailable": "{name} n'accepte pas de nouvelles réservations pour le moment.",
+    "fastSecure": "Rapide et sécurisé",
+    "serviceType": "Type de service",
+    "pricePer": "{amount} / {unit}",
+    "option": {
+      "minutes": "{count} min",
+      "perNight": "par nuit",
+      "fullDay": "journée complète"
+    },
+    "timeLabel": {
+      "DOG_WALKING": "Heure de la promenade",
+      "BOARDING": "Heure d'arrivée",
+      "DAY_CARE": "Heure d'arrivée",
+      "DROP_IN": "Heure de la visite"
+    },
+    "time": "Heure",
+    "date": "Date",
+    "walkHours": "Promenade de {count} h",
+    "walkMinutes": "Promenade de {count} min",
+    "dropInMinutes": "Visite à domicile de {count} min",
+    "puppy": "chiot",
+    "ageYears": "{count, plural, one {# an} other {# ans}}",
+    "dogsOnly": "La promenade est réservée aux chiens",
+    "addingPet": "Ajout de {name}: +{amount} par {unit}",
+    "addingPetFree": "Ajout de {name}: sans frais supplémentaires",
+    "puppyExtra": "{name} est un chiot: +{amount} par {unit}",
+    "yourPets": "Vos animaux",
+    "yourPet": "Votre animal",
+    "selectedOf": "{count} sur {limit} max.",
+    "limitTitle": "Jusqu'à {limit} animaux par réservation",
+    "addPet": "Ajouter votre animal",
+    "addNewPet": "Ajouter un animal",
+    "takesUpTo": "{name} accepte jusqu'à {limit} {phrase}.",
+    "rangeBoarding": "Arrivée → Départ",
+    "rangeDays": "Premier jour → Dernier jour",
+    "placeholderBoarding": "Ajouter l'arrivée et le départ",
+    "placeholderDays": "Ajouter des dates",
+    "tooSoon": "Trop tôt",
+    "booked": "Réservé",
+    "closedThatDay": "Fermé ce jour-là",
+    "pickDatesFirst": "Choisissez d'abord les dates",
+    "fullyBooked": "Complet",
+    "fullOn": "Complet le {date}.",
+    "notAvailableOn": "Non disponible le {date}.",
+    "nextAvailable": "Prochaine disponibilité: {date}",
+    "recurring": "Réservation hebdomadaire récurrente",
+    "repeatFor": "Répéter pendant",
+    "weeksAria": "Nombre de semaines",
+    "weeks": "{count} semaines",
+    "conflicts": "{count} des {total} dates hebdomadaires ne sont pas disponibles:",
+    "andMore": "et {count} de plus",
+    "pickCheckout": "Choisissez maintenant une date de départ.",
+    "pickLastDay": "Choisissez maintenant le dernier jour (le même jour pour une seule journée).",
+    "vetCover": "Couverture vétérinaire WagShield",
+    "serviceFee": "Frais de service WagStays",
+    "taxRate": "{tax} ({rate} %)",
+    "taxHst": "TVH",
+    "taxSales": "Taxe de vente",
+    "total": "Total",
+    "perWeek": "Par semaine · {tax} incl.",
+    "perVisit": "Par visite · {tax} incl.",
+    "includes": "{tax} et WagShield inclus",
+    "seriesStay": "{count} réservations hebdomadaires",
+    "seriesVisits": "{count} visites hebdomadaires",
+    "seriesStayTimes": "{count} réservations hebdomadaires × {amount}",
+    "seriesVisitsTimes": "{count} visites hebdomadaires × {amount}",
+    "howPricing": "Comment fonctionnent les prix",
+    "opening": "Ouverture du paiement...",
+    "send": "Envoyer la demande de réservation",
+    "meetGreet": "Demander d'abord une rencontre préalable gratuite",
+    "notCharged": "Votre carte <b>ne sera pas débitée</b> avant que le gardien accepte votre demande.",
+    "guaranteeTitle": "Garantie de satisfaction 100 %",
+    "guaranteeText": "Pas satisfait? Obtenez une nouvelle réservation gratuite ou un remboursement complet.",
+    "question": "Vous avez une question précise?",
+    "ask": "Poser une question à {name}"
+  },
+  "mobileBar": {
+    "reviews": "{count, plural, one {# avis} other {# avis}}",
+    "bookNow": "Réserver"
+  },
+  "actions": {
+    "shareTitle": "{name} sur WagStays",
+    "copyPrompt": "Copiez ce lien",
+    "addFavorite": "Ajouter aux favoris",
+    "saved": "Enregistré",
+    "shareAria": "Partager le profil",
+    "linkCopied": "Lien copié!",
+    "share": "Partager le profil",
+    "message": "Message"
+  }
+}

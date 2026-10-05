@@ -1,4 +1,7 @@
+import { createTranslator } from "next-intl";
 import type { Tone } from "@/components/ui";
+import en from "../../messages/en/account.json";
+import fr from "../../messages/fr/account.json";
 
 // Support tickets: shared constants (safe for client components).
 
@@ -48,10 +51,23 @@ export const PRIORITY_LABELS: Record<TicketPriority, { label: string; tone: Tone
 export const PRIORITY_RANK: Record<string, number> = { URGENT: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
 export const STATUS_RANK: Record<string, number> = { OPEN: 0, IN_PROGRESS: 1, WAITING_ON_USER: 2, RESOLVED: 3, CLOSED: 4 };
 
-export const statusLabel = (s: string) => STATUS_LABELS[s as TicketStatus] ?? { label: s, tone: "neutral" as Tone, icon: "help" };
+const tr = (locale = "en") =>
+  createTranslator({ locale: locale === "fr" ? "fr" : "en", messages: { account: locale === "fr" ? fr : en }, namespace: "account.support" });
+
+/** Status as seen by the person who opened the ticket; translated (English by default, e.g. admin). */
+export const statusLabel = (s: string, locale = "en") => {
+  const st = STATUS_LABELS[s as TicketStatus];
+  if (!st) return { label: s, tone: "neutral" as Tone, icon: "help" };
+  return { ...st, label: tr(locale)(`statuses.${s as TicketStatus}`) };
+};
 export const adminStatusLabel = (s: string) => ADMIN_STATUS_LABELS[s as TicketStatus] ?? { label: s, tone: "neutral" as Tone, icon: "help" };
 export const priorityLabel = (p: string) => PRIORITY_LABELS[p as TicketPriority] ?? { label: p, tone: "neutral" as Tone, icon: "remove" };
-export const categoryLabel = (c: string) => CATEGORY_LABELS[c as TicketCategory] ?? { label: c, icon: "help", hint: "" };
+export const categoryLabel = (c: string, locale = "en") => {
+  const cat = CATEGORY_LABELS[c as TicketCategory];
+  if (!cat) return { label: c, icon: "help", hint: "" };
+  const t = tr(locale);
+  return { ...cat, label: t(`categories.${c as TicketCategory}.label`), hint: t(`categories.${c as TicketCategory}.hint`) };
+};
 
 export const SUBJECT_MAX = 120;
 export const BODY_MAX = 4000;

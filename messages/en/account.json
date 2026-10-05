@@ -1,1 +1,601 @@
-{}
+{
+  "meta": {
+    "bookings": "My Bookings",
+    "bookingDetail": "Booking Details",
+    "pets": "My Pets",
+    "addPet": "Add a Pet",
+    "editPet": "Edit Pet",
+    "settings": "Account Settings",
+    "wagpoints": "WagPoints",
+    "support": "Help & Support",
+    "newTicket": "New support request",
+    "ticket": "Support request"
+  },
+  "layout": {
+    "pendingApproval": "<b>Your account is being reviewed</b> — usually within a few hours. You can browse sitters and set up your pets in the meantime; we'll let you know as soon as you can book."
+  },
+  "shared": {
+    "weekOf": "Week {index} of {total}",
+    "quantity": "{type, select, BOARDING {{count, plural, one {# night} other {# nights}}} DAY_CARE {{count, plural, one {# day} other {# days}}} DOG_WALKING {{count, plural, one {# walk} other {# walks}}} other {{count, plural, one {# visit} other {# visits}}}}",
+    "ageMonths": "{count, plural, one {# mo} other {# mos}}",
+    "ageYears": "{count, plural, one {# yr} other {# yrs}}",
+    "sizeWithRange": "{size} ({range})",
+    "cancelReasons": {
+      "plansChanged": "My plans changed",
+      "petUnwell": "My pet is unwell",
+      "foundAnother": "I found another sitter",
+      "wrongDate": "I booked the wrong date or time",
+      "other": "Something else"
+    },
+    "reason": "Reason",
+    "chooseReason": "Choose a reason…",
+    "anythingElse": "Anything else?",
+    "sharedWithSitter": "Optional — shared with your sitter.",
+    "cancelling": "Cancelling…"
+  },
+  "bookings": {
+    "description": "Every walk, stay and visit you've booked — with your sitter's notes and next steps.",
+    "filtersLabel": "Booking filters",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "cancelled": "Cancelled"
+    },
+    "empty": {
+      "upcomingTitle": "No upcoming bookings",
+      "upcomingText": "When you book a walk, stay or drop-in visit it will show up here.",
+      "pastTitle": "No past bookings yet",
+      "pastText": "Completed bookings appear here, ready for a review or a repeat booking.",
+      "cancelledTitle": "No cancelled bookings",
+      "cancelledText": "Nothing cancelled or declined — nice!"
+    },
+    "leaveReview": "Leave a review",
+    "viewDetails": "View details"
+  },
+  "detail": {
+    "notices": {
+      "cancelled": "Your booking has been cancelled. Any WagPoints you used are back in your wallet.",
+      "reviewed": "Thanks! Your review is now live on the sitter's profile."
+    },
+    "timeline": {
+      "title": "Timeline",
+      "requested": "Booking requested",
+      "confirmedBy": "Confirmed by {name}",
+      "completed": "Completed",
+      "declinedBy": "Declined by {name}",
+      "cancelledByYou": "Cancelled by you",
+      "cancelledBy": "Cancelled by {name}",
+      "cancelledBySupport": "Cancelled by WagStays support",
+      "reviewed": "You left a review"
+    },
+    "next": {
+      "pending": "Waiting for {name} to accept",
+      "upcoming": "Upcoming — see you soon!",
+      "inProgress": "In progress or awaiting {name}'s wrap-up"
+    },
+    "care": {
+      "title": "Care Instructions",
+      "meetingAddress": "Meeting address",
+      "leash": "Leash & gear",
+      "otherAnimals": "Around other animals",
+      "feeding": "Feeding rules",
+      "notes": "Notes for the sitter",
+      "gps": "GPS updates",
+      "gpsOn": "Live GPS + photo updates on",
+      "gpsOff": "Off",
+      "emergency": "Emergency contact",
+      "vet": "Vet clinic",
+      "none": "No special instructions were added."
+    },
+    "price": {
+      "title": "Price Breakdown",
+      "line": "{quantity} × {price}",
+      "subtotal": "{service} subtotal",
+      "protection": "WagShield Vet Protection",
+      "serviceFee": "Platform Service Fee",
+      "discount": "WagPoints Discount",
+      "tax": "HST",
+      "total": "Total",
+      "pointsReturned": "{amount} in WagPoints was returned to your wallet."
+    },
+    "bookingRef": "Booking {ref}",
+    "heading": "{service} with {name}",
+    "superSitter": "Super Sitter",
+    "summary": {
+      "service": "Service",
+      "serviceMinutes": "{service} ({mins} min)",
+      "pets": "{count} pets",
+      "pet": "Pet",
+      "dateTime": "Date & time",
+      "repeatsWeekly": "Repeats weekly",
+      "meetGreet": "Meet & Greet requested",
+      "payment": "Payment",
+      "cardEnding": "{brand} ending in {last4}",
+      "cardOnFile": "Card on file"
+    },
+    "noteFrom": "Note from {name}:",
+    "reasonGiven": "Reason given:",
+    "cancellationReason": "Cancellation reason:",
+    "review": {
+      "yours": "Your Review",
+      "howWas": "How was {pets}'s {service}?",
+      "stars": "{rating} out of 5 stars",
+      "posted": "Posted {date}",
+      "hidden": " · Hidden by moderation"
+    },
+    "actions": {
+      "message": "Message {name}",
+      "bookAgain": "Book again",
+      "report": "Report a problem"
+    },
+    "series": {
+      "title": "Weekly series · {count} weeks",
+      "week": "Week {n}",
+      "total": "Series total (active weeks)"
+    }
+  },
+  "cancelForm": {
+    "open": "Cancel booking",
+    "title": "Cancel this booking?",
+    "free": "Free cancellation up to {hours} hours before the start time. Any WagPoints you used go straight back to your wallet.",
+    "late": "This booking starts in less than {hours} hours. You can still cancel, but your sitter may have already set this time aside — a late-cancellation fee may apply once payments go live.",
+    "detailsPlaceholder": "e.g. We're heading to the cottage a day early.",
+    "confirm": "Yes, cancel booking",
+    "keep": "Keep my booking"
+  },
+  "seriesCancel": {
+    "open": "Cancel this & all later weeks ({count})",
+    "title": "Cancel the rest of this series?",
+    "text": "This cancels this booking and {later, plural, one {the # later weekly booking} other {the # later weekly bookings}}. Earlier weeks aren't affected. Any WagPoints you used go back to your wallet.",
+    "detailsPlaceholder": "e.g. We're moving at the end of the month.",
+    "confirm": "Yes, cancel {count} bookings",
+    "keep": "Keep them"
+  },
+  "reviewForm": {
+    "words": {
+      "1": "Poor",
+      "2": "Fair",
+      "3": "Good",
+      "4": "Great",
+      "5": "Outstanding"
+    },
+    "yourRating": "Your rating",
+    "starRating": "Star rating",
+    "star": "{count, plural, one {# star} other {# stars}} — {word}",
+    "tapToRate": "Tap to rate",
+    "yourReview": "Your review",
+    "placeholder": "What did {name} do well? Other pet parents will read this.",
+    "moreChars": "{count, plural, one {At least # more character} other {At least # more characters}}",
+    "looksGood": "Looks good!",
+    "posting": "Posting…",
+    "post": "Post review"
+  },
+  "pets": {
+    "description": "Keep your pets' details up to date so sitters know exactly how to care for them.",
+    "addPet": "Add a pet",
+    "deleted": "Pet profile deleted.",
+    "saved": "Pet profile saved.",
+    "emptyAction": "Add your first pet",
+    "emptyText": "Add your dog, cat or other companion — you'll pick them when you book.",
+    "emptyTitle": "No pets yet",
+    "otherPet": "Other pet",
+    "chipped": "Chipped",
+    "rabies": "Rabies vaccinated",
+    "spayed": "Spayed",
+    "neutered": "Neutered",
+    "editProfile": "Edit profile",
+    "new": {
+      "backToBooking": "Back to booking",
+      "descriptionNext": "Add your pet and we'll take you straight back to where you left off.",
+      "description": "Tell sitters who they'll be caring for.",
+      "title": "Add a Pet"
+    },
+    "edit": {
+      "title": "Edit {name}",
+      "deleteTitle": "Delete {name}'s profile",
+      "upcoming": "{name} has {count, plural, one {an upcoming booking — cancel it} other {# upcoming bookings — cancel them}} before deleting this profile.",
+      "permanent": "This permanently removes the profile and its traits. It can't be undone."
+    }
+  },
+  "deletePet": {
+    "keep": "Keep {name}",
+    "deleting": "Deleting…",
+    "confirm": "Yes, delete",
+    "delete": "Delete pet"
+  },
+  "petForm": {
+    "species": {
+      "DOG": "Dog",
+      "CAT": "Cat",
+      "OTHER": "Other"
+    },
+    "sex": {
+      "none": "Prefer not to say",
+      "MALE": "Male",
+      "FEMALE": "Female"
+    },
+    "suggestions": {
+      "peopleFriendly": "People-Friendly",
+      "goodWithDogs": "Good with Dogs",
+      "pullsOnLeash": "Pulls on Leash",
+      "separationAnxiety": "Separation Anxiety",
+      "chickenAllergy": "Chicken Allergy",
+      "needsMedication": "Needs Medication"
+    },
+    "basics": "The Basics",
+    "photo": "Photo",
+    "name": "Name",
+    "namePlaceholder": "e.g. Maple",
+    "breed": "Breed",
+    "breedPlaceholder": "e.g. Golden Retriever",
+    "speciesLegend": "Species",
+    "otherKindHint": "Rabbits, birds, reptiles… tell your sitter what to expect.",
+    "otherKindLabel": "What kind of pet?",
+    "otherKindPlaceholder": "e.g. Rabbit",
+    "ageHint": "In years — decimals are fine (e.g. 0.5 for six months).",
+    "age": "Age",
+    "agePlaceholder": "e.g. 2.5",
+    "sexLabel": "Sex",
+    "size": "Size",
+    "health": "Health & ID",
+    "neuteredDescription": "Helps sitters plan group play.",
+    "neuteredLabel": "Spayed / neutered",
+    "rabiesDescription": "Required for most boarding stays.",
+    "rabiesLabel": "Rabies vaccinated",
+    "microchipHint": "Optional — 9 to 15 letters or digits.",
+    "microchip": "Microchip number",
+    "microchipPlaceholder": "e.g. 981098103982",
+    "personality": "Personality & Care Notes",
+    "traitsIntro": "Add short traits sitters should know. Mark allergies and medical needs as <b>important</b> so they stand out.",
+    "traits": "Traits",
+    "removeTrait": "Remove {label}",
+    "noTraits": "No traits yet.",
+    "newTrait": "New trait",
+    "traitPlaceholder": "e.g. Tennis Ball Fanatic",
+    "allergy": "Allergy / medical",
+    "addTrait": "Add trait",
+    "suggestionsLabel": "Suggestions:",
+    "fixFields": "Please fix the highlighted fields.",
+    "saveContinue": "Save & continue booking",
+    "addPet": "Add pet"
+  },
+  "imagePicker": {
+    "badType": "Please upload a JPG, PNG or WebP image.",
+    "tooBig": "Images must be 5 MB or smaller.",
+    "unreadable": "We couldn't read that image — please try another.",
+    "preview": "Preview",
+    "change": "Change photo",
+    "upload": "Upload photo",
+    "help": "JPG, PNG or WebP, up to 5 MB."
+  },
+  "settings": {
+    "description": "Update your details, login email and password, download your data or close your account.",
+    "wallet": "WagPoints Wallet",
+    "walletText": "Apply up to {amount} off at checkout. Points from cancelled bookings come back here automatically.",
+    "bookWithPoints": "Book with WagPoints",
+    "privacy": "Privacy questions? Read our <link>Privacy Policy</link> or email <mail>{email}</mail>.",
+    "profile": {
+      "title": "Profile",
+      "photo": "Profile photo",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phoneHint": "Shared with your sitter once a booking is confirmed.",
+      "phone": "Phone",
+      "save": "Save profile"
+    },
+    "email": {
+      "title": "Login Email",
+      "current": "You currently sign in with <b>{email}</b>.",
+      "new": "New email",
+      "currentPassword": "Current password",
+      "update": "Update email"
+    },
+    "password": {
+      "title": "Password",
+      "newHint": "At least 8 characters.",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "change": "Change password"
+    }
+  },
+  "privacy": {
+    "export": {
+      "failed": "We couldn't prepare your download. Please try again.",
+      "offline": "We couldn't prepare your download. Please check your connection and try again.",
+      "title": "Your Data",
+      "text": "Download a copy of everything we hold about you — profile, pets, bookings and prices, reviews, messages you sent, favourites, WagPoints history, applications and support tickets — as a JSON file. Uploaded documents are listed by file name only.",
+      "started": "Download started.",
+      "preparing": "Preparing…",
+      "download": "Download my data"
+    },
+    "close": {
+      "title": "Close Account",
+      "intro": "Closing your account is permanent and can't be undone. When you close it we:",
+      "login": "Delete your login and replace your name, email and phone with “Deleted User”.",
+      "pets": "Remove your pets’ photos and your profile photo, and archive your pets.",
+      "messages": "Replace the messages you sent with “Message deleted” and remove your favourites and notifications.",
+      "reviews": "Keep the star rating and text of reviews you wrote, shown as “Former member” — sitters rely on honest review history.",
+      "sitter": "Pause and anonymise your sitter profile and delete its photos and your application documents.",
+      "bookings": "Keep past bookings and payments, without your name, as a financial record. Unused WagPoints are forfeited.",
+      "retention": "Keep support tickets, chats and points history for 6 months in case of a safety or payment dispute, then delete them permanently.",
+      "copyFirst": "Want a copy first? Use “Download my data” above.",
+      "blocked": "Finish or cancel {count, plural, one {this upcoming booking} other {these # upcoming bookings}} before closing your account:",
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "withName": "with {name}",
+      "forName": "for {name} (you're the sitter)",
+      "confirmHint": "Type DELETE in capitals.",
+      "confirm": "Confirm",
+      "password": "Current password",
+      "closing": "Closing account…",
+      "submit": "Close my account"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "offFlash": "Notifications are off for this device.",
+    "onFlash": "Notifications are on for this device.",
+    "testSent": "Test sent.",
+    "removed": "Removed.",
+    "intro": "Get a push notification for new booking requests, confirmations, cancellations and messages.",
+    "iosHomeScreen": "On iPhone and iPad, notifications work once WagStays is on your Home Screen: tap <icon></icon> <b>Share</b> → <b>Add to Home Screen</b>, then open WagStays from there and come back to this page.",
+    "updateIos": "Update to iOS 16.4 or later to get notifications.",
+    "unsupported": "This browser doesn't support push notifications. Try Chrome, Edge, Firefox or Safari.",
+    "blocked": "Notifications are blocked for WagStays in this browser. Allow them in your browser's site settings, then try again.",
+    "onDevice": "On for this device",
+    "offDevice": "Off for this device",
+    "turnOff": "Turn off",
+    "turnOn": "Turn on",
+    "devices": "Your devices",
+    "thisDevice": "· This device",
+    "added": "Added {date}",
+    "remove": "Remove {label}",
+    "sendTest": "Send a test notification"
+  },
+  "wagpoints": {
+    "description": "Your rewards wallet — earn on every completed booking, invite friends, and save at checkout.",
+    "balance": "Available balance",
+    "balanceText": "Use up to {amount} off each booking at checkout. Points never expire while your account is open.",
+    "bookEarn": "Book & earn",
+    "howToEarn": "How to earn",
+    "earnTitle": "{rate} back on bookings",
+    "earnText": "Every completed walk, stay or visit earns {rate} of the booking subtotal.",
+    "friendTitle": "{reward} per friend",
+    "friendText": "Invite a friend — you both get {reward} once their first booking is completed.",
+    "saveTitle": "Save at checkout",
+    "saveText": "Tick \"Apply WagPoints\" when you book to take up to {amount} off.",
+    "giveGet": "Give {reward}, get {reward}",
+    "shareText": "Share your link with friends who have pets. When they sign up and their first booking is completed, you each get <b>{reward} in WagPoints</b>.",
+    "yourCode": "Your code: <b>{code}</b>",
+    "invited": "Friends invited",
+    "booked": "Friends booked",
+    "rewards": "Rewards earned",
+    "joined": "Joined {date}",
+    "earned": "+{reward} earned",
+    "awaiting": "Awaiting first stay",
+    "history": "History",
+    "emptyText": "Points you earn, use or receive will appear here.",
+    "emptyTitle": "No WagPoints activity yet",
+    "referralWith": "with {name}",
+    "booking": "Booking {ref}"
+  },
+  "referralShare": {
+    "shareTitle": "Join me on WagStays",
+    "shareText": "I use WagStays for trusted, verified pet sitters. Sign up with my link and we'll both get {reward} in WagPoints after your first stay.",
+    "linkLabel": "Your referral link",
+    "share": "Share invite"
+  },
+  "points": {
+    "earnNote": "You'll earn <b>~{amount}</b> in WagPoints once this booking is completed.",
+    "referrerWithPet": "{pet}'s pet parent {name}",
+    "invitedReward": "<b>{who}</b> invited you — you'll both get <reward>{amount}</reward> in WagPoints after your first stay.",
+    "invited": "<b>{who}</b> invited you to WagStays.",
+    "reasons": {
+      "BOOKING_EARN": "Earned on a booking",
+      "BOOKING_SPEND": "Used at checkout",
+      "BOOKING_REFUND": "Returned to your wallet",
+      "REFERRAL": "Referral reward",
+      "ADMIN": "Adjustment by WagStays",
+      "WELCOME": "Welcome bonus"
+    }
+  },
+  "support": {
+    "categories": {
+      "BOOKING_ISSUE": { "label": "Booking issue", "hint": "No-show, lateness, care not as agreed, schedule problems" },
+      "PAYMENT": { "label": "Payment & refunds", "hint": "Charges, refunds, WagPoints, payouts" },
+      "SAFETY": { "label": "Safety concern", "hint": "Injury, lost pet, unsafe situation — handled first" },
+      "ACCOUNT": { "label": "Account", "hint": "Sign-in, profile, verification" },
+      "OTHER": { "label": "Something else", "hint": "Anything that doesn't fit above" }
+    },
+    "statuses": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "WAITING_ON_USER": "Awaiting your reply",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    },
+    "list": {
+      "newRequest": "New request",
+      "description": "Questions about a booking, a payment or your account? Our Toronto team usually replies within a few hours.",
+      "title": "Support requests",
+      "emergency": "Pet emergency? Call 24/7",
+      "preferEmail": "Prefer email?",
+      "contact": "Contact support",
+      "emptyText": "If something isn't right with a booking, a payment or your account, send us a request and we'll take it from there.",
+      "emptyTitle": "No support requests yet",
+      "nothingOpen": "Nothing open right now.",
+      "open": "Open requests",
+      "past": "Resolved & closed",
+      "updated": "Updated {date}"
+    },
+    "new": {
+      "forWith": "{service} for {pets} with {name}",
+      "forOwner": "{service} for {pets} ({name})",
+      "asSitter": " · as sitter",
+      "title": "How can we help?",
+      "intro": "Tell us what happened and we'll get back to you here. Adding the booking helps us sort it out faster."
+    },
+    "form": {
+      "about": "What is this about?",
+      "category": "Category",
+      "chooseCategory": "Choose a category",
+      "bookingHint": "Optional — pick the booking this is about.",
+      "noBookings": "You don't have any bookings yet.",
+      "relatedBooking": "Related booking",
+      "noBooking": "No specific booking",
+      "subject": "Subject",
+      "subjectPlaceholder": "e.g. Sitter arrived an hour late",
+      "bodyHint": "Include times, what you expected and what happened. Please don't share card numbers.",
+      "body": "Describe the problem",
+      "send": "Send request"
+    },
+    "ticket": {
+      "created": "Thanks — your request is in. We'll reply here and let you know when we do.",
+      "request": "Request {ref} · {category}",
+      "conversation": "Conversation",
+      "you": "You",
+      "supportAuthor": "{name} · WagStays Support",
+      "closedOn": "Closed on {date}",
+      "resolvedOn": "Resolved on {date}",
+      "closedText": "This request is closed. <link>Open a new request</link> if you still need help.",
+      "details": "Details",
+      "reference": "Reference",
+      "category": "Category",
+      "opened": "Opened",
+      "lastUpdate": "Last update",
+      "relatedBooking": "Related booking",
+      "viewBooking": "View booking"
+    },
+    "reply": {
+      "reopen": "Still need help? Reply to re-open",
+      "add": "Add a reply",
+      "placeholder": "Write your message…",
+      "send": "Send reply"
+    },
+    "resolve": {
+      "title": "Mark this request as resolved?",
+      "body": "Let us know everything's sorted. You can still reply later to re-open it.",
+      "label": "Mark as resolved"
+    },
+    "safety": {
+      "title": "Is a pet or person in danger right now?",
+      "text": "Call our 24/7 safety line at <tel>{phone}</tel>. For a medical emergency, contact the nearest emergency vet or call 911. Safety reports sent here are marked urgent and handled first."
+    }
+  },
+  "dataExport": {
+    "wait": "You just downloaded your data. Please wait {count, plural, one {# second} other {# seconds}} and try again."
+  },
+  "errors": {
+    "notFound": "We couldn't find that — it may have been removed.",
+    "logInAgain": "Please log in again.",
+    "signInAgain": "Please sign in again.",
+    "tooLong": "Please keep this under {max} characters.",
+    "checkForm": "Please check the form.",
+    "wrongPassword": "That password isn't right.",
+    "currentPassword": "Please enter your current password.",
+    "starRating": "Please choose a star rating.",
+    "cancel": {
+      "reason": "Please choose a reason.",
+      "notCancellable": "This booking can no longer be cancelled."
+    },
+    "review": {
+      "minLength": "Please write at least 20 characters.",
+      "maxLength": "Please keep your review under 1,000 characters.",
+      "notCompleted": "You can review a booking once it's completed.",
+      "already": "You've already reviewed this booking."
+    },
+    "pet": {
+      "traitLength": "Trait labels must be under 40 characters.",
+      "name": "Please enter your pet's name.",
+      "nameLength": "Please keep the name under 40 characters.",
+      "species": "Please choose a species.",
+      "age": "Please enter an age between 0 and 40 years.",
+      "size": "Please choose a size.",
+      "sex": "Please choose male or female.",
+      "microchip": "Microchip numbers are 9–15 letters or digits.",
+      "maxTraits": "You can add up to 12 traits.",
+      "invalidTraits": "Invalid traits.",
+      "otherKind": "Please tell us what kind of pet this is (e.g. Rabbit).",
+      "saved": "Changes saved.",
+      "upcoming": "{name} has {count, plural, one {an upcoming booking. Cancel it} other {# upcoming bookings. Cancel them}} first, then delete this profile."
+    },
+    "profile": {
+      "firstName": "Please enter your first name.",
+      "lastName": "Please enter your last name.",
+      "phone": "Please enter a valid phone number, e.g. +1 (416) 555-0119.",
+      "updated": "Profile updated."
+    },
+    "email": {
+      "invalid": "Please enter a valid email.",
+      "same": "That's already your email.",
+      "taken": "An account with this email already exists.",
+      "check": "Check {email} — click the confirmation link there to finish changing your email."
+    },
+    "password": {
+      "min": "Use at least 8 characters.",
+      "mismatch": "Passwords don't match.",
+      "reused": "Choose a password you haven't used here before.",
+      "changed": "Password changed."
+    },
+    "close": {
+      "confirm": "Type DELETE (in capitals) to confirm.",
+      "blocked": "You still have upcoming bookings. Cancel or finish them before closing your account.",
+      "failed": "We couldn't close your account just now — nothing was changed. Please try again or contact support."
+    },
+    "support": {
+      "ticketNotFound": "We couldn't find that ticket — it may have been removed.",
+      "writeMessage": "Please write a message.",
+      "messageLength": "Please keep messages under {max} characters.",
+      "category": "Please choose what this is about.",
+      "subject": "Please add a subject.",
+      "subjectMin": "Please add a short subject (at least 4 characters).",
+      "subjectMax": "Please keep the subject under {max} characters.",
+      "bodyMin": "Please describe what happened (at least 10 characters).",
+      "signInContact": "Please sign in again to contact support.",
+      "ownBooking": "Please choose one of your own bookings.",
+      "createFailed": "Something went wrong creating your ticket — please try again.",
+      "signInReply": "Please sign in again to reply.",
+      "closed": "This ticket is closed. Please open a new one if you still need help.",
+      "replyReopened": "Reply sent — we've re-opened your ticket.",
+      "replySent": "Reply sent.",
+      "resolved": "Thanks — we've marked this ticket as resolved."
+    },
+    "reviews": {
+      "writeReply": "Please write a reply.",
+      "replyLength": "Please keep your reply under {max} characters.",
+      "reviewNotFound": "We couldn't find that review.",
+      "hidden": "This review has been hidden by WagStays, so it can't be replied to.",
+      "editWindow": "Replies can only be edited within {days} days of posting.",
+      "noChanges": "No changes to save.",
+      "cantEdit": "This reply can no longer be edited.",
+      "updated": "Reply updated.",
+      "alreadyReplied": "You've already replied to this review.",
+      "posted": "Reply posted — it's now visible on your public profile.",
+      "noteLength": "Please keep your note under {max} characters.",
+      "bookingNotFound": "We couldn't find that booking.",
+      "notCompleted": "You can rate the pet parent once the booking is completed.",
+      "alreadyRated": "You've already rated this pet parent for this booking.",
+      "self": "You can't rate yourself.",
+      "thanks": "Thanks! Your rating helps other sitters."
+    },
+    "readiness": {
+      "phone": "Please enter your phone number.",
+      "invalidPhone": "Please enter a valid Canadian or US number, e.g. (416) 555-0123.",
+      "saved": "Saved {phone}."
+    },
+    "push": {
+      "unavailable": "Notifications aren't available right now.",
+      "invalidSubscription": "This browser returned an invalid subscription.",
+      "on": "Notifications are on for this device.",
+      "off": "Notifications are off for this device.",
+      "invalidDevice": "Invalid device.",
+      "removed": "Device removed.",
+      "notFound": "Device not found.",
+      "testSent": "{count, plural, one {Test sent to # device.} other {Test sent to # devices.}}",
+      "unreachable": "No devices could be reached. Try turning notifications off and on again.",
+      "unknownDevice": "Unknown device",
+      "browser": "Browser",
+      "deviceOn": "{browser} on {os}"
+    }
+  }
+}

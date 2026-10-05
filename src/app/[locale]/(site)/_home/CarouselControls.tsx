@@ -1,7 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /** Prev/next chevrons that scroll a horizontal row (by one card) identified by `targetId`. */
 export function CarouselControls({ targetId }: { targetId: string }) {
+  const t = useTranslations("home.featured");
   const scroll = (dir: 1 | -1) => {
     const row = document.getElementById(targetId);
     if (!row) return;
@@ -20,7 +23,7 @@ export function CarouselControls({ targetId }: { targetId: string }) {
     <div className="flex items-center gap-space-sm">
       <button
         aria-controls={targetId}
-        aria-label="Previous"
+        aria-label={t("previous")}
         className="w-11 h-11 rounded-full bg-surface-container-lowest text-on-surface hover:bg-surface-container flex items-center justify-center shadow-sm transition-all"
         onClick={() => scroll(-1)}
         type="button"
@@ -29,7 +32,7 @@ export function CarouselControls({ targetId }: { targetId: string }) {
       </button>
       <button
         aria-controls={targetId}
-        aria-label="Next"
+        aria-label={t("next")}
         className="w-11 h-11 rounded-full bg-surface-container-lowest text-on-surface hover:bg-surface-container flex items-center justify-center shadow-sm transition-all"
         onClick={() => scroll(1)}
         type="button"

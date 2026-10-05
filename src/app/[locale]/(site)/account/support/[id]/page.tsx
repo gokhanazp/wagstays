@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -6,7 +6,8 @@ import { db } from "@/lib/db";
 import { getPlatformSettings } from "@/lib/settings";
 import { categoryLabel, statusLabel } from "@/lib/support";
 import { Card, StatusChip, formatDateTime } from "@/components/ui";
-import { bookingRef, bookingWhen, serviceLabel } from "../../_lib";
+import { bookingRef, bookingWhen } from "../../_lib";
+import type { ServiceType } from "@/lib/constants";
 import { PetChips } from "@/components/booking/PetChips";
 import { bookingPets, petNames } from "@/lib/pets";
 import { SafetyBanner } from "../_components/SafetyBanner";
@@ -14,17 +15,17 @@ import { TicketReplyForm } from "../_components/TicketReplyForm";
 import { ResolveTicketButton } from "../_components/ResolveTicketButton";
 import { localizedPath } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Support request | WagStays" };
-
-const NOTICES: Record<string, string> = {
-  created: "Thanks — your request is in. We'll reply here and let you know when we do.",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("account.meta");
+  return { title: t("ticket") };
+}
 
 export default async function TicketPage({ params, searchParams }: PageProps<"/[locale]/account/support/[id]">) {
   const user = await requireUser();
   const { id } = await params;
   const noticeKey = (await searchParams).notice;
-  const notice = typeof noticeKey === "string" ? NOTICES[noticeKey] : undefined;
+  const [t, tc, locale] = await Promise.all([getTranslations("account.support.ticket"), getTranslations("common"), getLocale()]);
+  const notice = noticeKey === "created" ? t("created") : undefined;
 
   const ticket = await db.supportTicket.findUnique({
     where: { id },
@@ -57,8 +58,9 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
   }
 
   const settings = ticket.category === "SAFETY" ? await getPlatformSettings() : null;
-  const st = statusLabel(ticket.status);
-  const cat = categoryLabel(ticket.category);
+  const st = statusLabel(ticket.status, locale);
+  const cat = categoryLabel(ticket.category, locale);
+  const when = (d: Date) => formatDateTime(d, undefined, locale);
   const finished = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
   const b = ticket.booking;
   const bookingHref = b ? (b.ownerId === user.id ? `/account/bookings/${b.id}` : b.sitter.userId === user.id ? `/sitter/bookings/${b.id}` : null) : null;
@@ -68,12 +70,12 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
       <div className="flex flex-col gap-space-sm">
         <Link className="flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-primary w-fit" href="/account/support">
           <span className="material-symbols-outlined text-base">arrow_back</span>
-          Help &amp; Support
+          {tc("nav.helpSupport")}
         </Link>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-space-md">
           <div className="flex flex-col gap-1 min-w-0">
             <span className="font-label-md text-label-md uppercase tracking-wide text-primary">
-              Request {ticket.reference} · {cat.label}
+              {t("request", { ref: ticket.reference, category: cat.label })}
             </span>
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-md md:text-headline-md text-on-surface break-words">{ticket.subject}</h1>
           </div>
@@ -97,7 +99,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
       <div className="flex flex-col gap-space-lg xl:grid xl:grid-cols-[1fr_320px] items-start">
         <div className="flex flex-col gap-space-lg min-w-0 w-full">
           <Card className="p-space-md sm:p-space-lg flex flex-col gap-space-md">
-            <ol className="flex flex-col gap-space-md" aria-label="Conversation">
+            <ol className="flex flex-col gap-space-md" aria-label={t("conversation")}>
               {ticket.messages.map((m) => {
                 const mine = m.authorId === user.id;
                 return (
@@ -107,7 +109,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
                     </span>
                     <div className={`flex flex-col gap-1 min-w-0 max-w-[85%] ${mine ? "items-end" : "items-start"}`}>
                       <span className="font-label-md text-label-md text-on-surface-variant">
-                        {mine ? "You" : `${m.author.firstName} · WagStays Support`} · {formatDateTime(m.createdAt)}
+                        {mine ? t("you") : t("supportAuthor", { name: m.author.firstName })} · {when(m.createdAt)}
                       </span>
                       <p
                         className={`px-space-md py-space-sm rounded-2xl font-body-md text-body-md whitespace-pre-line break-words ${
@@ -127,8 +129,9 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
                 <span className="material-symbols-outlined text-xl">task_alt</span>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <p className="font-label-lg text-label-lg">
-                    {ticket.status === "CLOSED" ? "Closed" : "Resolved"}
-                    {ticket.resolvedAt ? ` on ${formatDateTime(ticket.resolvedAt)}` : ""}
+                    {ticket.resolvedAt
+                      ? t(ticket.status === "CLOSED" ? "closedOn" : "resolvedOn", { date: when(ticket.resolvedAt) })
+                      : statusLabel(ticket.status === "CLOSED" ? "CLOSED" : "RESOLVED", locale).label}
                   </p>
                   {ticket.resolution && <p className="font-body-sm text-body-sm text-on-surface whitespace-pre-line break-words">{ticket.resolution}</p>}
                 </div>
@@ -137,11 +140,13 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
 
             {ticket.status === "CLOSED" ? (
               <p className="font-body-sm text-body-sm text-on-surface-variant border-t border-[#EFE7DE] pt-space-md">
-                This request is closed.{" "}
-                <Link className="text-primary font-semibold hover:underline" href={`/account/support/new${b ? `?booking=${b.id}` : ""}`}>
-                  Open a new request
-                </Link>{" "}
-                if you still need help.
+                {t.rich("closedText", {
+                  link: (c) => (
+                    <Link className="text-primary font-semibold hover:underline" href={`/account/support/new${b ? `?booking=${b.id}` : ""}`}>
+                      {c}
+                    </Link>
+                  ),
+                })}
               </p>
             ) : (
               <div className="border-t border-[#EFE7DE] pt-space-md">
@@ -153,26 +158,26 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
 
         <div className="flex flex-col gap-space-lg min-w-0 w-full">
           <Card className="p-space-lg flex flex-col gap-space-md">
-            <h2 className="font-title-md text-title-md text-on-surface">Details</h2>
+            <h2 className="font-title-md text-title-md text-on-surface">{t("details")}</h2>
             <dl className="flex flex-col gap-space-sm font-body-sm text-body-sm">
-              <Detail label="Reference" value={ticket.reference} />
-              <Detail label="Category" value={cat.label} />
-              <Detail label="Opened" value={formatDateTime(ticket.createdAt)} />
-              <Detail label="Last update" value={formatDateTime(ticket.updatedAt)} />
+              <Detail label={t("reference")} value={ticket.reference} />
+              <Detail label={t("category")} value={cat.label} />
+              <Detail label={t("opened")} value={when(ticket.createdAt)} />
+              <Detail label={t("lastUpdate")} value={when(ticket.updatedAt)} />
             </dl>
             {b && (
               <div className="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
-                <span className="font-label-md text-label-md text-on-surface-variant">Related booking</span>
+                <span className="font-label-md text-label-md text-on-surface-variant">{t("relatedBooking")}</span>
                 <span className="font-label-lg text-label-lg text-on-surface">
-                  {serviceLabel(b.service.type)} · {petNames(bookingPets(b).map((p) => p.name))}
+                  {tc(`enums.service.${b.service.type as ServiceType}`)} · {petNames(bookingPets(b).map((p) => p.name), locale)}
                 </span>
                 <PetChips className="my-0.5" pets={bookingPets(b)} />
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {bookingRef(b.id)} · {bookingWhen(b.startAt, b.endAt, b.sitter.city.timeZone)}
+                  {bookingRef(b.id)} · {bookingWhen(b.startAt, b.endAt, b.sitter.city.timeZone, locale)}
                 </span>
                 {bookingHref && (
                   <Link className="font-label-md text-label-md text-primary hover:underline mt-1 w-fit" href={bookingHref}>
-                    View booking
+                    {t("viewBooking")}
                   </Link>
                 )}
               </div>

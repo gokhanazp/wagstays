@@ -1,10 +1,11 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { MAX_PETS_LIMIT } from "@/lib/quote";
 import { useEffect, useRef, useState } from "react";
 import { RangePanel } from "@/components/forms/DatePicker";
 import { Select } from "@/components/forms/Select";
-import { PET_SIZES, PET_SIZE_LABELS, SERVICE_LABELS, SERVICE_TYPES, type PetSize, type ServiceType } from "@/lib/constants";
+import { PET_SIZES, PET_SIZE_LABELS, SERVICE_TYPES, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
 import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
 import { SERVICE_ICONS, formatDateRange, petTypeLabel, type SearchExtras } from "./search-url";
@@ -31,6 +32,10 @@ export function SearchTopBar({
   cities: CityOption[];
   centreHood: string;
 }) {
+  const t = useTranslations("search");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const { update, pending } = useSearchNav(filters, extras);
   const [service, setService] = useState<ServiceType | "">(filters.service ?? "");
   const [hood, setHood] = useState(filters.hood ?? centreHood);
@@ -90,15 +95,15 @@ export function SearchTopBar({
               <span className="material-symbols-outlined text-xl">{service ? SERVICE_ICONS[service] : "pets"}</span>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Service</span>
-              <span className={value}>{service ? SERVICE_LABELS[service] : "Any Service"}</span>
+              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">{t("topBar.service")}</span>
+              <span className={value}>{service ? tc(`enums.service.${service}`) : t("topBar.anyService")}</span>
             </div>
             <Select
-              aria-label="Service"
+              aria-label={t("topBar.service")}
               onChange={(v) => setService(v as ServiceType | "")}
               options={[
-                { value: "", label: "Any Service", icon: "pets" },
-                ...SERVICE_TYPES.map((t) => ({ value: t, label: SERVICE_LABELS[t], icon: SERVICE_ICONS[t] })),
+                { value: "", label: t("topBar.anyService"), icon: "pets" },
+                ...SERVICE_TYPES.map((st) => ({ value: st, label: tc(`enums.service.${st}`), icon: SERVICE_ICONS[st] })),
               ]}
               value={service}
               variant="overlay"
@@ -110,14 +115,14 @@ export function SearchTopBar({
               <span className="material-symbols-outlined text-xl">location_on</span>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Location</span>
+              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">{t("topBar.location")}</span>
               <span className={value}>
                 <span className="hidden sm:inline">{cityName} / </span>
                 {hoodName}
               </span>
             </div>
             <Select
-              aria-label="Neighbourhood"
+              aria-label={t("topBar.neighbourhood")}
               onChange={(v) => {
                 const [c, h] = v.split("|");
                 setCity(c);
@@ -146,8 +151,8 @@ export function SearchTopBar({
                 <span className="material-symbols-outlined text-xl">calendar_month</span>
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Date Range</span>
-                <span className={value}>{formatDateRange(from || undefined, to || undefined)}</span>
+                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">{t("topBar.dateRange")}</span>
+                <span className={value}>{formatDateRange(from || undefined, to || undefined, t, locale)}</span>
               </div>
             </button>
             <RangePanel
@@ -170,14 +175,14 @@ export function SearchTopBar({
               <span className="material-symbols-outlined text-xl">{petIcon}</span>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pet Type</span>
+              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">{t("topBar.petType")}</span>
               <span className={value}>
-                {(filters.petCount ?? 1) > 1 && <span data-testid="topbar-pet-count">{filters.petCount} pets · </span>}
-                {petTypeLabel(pets, sizes, PET_SIZE_LABELS)}
+                {(filters.petCount ?? 1) > 1 && <span data-testid="topbar-pet-count">{t("topBar.petsPrefix", { count: filters.petCount ?? 1 })}</span>}
+                {petTypeLabel(pets, sizes, t, tc)}
               </span>
             </div>
             <Select
-              aria-label="Pet type"
+              aria-label={t("topBar.petTypeAria")}
               onChange={(v) => {
                 if (v === "MIXED") return;
                 const [kind, size] = v.split(":");
@@ -185,11 +190,21 @@ export function SearchTopBar({
                 setSizes(size ? [size as PetSize] : []);
               }}
               options={[
-                ...(petValue === "MIXED" ? [{ value: "MIXED", label: petTypeLabel(pets, sizes, PET_SIZE_LABELS), icon: "pets" }] : []),
-                { value: "", label: "Any Pet", icon: "pets" },
-                { value: "DOG", label: "Dog · Any Size", icon: PET_KIND_META.DOG.icon, group: "Dogs" },
-                ...PET_SIZES.map((s) => ({ value: `DOG:${s}`, label: `${PET_SIZE_LABELS[s].label} Dog (${PET_SIZE_LABELS[s].range})`, icon: PET_KIND_META.DOG.icon, group: "Dogs" })),
-                ...PET_KINDS.filter((k) => k !== "DOG").map((k) => ({ value: k, label: PET_KIND_META[k].label, icon: PET_KIND_META[k].icon, group: "Other pets" })),
+                ...(petValue === "MIXED" ? [{ value: "MIXED", label: petTypeLabel(pets, sizes, t, tc), icon: "pets" }] : []),
+                { value: "", label: t("pets.anyPet"), icon: "pets" },
+                { value: "DOG", label: t("topBar.dogAnySize"), icon: PET_KIND_META.DOG.icon, group: t("topBar.dogsGroup") },
+                ...PET_SIZES.map((s) => ({
+                  value: `DOG:${s}`,
+                  label: `${cap(t(`pets.sizedDog.${s}`))} (${PET_SIZE_LABELS[s].range})`,
+                  icon: PET_KIND_META.DOG.icon,
+                  group: t("topBar.dogsGroup"),
+                })),
+                ...PET_KINDS.filter((k) => k !== "DOG").map((k) => ({
+                  value: k,
+                  label: tc(`enums.petKind.${k}`),
+                  icon: PET_KIND_META[k].icon,
+                  group: t("topBar.otherPetsGroup"),
+                })),
               ]}
               panelMinWidth={260}
               value={petValue}
@@ -199,11 +214,11 @@ export function SearchTopBar({
         </div>
         <div className="flex items-center gap-space-sm">
           {/* Phones/tablets: the pet-count filter lives in the collapsed sidebar, so surface it here too */}
-          <div aria-label="Number of pets" className="lg:hidden shrink-0 h-12 sm:h-14 flex items-center gap-1 pl-space-md pr-1 rounded-full bg-surface-container-lowest shadow-sm" role="group">
+          <div aria-label={t("petCount.label")} className="lg:hidden shrink-0 h-12 sm:h-14 flex items-center gap-1 pl-space-md pr-1 rounded-full bg-surface-container-lowest shadow-sm" role="group">
             <span className="material-symbols-outlined text-lg text-secondary">pets</span>
-            <span className="font-label-md text-label-md text-on-surface-variant mr-1">Pets</span>
+            <span className="font-label-md text-label-md text-on-surface-variant mr-1">{t("petCount.short")}</span>
             <button
-              aria-label="One pet fewer"
+              aria-label={t("petCount.fewer")}
               className="w-9 h-9 rounded-full flex items-center justify-center text-primary bg-surface-container hover:bg-surface-container-high disabled:text-outline disabled:bg-transparent transition-colors"
               disabled={(filters.petCount ?? 1) <= 1 || pending}
               onClick={() => update({ petCount: (filters.petCount ?? 1) - 1 > 1 ? (filters.petCount ?? 1) - 1 : undefined })}
@@ -215,7 +230,7 @@ export function SearchTopBar({
               {filters.petCount ?? 1}
             </span>
             <button
-              aria-label="One pet more"
+              aria-label={t("petCount.more")}
               className="w-9 h-9 rounded-full flex items-center justify-center text-primary bg-surface-container hover:bg-surface-container-high disabled:text-outline disabled:bg-transparent transition-colors"
               disabled={(filters.petCount ?? 1) >= MAX_PETS_LIMIT || pending}
               onClick={() => update({ petCount: (filters.petCount ?? 1) + 1 })}
@@ -231,7 +246,7 @@ export function SearchTopBar({
             type="button"
           >
             <span className={`material-symbols-outlined text-xl ${pending ? "animate-spin" : ""}`}>{pending ? "progress_activity" : "tune"}</span>
-            <span>Update Filters</span>
+            <span>{t("topBar.update")}</span>
           </button>
         </div>
       </div>

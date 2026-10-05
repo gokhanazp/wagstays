@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { pushPromptStatus } from "@/app/actions/push";
 import { EARLY_INSTALL_SCRIPT, captureInstallPrompt, currentSubscription, enablePush, needsHomeScreenFirst, pushSupported, registerServiceWorker } from "./push-client";
@@ -43,6 +44,8 @@ export function PwaClient({ vapidKey }: { vapidKey: string | null }) {
 type Mode = "push" | "ios";
 
 function PushPrompt({ vapidKey }: { vapidKey: string }) {
+  const t = useTranslations("misc.pwa");
+  const tp = useTranslations("common.push");
   const pathname = usePathname();
   const [mode, setMode] = useState<Mode | null>(null);
   const [busy, setBusy] = useState(false);
@@ -78,7 +81,12 @@ function PushPrompt({ vapidKey }: { vapidKey: string }) {
   const enable = async () => {
     setBusy(true);
     setError(null);
-    const res = await enablePush(vapidKey);
+    const res = await enablePush(vapidKey, {
+      unsupported: tp("unsupported"),
+      blocked: tp("blocked"),
+      notGranted: tp("notGranted"),
+      failed: tp("failed"),
+    });
     setBusy(false);
     if (res.ok) close("enabled");
     else setError(res.error);
@@ -95,17 +103,15 @@ function PushPrompt({ vapidKey }: { vapidKey: string }) {
       </span>
       <div className="flex flex-col gap-space-xs min-w-0 flex-1">
         <h2 className="font-title-md text-title-md text-on-surface pr-6" id="push-prompt-title">
-          {mode === "ios" ? "Get booking updates on your iPhone" : "Never miss a booking update"}
+          {mode === "ios" ? t("iosTitle") : t("pushTitle")}
         </h2>
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          {mode === "ios" ? (
-            <>
-              Tap <span className="material-symbols-outlined text-base align-text-bottom">ios_share</span> Share, then <b>Add to Home Screen</b>. Open
-              WagStays from your Home Screen to turn on notifications.
-            </>
-          ) : (
-            "Get a notification when a sitter replies or your booking changes. You can turn it off anytime in Account Settings."
-          )}
+          {mode === "ios"
+            ? t.rich("iosText", {
+                icon: () => <span className="material-symbols-outlined text-base align-text-bottom">ios_share</span>,
+                b: (c) => <b>{c}</b>,
+              })
+            : t("pushText")}
         </p>
         {error && (
           <p className="font-body-sm text-body-sm text-error" role="alert">
@@ -122,21 +128,21 @@ function PushPrompt({ vapidKey }: { vapidKey: string }) {
                 type="button"
               >
                 <span className={`material-symbols-outlined text-base ${busy ? "animate-spin" : ""}`}>{busy ? "autorenew" : "notifications"}</span>
-                Turn on
+                {t("turnOn")}
               </button>
               <button className="h-9 px-space-md rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low" onClick={() => close("dismissed")} type="button">
-                Not now
+                {t("notNow")}
               </button>
             </>
           ) : (
             <button className="h-9 px-space-md rounded-full bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] font-label-md text-label-md" onClick={() => close("ios-seen")} type="button">
-              Got it
+              {t("gotIt")}
             </button>
           )}
         </div>
       </div>
       <button
-        aria-label="Dismiss"
+        aria-label={t("dismiss")}
         className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low"
         onClick={() => close("dismissed")}
         type="button"

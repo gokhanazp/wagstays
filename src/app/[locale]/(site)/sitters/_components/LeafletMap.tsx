@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useLocale } from "next-intl";
 import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { formatMoney } from "@/lib/format";
@@ -23,8 +24,8 @@ const TILES = CARTO_KEY
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-function pinIcon(pin: MapPin, active: boolean) {
-  const price = esc(formatMoney(pin.priceCents));
+function pinIcon(pin: MapPin, active: boolean, locale: string) {
+  const price = esc(formatMoney(pin.priceCents, { locale }));
   const html = active
     ? `<div class="ws-pin -translate-x-1/2 -translate-y-full w-max">
          <div class="px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-bold shadow-lg flex items-center gap-1 transition-all hover:scale-110">
@@ -81,7 +82,8 @@ export default function LeafletMap({
   centre: { lat: number; lng: number };
   recenter: number;
 }) {
-  const icons = useMemo(() => new Map(pins.map((p) => [p.id, { on: pinIcon(p, true), off: pinIcon(p, false) }])), [pins]);
+  const locale = useLocale();
+  const icons = useMemo(() => new Map(pins.map((p) => [p.id, { on: pinIcon(p, true, locale), off: pinIcon(p, false, locale) }])), [pins, locale]);
   const focus = pins.filter((p) => focusIds.includes(p.id));
   const points = (focus.length ? focus : pins).map((p) => [p.lat, p.lng] as [number, number]);
   const c: [number, number] = [centre.lat, centre.lng];
@@ -103,7 +105,7 @@ export default function LeafletMap({
           key={p.id}
           keyboard
           position={[p.lat, p.lng]}
-          title={`${p.displayName} · ${formatMoney(p.priceCents)}`}
+          title={`${p.displayName} · ${formatMoney(p.priceCents, { locale })}`}
           zIndexOffset={p.id === selectedId ? 1000 : 0}
         />
       ))}

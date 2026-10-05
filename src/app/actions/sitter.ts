@@ -1,5 +1,6 @@
 "use server";
 
+import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "@/i18n/revalidate";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/sitter";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 import { parseServiceAddons } from "@/lib/service-addons";
+import { formatMoney } from "@/lib/format";
 
 // Every action re-loads the signed-in sitter (requireSitter) and only touches rows that belong to
 // that sitter's profile — ids posted by the client are never trusted on their own.
@@ -29,6 +31,8 @@ export type SitterActionState =
   | undefined;
 
 type Profile = Awaited<ReturnType<typeof requireSitter>>["profile"];
+const tActions = () => getTranslations("sitter.actions");
+type T = Awaited<ReturnType<typeof tActions>>;
 
 function revalidateSitter(profile: Pick<Profile, "slug">) {
   revalidatePath("/sitter", "layout");
@@ -37,16 +41,16 @@ function revalidateSitter(profile: Pick<Profile, "slug">) {
   revalidatePath("/");
 }
 
-function fail(error: z.ZodError): SitterActionState {
+function fail(error: z.ZodError, t: T): SitterActionState {
   const fieldErrors = z.flattenError(error).fieldErrors as Record<string, string[] | undefined>;
-  return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
+  return { error: Object.values(fieldErrors).flat()[0] ?? t("checkForm"), fieldErrors };
 }
 
-const optText = (max: number, msg?: string) =>
+const optText = (t: T, max: number, msg?: string) =>
   z
     .string()
     .trim()
-    .max(max, msg ?? `Please keep this under ${max} characters.`)
+    .max(max, msg ?? t("maxChars", { max }))
     .optional()
     .transform((v) => (v ? v : null));
 
@@ -61,29 +65,31 @@ const id = z.string().trim().min(1).max(64);
 
 export async function setAvailability(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const parsed = z.object({ status: z.enum(["ACTIVE", "PAUSED"]) }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Unknown availability status." };
+  if (!parsed.success) return { error: t("unknownStatus") };
   await db.sitterProfile.update({ where: { id: profile.id }, data: { status: parsed.data.status } });
   revalidateSitter(profile);
-  return { ok: parsed.data.status === "ACTIVE" ? "You're visible in search again." : "Bookings paused — you're hidden from search." };
+  return { ok: parsed.data.status === "ACTIVE" ? t("visibleAgain") : t("pausedHidden") };
 }
 
 /* ─────────────────────────────── Bookings ─────────────────────────────── */
 
-const BookingActionSchema = z.discriminatedUnion("intent", [
-  z.object({ intent: z.literal("accept"), bookingId: id, note: optText(500) }),
-  z.object({
-    intent: z.literal("decline"),
-    bookingId: id,
-    reason: z.string().trim().min(5, "Please give the owner a short reason (at least 5 characters).").max(500),
-  }),
-  z.object({ intent: z.literal("complete"), bookingId: id }),
-  z.object({
-    intent: z.literal("cancel"),
-    bookingId: id,
-    reason: z.string().trim().min(5, "Please explain why you're cancelling (at least 5 characters).").max(500),
-  }),
-]);
+const bookingActionSchema = (t: T) =>
+  z.discriminatedUnion("intent", [
+    z.object({ intent: z.literal("accept"), bookingId: id, note: optText(t, 500) }),
+    z.object({
+      intent: z.literal("decline"),
+      bookingId: id,
+      reason: z.string().trim().min(5, t("declineReason")).max(500),
+    }),
+    z.object({ intent: z.literal("complete"), bookingId: id }),
+    z.object({
+      intent: z.literal("cancel"),
+      bookingId: id,
+      reason: z.string().trim().min(5, t("cancelReason")).max(500),
+    }),
+  ]);
 
 const INTENT_TO_STATUS: Record<string, BookingStatus> = {
   accept: "CONFIRMED",
@@ -94,22 +100,23 @@ const INTENT_TO_STATUS: Record<string, BookingStatus> = {
 
 export async function respondToBooking(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const parsed = BookingActionSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  const t = await tActions();
+  const parsed = bookingActionSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fail(parsed.error, t);
   const d = parsed.data;
 
   const booking = await db.booking.findFirst({
     where: { id: d.bookingId, sitterId: profile.id },
     select: { id: true, status: true, startAt: true },
   });
-  if (!booking) return { error: "Booking not found." };
+  if (!booking) return { error: t("bookingNotFound") };
 
   const to = INTENT_TO_STATUS[d.intent];
   if (!allowedTransitions(booking.status, "SITTER").includes(to)) {
-    return { error: "This booking can no longer be changed that way — refresh to see its latest status." };
+    return { error: t("cantChange") };
   }
   if (d.intent === "complete" && booking.startAt.getTime() > Date.now()) {
-    return { error: "You can mark a booking completed once it has started." };
+    return { error: t("notStarted") };
   }
 
   const res = await transitionBooking({
@@ -125,62 +132,64 @@ export async function respondToBooking(_: SitterActionState, formData: FormData)
   revalidatePath("/account", "layout");
   return {
     ok: {
-      accept: "Request accepted — the owner has been notified.",
-      decline: "Request declined.",
-      complete: "Marked as completed. Nice work!",
-      cancel: "Booking cancelled.",
+      accept: t("accepted"),
+      decline: t("declined"),
+      complete: t("completed"),
+      cancel: t("cancelled"),
     }[d.intent],
   };
 }
 
 /* ─────────────────────────────── Profile ─────────────────────────────── */
 
-const ProfileSchema = z
-  .object({
-    headline: z.string().trim().min(3, "Please add a headline.").max(80, "Keep your headline under 80 characters."),
-    bio: z
-      .string()
-      .trim()
-      .min(20, "Your card blurb should be at least 20 characters.")
-      .max(BIO_MAX, `Your card blurb must be ${BIO_MAX} characters or fewer.`),
-    about: optText(4000, "Please keep your About section under 4,000 characters."),
-    residentPetName: optText(40),
-    locationNote: optText(80),
-    serviceAreaNote: optText(200),
-    serviceRadiusKm: z.coerce.number("Enter a radius in km.").min(0.5, "Radius must be at least 0.5 km.").max(25, "Radius can be at most 25 km."),
-    yearsExperience: z.coerce.number("Enter a number of years.").int("Use whole years.").min(0, "Can't be negative.").max(60, "Please enter 60 or fewer."),
-    homeType: z.enum(HOME_TYPES.map((h) => h.value) as [string, ...string[]], "Please choose a home type."),
-    homeTitle: optText(60),
-    homeNote: optText(200),
-    hasYard: checkbox,
-    smokeFree: checkbox,
-    hasChildren: checkbox,
-    hasOtherPets: checkbox,
-    otherPetsNote: optText(200),
-    acceptsSmall: checkbox,
-    acceptsMedium: checkbox,
-    acceptsLarge: checkbox,
-    acceptsGiant: checkbox,
-    kinds: z
-      .array(z.enum(PET_KINDS, "Unknown pet type."))
-      .min(1, "Choose at least one kind of pet you care for.")
-      .transform((v) => normalizeKinds(v)),
-  })
-  .refine((d) => !d.kinds.includes("DOG") || d.acceptsSmall || d.acceptsMedium || d.acceptsLarge || d.acceptsGiant, {
-    message: "Choose at least one dog size you accept.",
-    path: ["acceptsSmall"],
-  });
+const profileSchema = (t: T) =>
+  z
+    .object({
+      headline: z.string().trim().min(3, t("headlineMin")).max(80, t("headlineMax")),
+      bio: z
+        .string()
+        .trim()
+        .min(20, t("bioMin"))
+        .max(BIO_MAX, t("bioMax", { max: BIO_MAX })),
+      about: optText(t, 4000, t("aboutMax")),
+      residentPetName: optText(t, 40),
+      locationNote: optText(t, 80),
+      serviceAreaNote: optText(t, 200),
+      serviceRadiusKm: z.coerce.number(t("radiusNumber")).min(0.5, t("radiusMin")).max(25, t("radiusMax")),
+      yearsExperience: z.coerce.number(t("yearsNumber")).int(t("yearsInt")).min(0, t("yearsMin")).max(60, t("yearsMax")),
+      homeType: z.enum(HOME_TYPES.map((h) => h.value) as [string, ...string[]], t("homeType")),
+      homeTitle: optText(t, 60),
+      homeNote: optText(t, 200),
+      hasYard: checkbox,
+      smokeFree: checkbox,
+      hasChildren: checkbox,
+      hasOtherPets: checkbox,
+      otherPetsNote: optText(t, 200),
+      acceptsSmall: checkbox,
+      acceptsMedium: checkbox,
+      acceptsLarge: checkbox,
+      acceptsGiant: checkbox,
+      kinds: z
+        .array(z.enum(PET_KINDS, t("unknownPetType")))
+        .min(1, t("kindsMin"))
+        .transform((v) => normalizeKinds(v)),
+    })
+    .refine((d) => !d.kinds.includes("DOG") || d.acceptsSmall || d.acceptsMedium || d.acceptsLarge || d.acceptsGiant, {
+      message: t("dogSize"),
+      path: ["acceptsSmall"],
+    });
 
 export async function updateProfile(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const parsed = ProfileSchema.safeParse({ ...Object.fromEntries(formData), kinds: formData.getAll("kinds") });
-  if (!parsed.success) return fail(parsed.error);
+  const t = await tActions();
+  const parsed = profileSchema(t).safeParse({ ...Object.fromEntries(formData), kinds: formData.getAll("kinds") });
+  if (!parsed.success) return fail(parsed.error, t);
   const { kinds, ...d } = parsed.data;
   // Dog walking only makes sense for dogs — keep DOG while that service is on.
   if (!kinds.includes("DOG") && (await db.service.count({ where: { sitterId: profile.id, type: "DOG_WALKING", active: true } }))) {
     return {
-      error: "Please check “Pets I care for”.",
-      fieldErrors: { kinds: ["You offer Dog Walking, so dogs must stay selected. Turn off Dog Walking in Services first."] },
+      error: t("checkPets"),
+      fieldErrors: { kinds: [t("dogsRequired")] },
     };
   }
   await db.$transaction([
@@ -192,15 +201,16 @@ export async function updateProfile(_: SitterActionState, formData: FormData): P
     db.sitterSpecies.createMany({ data: kinds.map((kind) => ({ sitterId: profile.id, kind })), skipDuplicates: true }),
   ]);
   revalidateSitter(profile);
-  return { ok: "Profile saved." };
+  return { ok: t("profileSaved") };
 }
 
 export async function uploadProfileImage(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { user, profile } = await requireSitter();
+  const t = await tActions();
   const kind = z.enum(["avatar", "card"]).safeParse(formData.get("kind"));
   const file = formData.get("file");
-  if (!kind.success) return { error: "Unknown image type." };
-  if (!(file instanceof File)) return { error: "Please choose a file." };
+  if (!kind.success) return { error: t("unknownImage") };
+  if (!(file instanceof File)) return { error: t("chooseFile") };
   const saved = await saveUpload(file, "sitters");
   if ("error" in saved) return { error: saved.error };
   if (kind.data === "avatar") {
@@ -212,19 +222,20 @@ export async function uploadProfileImage(_: SitterActionState, formData: FormDat
     await db.sitterProfile.update({ where: { id: profile.id }, data: { cardPhotoUrl: saved.url } });
   }
   revalidateSitter(profile);
-  return { ok: kind.data === "avatar" ? "Profile photo updated." : "Card photo updated." };
+  return { ok: kind.data === "avatar" ? t("avatarUpdated") : t("cardUpdated") };
 }
 
 /* ─────────────────────────────── Gallery ─────────────────────────────── */
 
 export async function addPhoto(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const caption = optText(80).safeParse(formData.get("caption") ?? undefined);
-  if (!caption.success) return fail(caption.error);
+  const t = await tActions();
+  const caption = optText(t, 80).safeParse(formData.get("caption") ?? undefined);
+  if (!caption.success) return fail(caption.error, t);
   const count = await db.sitterPhoto.count({ where: { sitterId: profile.id } });
-  if (count >= MAX_PHOTOS) return { error: `You can show up to ${MAX_PHOTOS} photos — remove one first.` };
+  if (count >= MAX_PHOTOS) return { error: t("maxPhotos", { max: MAX_PHOTOS }) };
   const file = formData.get("file");
-  if (!(file instanceof File)) return { error: "Please choose a file." };
+  if (!(file instanceof File)) return { error: t("chooseFile") };
   const saved = await saveUpload(file, "sitters");
   if ("error" in saved) return { error: saved.error };
   const last = await db.sitterPhoto.aggregate({ where: { sitterId: profile.id }, _max: { sortOrder: true } });
@@ -232,33 +243,35 @@ export async function addPhoto(_: SitterActionState, formData: FormData): Promis
     data: { sitterId: profile.id, url: saved.url, caption: caption.data, sortOrder: (last._max.sortOrder ?? -1) + 1 },
   });
   revalidateSitter(profile);
-  return { ok: "Photo added to your gallery." };
+  return { ok: t("photoAdded") };
 }
 
 export async function updatePhotoCaption(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
-  const parsed = z.object({ photoId: id, caption: optText(80) }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  const t = await tActions();
+  const parsed = z.object({ photoId: id, caption: optText(t, 80) }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fail(parsed.error, t);
   const res = await db.sitterPhoto.updateMany({
     where: { id: parsed.data.photoId, sitterId: profile.id },
     data: { caption: parsed.data.caption },
   });
-  if (!res.count) return { error: "Photo not found." };
+  if (!res.count) return { error: t("photoNotFound") };
   revalidateSitter(profile);
-  return { ok: "Caption saved." };
+  return { ok: t("captionSaved") };
 }
 
 export async function movePhoto(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const parsed = z.object({ photoId: id, direction: z.enum(["up", "down"]) }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Invalid move." };
+  if (!parsed.success) return { error: t("invalidMove") };
   const photos = await db.sitterPhoto.findMany({
     where: { sitterId: profile.id },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     select: { id: true },
   });
   const i = photos.findIndex((p) => p.id === parsed.data.photoId);
-  if (i < 0) return { error: "Photo not found." };
+  if (i < 0) return { error: t("photoNotFound") };
   const j = parsed.data.direction === "up" ? i - 1 : i + 1;
   if (j < 0 || j >= photos.length) return undefined;
   [photos[i], photos[j]] = [photos[j], photos[i]];
@@ -270,80 +283,86 @@ export async function movePhoto(_: SitterActionState, formData: FormData): Promi
 
 export async function deletePhoto(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const photoId = id.safeParse(formData.get("photoId"));
-  if (!photoId.success) return { error: "Photo not found." };
+  if (!photoId.success) return { error: t("photoNotFound") };
   const res = await db.sitterPhoto.deleteMany({ where: { id: photoId.data, sitterId: profile.id } });
-  if (!res.count) return { error: "Photo not found." };
+  if (!res.count) return { error: t("photoNotFound") };
   revalidateSitter(profile);
-  return { ok: "Photo removed." };
+  return { ok: t("photoRemoved") };
 }
 
 /* ───────────────────────────── Skills & tags ───────────────────────────── */
 
 export async function addSkill(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const parsed = z
     .object({
-      label: z.string().trim().min(2, "Enter a skill (at least 2 characters).").max(40, "Keep skills under 40 characters."),
+      label: z.string().trim().min(2, t("skillMin")).max(40, t("skillMax")),
       emoji: z
         .string()
         .trim()
-        .max(8, "Use a single emoji.")
-        .refine((v) => !v || !/[\p{L}\p{N}]/u.test(v), "Use an emoji, not letters.")
+        .max(8, t("singleEmoji"))
+        .refine((v) => !v || !/[\p{L}\p{N}]/u.test(v), t("emojiOnly"))
         .optional()
         .transform((v) => (v ? v : null)),
     })
     .safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  if (!parsed.success) return fail(parsed.error, t);
   const count = await db.sitterSkill.count({ where: { sitterId: profile.id } });
-  if (count >= MAX_SKILLS) return { error: `You can list up to ${MAX_SKILLS} skills.` };
+  if (count >= MAX_SKILLS) return { error: t("maxSkills", { max: MAX_SKILLS }) };
   await db.sitterSkill.create({ data: { sitterId: profile.id, ...parsed.data, sortOrder: count } });
   revalidateSitter(profile);
-  return { ok: "Skill added." };
+  return { ok: t("skillAdded") };
 }
 
 export async function removeSkill(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const skillId = id.safeParse(formData.get("skillId"));
-  if (!skillId.success) return { error: "Skill not found." };
+  if (!skillId.success) return { error: t("skillNotFound") };
   const res = await db.sitterSkill.deleteMany({ where: { id: skillId.data, sitterId: profile.id } });
-  if (!res.count) return { error: "Skill not found." };
+  if (!res.count) return { error: t("skillNotFound") };
   revalidateSitter(profile);
-  return { ok: "Skill removed." };
+  return { ok: t("skillRemoved") };
 }
 
 export async function addTag(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const parsed = z
     .object({
-      label: z.string().trim().min(2, "Enter a tag (at least 2 characters).").max(28, "Keep tags under 28 characters."),
-      icon: z.enum(TAG_ICONS.map((t) => t.icon) as [string, ...string[]], "Choose an icon from the list."),
+      label: z.string().trim().min(2, t("tagMin")).max(28, t("tagMax")),
+      icon: z.enum(TAG_ICONS.map((x) => x.icon) as [string, ...string[]], t("tagIcon")),
     })
     .safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  if (!parsed.success) return fail(parsed.error, t);
   const count = await db.sitterTag.count({ where: { sitterId: profile.id } });
-  if (count >= MAX_TAGS) return { error: `Cards show up to ${MAX_TAGS} tags — remove one first.` };
+  if (count >= MAX_TAGS) return { error: t("maxTags", { max: MAX_TAGS }) };
   await db.sitterTag.create({ data: { sitterId: profile.id, ...parsed.data, sortOrder: count } });
   revalidateSitter(profile);
-  return { ok: "Tag added." };
+  return { ok: t("tagAdded") };
 }
 
 export async function removeTag(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const t = await tActions();
   const tagId = id.safeParse(formData.get("tagId"));
-  if (!tagId.success) return { error: "Tag not found." };
+  if (!tagId.success) return { error: t("tagNotFound") };
   const res = await db.sitterTag.deleteMany({ where: { id: tagId.data, sitterId: profile.id } });
-  if (!res.count) return { error: "Tag not found." };
+  if (!res.count) return { error: t("tagNotFound") };
   revalidateSitter(profile);
-  return { ok: "Tag removed." };
+  return { ok: t("tagRemoved") };
 }
 
 /* ─────────────────────────────── Services ─────────────────────────────── */
 
 export async function updateService(_: SitterActionState, formData: FormData): Promise<SitterActionState> {
   const { profile } = await requireSitter();
+  const [tr, locale] = await Promise.all([tActions(), getLocale()]);
   const type = z.enum(SERVICE_TYPES).safeParse(formData.get("type"));
-  if (!type.success) return { error: "Unknown service." };
+  if (!type.success) return { error: tr("unknownService") };
   const t: ServiceType = type.data;
   const bounds = SERVICE_PRICE_BOUNDS[t];
   const durations = SERVICE_DURATIONS[t];
@@ -352,24 +371,24 @@ export async function updateService(_: SitterActionState, formData: FormData): P
     .object({
       active: checkbox,
       price: z.coerce
-        .number("Enter a price in dollars.")
-        .min(bounds.min / 100, `Price must be at least $${bounds.min / 100}.`)
-        .max(bounds.max / 100, `Price can be at most $${bounds.max / 100}.`)
-        .refine((v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-6, "Use dollars and cents only."),
+        .number(tr("priceNumber"))
+        .min(bounds.min / 100, tr("priceMin", { amount: formatMoney(bounds.min, { locale }) }))
+        .max(bounds.max / 100, tr("priceMax", { amount: formatMoney(bounds.max, { locale }) }))
+        .refine((v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-6, tr("priceCents")),
       durationMins: durations
-        ? z.coerce.number().refine((v) => durations.includes(v), "Choose a visit length.")
+        ? z.coerce.number().refine((v) => durations.includes(v), tr("visitLength"))
         : z.any().transform(() => null),
-      description: optText(300),
-      extraNote: optText(40),
+      description: optText(tr, 300),
+      extraNote: optText(tr, 40),
     })
     .safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error);
+  if (!parsed.success) return fail(parsed.error, tr);
   const d = parsed.data;
   // Add-on rates: additional pet (+ max pets), holiday rate (≥ base price), puppy surcharge.
-  const addons = parseServiceAddons(Object.fromEntries(formData) as Record<string, FormDataEntryValue>, Math.round(d.price * 100), t);
-  if (!addons.ok) return { error: Object.values(addons.fieldErrors).flat()[0] ?? "Please check the add-on rates.", fieldErrors: addons.fieldErrors };
+  const addons = parseServiceAddons(Object.fromEntries(formData) as Record<string, FormDataEntryValue>, Math.round(d.price * 100), t, locale);
+  if (!addons.ok) return { error: Object.values(addons.fieldErrors).flat()[0] ?? tr("checkAddons"), fieldErrors: addons.fieldErrors };
   if (t === "DOG_WALKING" && d.active && !(await db.sitterSpecies.findFirst({ where: { sitterId: profile.id, kind: "DOG" } }))) {
-    return { error: "Dog Walking needs dogs in “Pets I care for” — add dogs on your profile first." };
+    return { error: tr("dogWalkingNeedsDogs") };
   }
 
   const data = {
@@ -387,5 +406,5 @@ export async function updateService(_: SitterActionState, formData: FormData): P
   else await db.service.create({ data: { sitterId: profile.id, type: t, ...data } });
 
   revalidateSitter(profile);
-  return { ok: d.active ? "Service saved." : "Saved — this service is hidden from owners." };
+  return { ok: d.active ? tr("serviceSaved") : tr("serviceHidden") };
 }

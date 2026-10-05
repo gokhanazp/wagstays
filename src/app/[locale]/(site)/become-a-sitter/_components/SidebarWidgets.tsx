@@ -1,39 +1,42 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { ESTIMATOR_NET_PER_SERVICE, ESTIMATOR_WEEKS_PER_MONTH } from "@/lib/sitter-application";
 
 export function EarningsEstimator() {
+  const t = useTranslations("apply.estimator");
+  const locale = useLocale();
   const [days, setDays] = useState(4);
   const [walks, setWalks] = useState(3);
   const weekly = ESTIMATOR_NET_PER_SERVICE * walks * days;
   const monthly = weekly * ESTIMATOR_WEEKS_PER_MONTH;
-  const money = (dollars: number) => formatMoney(Math.round(dollars) * 100);
+  const money = (dollars: number) => formatMoney(Math.round(dollars) * 100, { locale });
 
   return (
     <>
       <div className="bg-surface-container-low p-space-md rounded-2xl flex flex-col items-center text-center">
         <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-          Your Estimated Monthly Income
+          {t("monthlyIncome")}
         </span>
         <div className="flex items-baseline gap-1 my-1">
           <span aria-live="polite" className="font-display-lg text-display-lg text-secondary tracking-tight">
             {money(monthly)}
           </span>
-          <span className="font-title-md text-title-md text-on-surface-variant">/ mo</span>
+          <span className="font-title-md text-title-md text-on-surface-variant">{t("perMonth")}</span>
         </div>
         <p className="font-body-sm text-body-sm text-primary font-semibold flex items-center gap-1">
-          <span className="material-symbols-outlined text-base">trending_up</span>≈ {money(weekly)} per week
+          <span className="material-symbols-outlined text-base">trending_up</span>{t("perWeek", { amount: money(weekly) })}
         </p>
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="flex justify-between items-center font-label-md text-label-md">
           <label className="text-on-surface-variant" htmlFor="daysSlider">
-            Days per week?
+            {t("daysLabel")}
           </label>
           <span className="font-bold text-on-surface bg-surface-container px-2 py-0.5 rounded-lg">
-            {days} {days === 1 ? "Day" : "Days"}
+            {t("days", { count: days })}
           </span>
         </div>
         <input
@@ -46,18 +49,18 @@ export function EarningsEstimator() {
           value={days}
         />
         <div className="flex justify-between text-label-sm font-label-sm text-outline-variant">
-          <span>1 day</span>
-          <span>Weekends</span>
-          <span>Full-time (7 days)</span>
+          <span>{t("daysMin")}</span>
+          <span>{t("daysMid")}</span>
+          <span>{t("daysMax")}</span>
         </div>
       </div>
       <div className="flex flex-col gap-1.5 pt-2">
         <div className="flex justify-between items-center font-label-md text-label-md">
           <label className="text-on-surface-variant" htmlFor="walksSlider">
-            Walks / visits per day?
+            {t("walksLabel")}
           </label>
           <span className="font-bold text-on-surface bg-surface-container px-2 py-0.5 rounded-lg">
-            {walks} {walks === 1 ? "Pet" : "Pets"}
+            {t("pets", { count: walks })}
           </span>
         </div>
         <input
@@ -70,9 +73,9 @@ export function EarningsEstimator() {
           value={walks}
         />
         <div className="flex justify-between text-label-sm font-label-sm text-outline-variant">
-          <span>1 pet</span>
-          <span>3 pets</span>
-          <span>6 pets (max)</span>
+          <span>{t("petsMin")}</span>
+          <span>{t("petsMid")}</span>
+          <span>{t("petsMax")}</span>
         </div>
       </div>
     </>

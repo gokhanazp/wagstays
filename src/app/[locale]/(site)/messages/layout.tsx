@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { listConversations } from "@/lib/conversations";
 import { InboxShell, type InboxItem } from "./_components/InboxShell";
 import { shortRelative } from "./_components/time";
 
-export const metadata: Metadata = { title: "Messages", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("chat.meta");
+  return { title: t("messages"), robots: { index: false } };
+}
 
 export default async function MessagesLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const rows = await listConversations(user.id);
+  const locale = await getLocale();
+  const rows = await listConversations(user.id, locale);
   const now = new Date();
   const items: InboxItem[] = rows.map((c) => ({
     id: c.id,
@@ -17,7 +22,7 @@ export default async function MessagesLayout({ children }: { children: React.Rea
     avatarUrl: c.other.avatarUrl,
     initial: c.other.initial,
     preview: c.preview,
-    when: shortRelative(c.at, undefined, now),
+    when: shortRelative(c.at, undefined, now, locale),
     whenIso: c.at.toISOString(),
     unread: c.unread,
   }));

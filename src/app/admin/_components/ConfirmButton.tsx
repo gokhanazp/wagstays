@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { BTN } from "@/components/ui";
 
@@ -26,6 +27,7 @@ export function ConfirmButton({
   disabled?: boolean;
   disabledReason?: string;
 }) {
+  const tc = useTranslations("common.actions");
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, start] = useTransition();
@@ -88,7 +90,7 @@ export function ConfirmButton({
             </div>
             <div className="flex flex-wrap justify-end gap-space-sm">
               <button className={BTN.ghost} data-cancel disabled={pending} onClick={() => setOpen(false)} type="button">
-                Cancel
+                {tc("cancel")}
               </button>
               <button className={confirm.danger ? BTN.danger : BTN.sage} disabled={pending} onClick={run} type="button">
                 {pending && <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>}

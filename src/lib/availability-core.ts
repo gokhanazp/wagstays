@@ -6,6 +6,8 @@
 // after local midnight. Instants are epoch milliseconds. All maths on dates goes through UTC-noon
 // calendar arithmetic so DST changes never shift a day.
 
+import { intlLocale } from "@/i18n/routing";
+import { bookingT } from "./booking-messages";
 import { TIME_SLOTS } from "./booking-slots";
 
 export type WeeklyRange = { weekday: number; startMinute: number; endMinute: number };
@@ -32,6 +34,11 @@ export const MAX_STAY_DAYS = 30;
 /** Limits enforced by the sitter availability editor (src/app/actions/availability.ts). */
 export const AVAILABILITY_LIMITS = { maxRangesPerDay: 4, maxCapacity: 10, maxNoticeHours: 168, maxTimeOffDays: 365 } as const;
 export const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+/** WEEKDAY_LABELS[i] in the UI language ("Monday" / fr "lundi" — French weekday names are lower case). */
+export function weekdayLabel(weekday: number, locale = "en") {
+  if (locale === "en") return WEEKDAY_LABELS[weekday];
+  return new Date(Date.UTC(2000, 0, 2 + weekday, 12)).toLocaleDateString(intlLocale(locale), { weekday: "long", timeZone: "UTC" });
+}
 
 export const isStayService = (type: string) => type === "BOARDING" || type === "DAY_CARE";
 export const isVisitService = (type: string) => type === "DOG_WALKING" || type === "DROP_IN";
@@ -136,42 +143,52 @@ export function parseSlot(v: string | null | undefined) {
   return hhmmToMinute(legacy ? legacy.start : v);
 }
 
-/** 540 → "9:00 AM", 1440 → "12:00 AM" (midnight, end of day) */
-export function formatMinute(m: number) {
+/** 540 → "9:00 AM", 1440 → "12:00 AM" (midnight, end of day). French: "9 h", "9 h 30", "24 h". */
+export function formatMinute(m: number, locale = "en") {
+  if (locale !== "en") {
+    const mm = m % 60;
+    return `${Math.floor(m / 60)} h${mm ? ` ${String(mm).padStart(2, "0")}` : ""}`;
+  }
   const h = Math.floor(m / 60) % 24;
   return `${h % 12 || 12}:${String(m % 60).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
-/** "9:00 – 10:00 AM" / "11:30 AM – 12:30 PM" */
-export function formatMinuteRange(start: number, end: number) {
-  const a = formatMinute(start);
-  const b = formatMinute(end);
+/** "9:00 – 10:00 AM" / "11:30 AM – 12:30 PM" (fr: "9 h – 10 h") */
+export function formatMinuteRange(start: number, end: number, locale = "en") {
+  const a = formatMinute(start, locale);
+  const b = formatMinute(end, locale);
+  if (locale !== "en") return `${a} – ${b}`;
   return a.slice(-2) === b.slice(-2) ? `${a.slice(0, -3)} – ${b}` : `${a} – ${b}`;
 }
 
-const shortFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", month: "short", day: "numeric" });
-const longFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
-/** "Oct 18" */
-export const formatDay = (iso: string) => shortFmt.format(new Date(toUtcNoon(iso)));
-/** "Sat, Oct 18" */
-export const formatDayLong = (iso: string) => longFmt.format(new Date(toUtcNoon(iso)));
-/** "Oct 18–22" / "Oct 30 – Nov 2" / "Oct 18" */
-export function formatDayRange(from: string, to?: string | null) {
-  if (!to || to === from) return formatDay(from);
-  const [a, b] = [formatDay(from), formatDay(to)];
+const fmtCache = new Map<string, Intl.DateTimeFormat>();
+function dayFmt(locale: string, long: boolean) {
+  const k = `${locale}:${long}`;
+  let f = fmtCache.get(k);
+  if (!f) {
+    f = new Intl.DateTimeFormat(intlLocale(locale), { timeZone: "UTC", ...(long && { weekday: "short" }), month: "short", day: "numeric" });
+    fmtCache.set(k, f);
+  }
+  return f;
+}
+/** "Oct 18" (fr: "18 oct.") */
+export const formatDay = (iso: string, locale = "en") => dayFmt(locale, false).format(new Date(toUtcNoon(iso)));
+/** "Sat, Oct 18" (fr: "sam. 18 oct.") */
+export const formatDayLong = (iso: string, locale = "en") => dayFmt(locale, true).format(new Date(toUtcNoon(iso)));
+/** "Oct 18–22" / "Oct 30 – Nov 2" / "Oct 18" (fr: "18–22 oct." / "30 oct. – 2 nov.") */
+export function formatDayRange(from: string, to?: string | null, locale = "en") {
+  if (!to || to === from) return formatDay(from, locale);
+  const [a, b] = [formatDay(from, locale), formatDay(to, locale)];
+  if (locale !== "en") {
+    const sameMonth = from.slice(0, 7) === to.slice(0, 7);
+    return sameMonth ? `${Number(from.slice(8, 10))}–${b}` : `${a} – ${b}`;
+  }
   return a.split(" ")[0] === b.split(" ")[0] ? `${a}–${b.split(" ")[1]}` : `${a} – ${b}`;
 }
 
-const UNIT_WORDS: Record<string, [string, string]> = {
-  BOARDING: ["night", "nights"],
-  DAY_CARE: ["day", "days"],
-  DOG_WALKING: ["walk", "walks"],
-  DROP_IN: ["visit", "visits"],
-};
-/** "3 nights", "1 day", "2 walks" */
-export function quantityLabel(type: string, quantity: number) {
-  const [one, many] = UNIT_WORDS[type] ?? ["visit", "visits"];
-  return `${quantity} ${quantity === 1 ? one : many}`;
+/** "3 nights", "1 day", "2 walks" (fr: "3 nuits", "1 jour", "2 promenades") */
+export function quantityLabel(type: string, quantity: number, locale = "en") {
+  return bookingT(locale)("time.quantity", { type, count: quantity });
 }
 
 /* ─────────────────────────── rules ─────────────────────────── */
@@ -217,7 +234,7 @@ export function stayLoad(snap: AvailabilitySnapshot, exclude?: string | null) {
 export type Slot = { minute: number; end: number; label: string; available: boolean; reason?: "notice" | "booked" };
 
 /** 30-minute-step start times for a walk / drop-in of `duration` minutes on `iso`. */
-export function visitSlots(snap: AvailabilitySnapshot, iso: string, duration: number, now: number, exclude?: string | null): Slot[] {
+export function visitSlots(snap: AvailabilitySnapshot, iso: string, duration: number, now: number, exclude?: string | null, locale = "en"): Slot[] {
   const cutoff = noticeCutoff(snap, now);
   const seen = new Set<number>();
   const out: Slot[] = [];
@@ -232,7 +249,7 @@ export function visitSlots(snap: AvailabilitySnapshot, iso: string, duration: nu
       out.push({
         minute: m,
         end: m + duration,
-        label: formatMinuteRange(m, m + duration),
+        label: formatMinuteRange(m, m + duration, locale),
         available: !booked && !tooSoon,
         reason: tooSoon ? "notice" : booked ? "booked" : undefined,
       });
@@ -242,14 +259,14 @@ export function visitSlots(snap: AvailabilitySnapshot, iso: string, duration: nu
 }
 
 /** Drop-off times for a stay starting on `iso` (inside opening hours, respecting notice). */
-export function dropOffSlots(snap: AvailabilitySnapshot, iso: string, now: number): Slot[] {
+export function dropOffSlots(snap: AvailabilitySnapshot, iso: string, now: number, locale = "en"): Slot[] {
   const cutoff = noticeCutoff(snap, now);
   const out: Slot[] = [];
   for (const r of rangesOn(snap, iso)) {
     for (let m = r.start; m < r.end; m += SLOT_STEP_MINS) {
       if (out.some((s) => s.minute === m)) continue;
       const tooSoon = zonedInstant(iso, m, snap.timeZone) < cutoff;
-      out.push({ minute: m, end: m, label: formatMinute(m), available: !tooSoon, reason: tooSoon ? "notice" : undefined });
+      out.push({ minute: m, end: m, label: formatMinute(m, locale), available: !tooSoon, reason: tooSoon ? "notice" : undefined });
     }
   }
   return out.sort((a, b) => a.minute - b.minute);
@@ -272,8 +289,10 @@ export type BookingCheck =
   | { ok: true; quantity: number; startAt: number; endAt: number; days: string[] }
   | { ok: false; error: string };
 
-const closedMsg = (iso: string, snap: AvailabilitySnapshot) =>
-  isTimeOff(snap, iso) ? `The sitter is away on ${formatDayLong(iso)}.` : `The sitter isn't available on ${WEEKDAY_LABELS[weekdayOf(iso)]}s.`;
+const closedMsg = (iso: string, snap: AvailabilitySnapshot, locale: string) =>
+  isTimeOff(snap, iso)
+    ? bookingT(locale)("availability.away", { day: formatDayLong(iso, locale) })
+    : bookingT(locale)("availability.closed", { weekday: weekdayLabel(weekdayOf(iso), locale) });
 
 /**
  * The single availability rule set. Visits: the whole slot inside opening hours, not on time off,
@@ -281,50 +300,58 @@ const closedMsg = (iso: string, snap: AvailabilitySnapshot) =>
  * open days, no time off in between (boarding), notice, and `petCount` free places (capacity minus
  * the pets of other stays) on every night / day.
  */
-export function checkBooking(snap: AvailabilitySnapshot, req: BookingRequest, now: number, exclude?: string | null): BookingCheck {
+export function checkBooking(snap: AvailabilitySnapshot, req: BookingRequest, now: number, exclude?: string | null, locale = "en"): BookingCheck {
+  const res = checkBookingIn(snap, req, now, exclude, locale);
+  // French abbreviated dates end in "." ("sam. 18 oct.") — don't double the sentence's full stop.
+  return res.ok ? res : { ok: false, error: res.error.replace(/\.\.$/, ".") };
+}
+
+function checkBookingIn(snap: AvailabilitySnapshot, req: BookingRequest, now: number, exclude: string | null | undefined, locale: string): BookingCheck {
+  const t = bookingT(locale);
+  const day = (iso: string) => formatDayLong(iso, locale);
   const tz = snap.timeZone;
   const cutoff = noticeCutoff(snap, now);
   const today = todayIn(tz, now);
-  if (!isIsoDay(req.date)) return { ok: false, error: "Please choose a valid date." };
-  if (req.date < today) return { ok: false, error: "That date has already passed — please pick another day." };
+  if (!isIsoDay(req.date)) return { ok: false, error: t("availability.invalidDate") };
+  if (req.date < today) return { ok: false, error: t("availability.past") };
 
   if (!isStayService(req.type)) {
     const duration = visitMinutes(req.type, req.durationMins);
     const ranges = rangesOn(snap, req.date);
-    if (!ranges.length) return { ok: false, error: closedMsg(req.date, snap) };
+    if (!ranges.length) return { ok: false, error: closedMsg(req.date, snap, locale) };
     if (!ranges.some((r) => r.start <= req.minute && req.minute + duration <= r.end)) {
-      return { ok: false, error: `${formatMinuteRange(req.minute, req.minute + duration)} is outside the sitter's hours on ${formatDayLong(req.date)}.` };
+      return { ok: false, error: t("availability.outsideHours", { range: formatMinuteRange(req.minute, req.minute + duration, locale), day: day(req.date) }) };
     }
     const startAt = zonedInstant(req.date, req.minute, tz);
     const endAt = startAt + duration * 60_000;
     if (startAt < cutoff) {
-      return { ok: false, error: `This sitter needs at least ${snap.noticeHours} hours' notice — please pick a later time.` };
+      return { ok: false, error: t("availability.notice", { hours: snap.noticeHours }) };
     }
     if (snap.bookings.some((b) => b.id !== exclude && isVisitService(b.type) && b.startAt < endAt && b.endAt > startAt)) {
-      return { ok: false, error: `${formatDayLong(req.date)} at ${formatMinute(req.minute)} is already booked.` };
+      return { ok: false, error: t("availability.booked", { day: day(req.date), time: formatMinute(req.minute, locale) }) };
     }
     return { ok: true, quantity: 1, startAt, endAt, days: [req.date] };
   }
 
   const end = req.endDate;
-  if (!isIsoDay(end)) return { ok: false, error: req.type === "BOARDING" ? "Please choose a check-out date." : "Please choose the last day." };
+  if (!isIsoDay(end)) return { ok: false, error: req.type === "BOARDING" ? t("availability.chooseCheckout") : t("availability.chooseLastDay") };
   const span = daysBetween(req.date, end);
   if (req.type === "BOARDING" ? span < 1 : span < 0) {
-    return { ok: false, error: req.type === "BOARDING" ? "Check-out must be at least one night after check-in." : "The last day can't be before the first day." };
+    return { ok: false, error: req.type === "BOARDING" ? t("availability.checkoutAfter") : t("availability.lastBeforeFirst") };
   }
-  if (span > MAX_STAY_DAYS) return { ok: false, error: `Stays can be at most ${MAX_STAY_DAYS} days — please book a shorter range.` };
+  if (span > MAX_STAY_DAYS) return { ok: false, error: t("availability.maxStay", { max: MAX_STAY_DAYS }) };
 
-  if (!isOpenDay(snap, req.date)) return { ok: false, error: closedMsg(req.date, snap) };
-  if (!isOpenDay(snap, end)) return { ok: false, error: closedMsg(end, snap) };
+  if (!isOpenDay(snap, req.date)) return { ok: false, error: closedMsg(req.date, snap, locale) };
+  if (!isOpenDay(snap, end)) return { ok: false, error: closedMsg(end, snap, locale) };
   const away = eachDate(req.date, end).find((d) => isTimeOff(snap, d));
-  if (away) return { ok: false, error: `The sitter is away on ${formatDayLong(away)}.` };
+  if (away) return { ok: false, error: t("availability.away", { day: day(away) }) };
 
   const startRanges = rangesOn(snap, req.date);
   if (!startRanges.some((r) => r.start <= req.minute && req.minute < r.end)) {
-    return { ok: false, error: `Drop-off at ${formatMinute(req.minute)} is outside the sitter's hours on ${formatDayLong(req.date)}.` };
+    return { ok: false, error: t("availability.dropOffOutside", { time: formatMinute(req.minute, locale), day: day(req.date) }) };
   }
   const startAt = zonedInstant(req.date, req.minute, tz);
-  if (startAt < cutoff) return { ok: false, error: `This sitter needs at least ${snap.noticeHours} hours' notice — please pick a later drop-off.` };
+  if (startAt < cutoff) return { ok: false, error: t("availability.noticeDropOff", { hours: snap.noticeHours }) };
 
   // Boarding: pick-up at the same time on check-out day. Day care: pick-up at closing on the last day.
   const days = req.type === "BOARDING" ? eachDate(req.date, addDays(end, -1)) : eachDate(req.date, end).filter((d) => isOpenDay(snap, d));
@@ -333,19 +360,17 @@ export function checkBooking(snap: AvailabilitySnapshot, req: BookingRequest, no
 
   const pets = Math.max(1, req.petCount ?? 1);
   if (pets > snap.capacity) {
-    return { ok: false, error: `The sitter can host at most ${snap.capacity} pet${snap.capacity === 1 ? "" : "s"} at the same time.` };
+    return { ok: false, error: t("availability.capacity", { capacity: snap.capacity }) };
   }
   const load = stayLoad(snap, exclude);
   const full = days.filter((d) => (load.get(d) ?? 0) + pets > snap.capacity);
   if (full.length) {
-    const list = `${full.slice(0, 3).map(formatDayLong).join(", ")}${full.length > 3 ? ` and ${full.length - 3} more` : ""}`;
+    const shown = full.slice(0, 3).map(day).join(", ");
+    const list = full.length > 3 ? t("availability.listMore", { list: shown, count: full.length - 3 }) : shown;
     const roomFor = Math.min(...full.map((d) => snap.capacity - (load.get(d) ?? 0)));
     return {
       ok: false,
-      error:
-        pets > 1 && roomFor > 0
-          ? `The sitter only has room for ${roomFor} more pet${roomFor === 1 ? "" : "s"} on ${list}.`
-          : `The sitter is fully booked on ${list}.`,
+      error: pets > 1 && roomFor > 0 ? t("availability.roomFor", { count: roomFor, list }) : t("availability.full", { list }),
     };
   }
   return { ok: true, quantity: days.length, startAt, endAt, days };
@@ -357,13 +382,13 @@ export function shiftWeeks(req: BookingRequest, weeks: number): BookingRequest {
 }
 
 /** Every occurrence of a weekly series (weeks = 1 for a one-off booking), each checked. */
-export function checkSeries(snap: AvailabilitySnapshot, req: BookingRequest, weeks: number, now: number) {
+export function checkSeries(snap: AvailabilitySnapshot, req: BookingRequest, weeks: number, now: number, locale = "en") {
   if (weeks > 1 && isStayService(req.type) && req.endDate && daysBetween(req.date, req.endDate) >= 7) {
-    return [{ req, check: { ok: false as const, error: "Weekly day care can span at most 7 days per week." } }];
+    return [{ req, check: { ok: false as const, error: bookingT(locale)("availability.weeklyMax") } }];
   }
   return Array.from({ length: weeks }, (_, i) => {
     const r = shiftWeeks(req, i);
-    return { req: r, check: checkBooking(snap, r, now) };
+    return { req: r, check: checkBooking(snap, r, now, undefined, locale) };
   });
 }
 

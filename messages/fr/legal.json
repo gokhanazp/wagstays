@@ -1,1 +1,213 @@
-{}
+{
+  "doc": {
+    "navAria": "Documents juridiques",
+    "docs": {
+      "terms": "Conditions d'utilisation",
+      "privacy": "Politique de confidentialité",
+      "pipeda": "Avis LPRPDE"
+    },
+    "kicker": "Juridique",
+    "lastUpdated": "Dernière mise à jour: {date}",
+    "translationNotice": "Cette traduction est fournie à titre informatif. En cas de divergence, la version anglaise prévaut.",
+    "draftTitle": "Ébauche — à faire réviser par un conseiller juridique avant le lancement",
+    "draftText": "Ce texte provisoire a été préparé pour le développement du produit. Il ne constitue pas un avis juridique et n'est pas encore une entente contraignante.",
+    "contents": "Table des matières",
+    "backToTop": "Retour en haut"
+  },
+  "terms": {
+    "meta": {
+      "title": "Conditions d'utilisation",
+      "description": "Les conditions qui s'appliquent lorsque vous utilisez WagStays pour trouver ou réserver un gardien d'animaux, ou pour travailler comme gardien au Canada."
+    },
+    "intro": "Veuillez lire attentivement ces conditions. Elles expliquent le fonctionnement de WagStays, ce que nous attendons des Propriétaires et des Gardiens, et vos droits en cas de problème.",
+    "about": {
+      "title": "À propos des présentes conditions",
+      "p1": "Les présentes Conditions d'utilisation (les « Conditions ») constituent une entente entre vous et <b>WagStays Technologies Inc.</b> (« WagStays », « nous »), une société établie à Toronto, en Ontario. Elles s'appliquent à notre site Web, à nos applications et aux services connexes (la « Plateforme »).",
+      "p2": "En créant un compte ou en effectuant une réservation, vous acceptez les présentes Conditions ainsi que notre <privacy>Politique de confidentialité</privacy>. Si vous ne les acceptez pas, veuillez ne pas utiliser la Plateforme."
+    },
+    "marketplace": {
+      "title": "WagStays est une place de marché",
+      "p1": "WagStays met en relation des propriétaires d'animaux (les « Propriétaires ») et des fournisseurs indépendants de soins aux animaux (les « Gardiens »). Les Gardiens sont des entrepreneurs indépendants, et non des employés ou des mandataires de WagStays. Chaque réservation est un contrat conclu directement entre le Propriétaire et le Gardien; WagStays fournit les outils pour trouver, réserver, payer et communiquer.",
+      "p2": "Nous vérifions les Gardiens comme il est décrit sur notre site (par exemple, une pièce d'identité avec photo émise par le gouvernement et une vérification des antécédents en vue d'un travail auprès de personnes vulnérables), mais nous ne garantissons pas la qualité, la sécurité ou la légalité des services."
+    },
+    "accounts": {
+      "title": "Comptes et admissibilité",
+      "li1": "Vous devez avoir au moins 18 ans et être en mesure de conclure un contrat valide dans votre province ou territoire.",
+      "li2": "Gardez les renseignements de votre compte exacts et votre mot de passe confidentiel. Vous êtes responsable de l'activité de votre compte.",
+      "li3": "Une personne, un compte. Nous pouvons suspendre les comptes faux, en double ou utilisés en violation des présentes Conditions."
+    },
+    "bookings": {
+      "title": "Réservations, paiements et frais",
+      "p1": "Les prix sont fixés par les Gardiens et affichés en dollars canadiens <b>avant taxes</b>. Les taxes de vente applicables (par exemple, la TVH de 13 % en Ontario) figurent sur une ligne distincte au paiement. Chaque réservation comprend aussi des frais de service WagStays (actuellement {serviceFee}) et la protection WagShield (actuellement {wagShieldFee}).",
+      "p2": "Les paiements sont traités par notre partenaire de paiement au moyen des paiements à retenue sécurisée: votre carte est autorisée lorsque vous réservez, débitée lorsque le Gardien accepte, et les fonds sont versés au Gardien une fois le service terminé.",
+      "p3": "Les WagPoints sont des crédits promotionnels sans valeur monétaire. Ils ne peuvent être ni transférés ni échangés contre de l'argent, et peuvent expirer."
+    },
+    "cancellations": {
+      "title": "Annulations et remboursements",
+      "p1": "Les Propriétaires peuvent annuler une demande en attente en tout temps, sans frais. Les conditions d'annulation des réservations confirmées sont affichées avant le paiement. Si un Gardien annule une réservation confirmée, vous êtes remboursé en totalité et les WagPoints utilisés vous sont rendus.",
+      "p2": "Rien dans les présentes Conditions ne limite les droits que vous confère la <em>Loi de 2002 sur la protection du consommateur</em> de l’Ontario ou toute autre loi applicable sur la protection du consommateur."
+    },
+    "conduct": {
+      "title": "Vos responsabilités",
+      "owners": "Les <b>Propriétaires</b> s'engagent à décrire honnêtement leurs animaux (y compris leur santé, leur comportement et leur statut vaccinal), à faire enregistrer leurs animaux lorsque les règlements municipaux l'exigent et à fournir des coordonnées d'urgence et vétérinaires.",
+      "sitters": "Les <b>Gardiens</b> s'engagent à fournir leurs services avec un soin et une compétence raisonnables, à suivre les consignes de soins du Propriétaire, à respecter les règlements municipaux (par exemple, les règles sur la laisse et le ramassage des excréments) et à tenir leurs documents de vérification à jour.",
+      "everyone": "Tous s'engagent à ne pas:",
+      "li1": "accepter des paiements ou organiser des réservations hors de la Plateforme avec des personnes rencontrées par l'intermédiaire de WagStays;",
+      "li2": "harceler ou menacer d'autres utilisateurs, ou faire preuve de discrimination à leur égard;",
+      "li3": "publier du contenu faux, trompeur ou contrefait, y compris de faux avis;",
+      "li4": "faire un usage abusif de la messagerie, par exemple en envoyant des pourriels ou en divulguant les renseignements personnels d'autrui."
+    },
+    "messaging": {
+      "title": "Messages et avis",
+      "p1": "Utilisez la messagerie WagStays pour discuter des réservations. Pour protéger la communauté, nous pouvons examiner les messages qui nous sont signalés ou repérés par des outils de sécurité automatisés. Les avis doivent refléter une expérience réelle. Nous pouvons retirer tout contenu qui enfreint les présentes Conditions."
+    },
+    "wagshield": {
+      "title": "Protection WagShield",
+      "p1": "La protection WagShield peut rembourser les frais vétérinaires admissibles jusqu'à {coverage} par réservation, sous réserve des conditions, des exclusions et de la procédure de réclamation de WagShield publiées séparément. WagShield n'est pas une police d'assurance et ne remplace pas votre propre assurance pour animaux ou responsabilité civile."
+    },
+    "liability": {
+      "title": "Avis de non-responsabilité et limitation de responsabilité",
+      "p1": "La Plateforme est fournie « telle quelle ». Dans la mesure permise par la loi, WagStays n'est pas responsable des pertes indirectes ou consécutives, ni des actes ou omissions des Propriétaires et des Gardiens. Notre responsabilité totale envers vous pour toute réclamation est limitée aux frais que vous avez payés à WagStays pour la réservation concernée au cours des 12 derniers mois.",
+      "p2": "Certaines juridictions n'autorisent pas ces limites; elles pourraient donc ne pas s'appliquer à vous."
+    },
+    "termination": {
+      "title": "Suspension et résiliation",
+      "p1": "Vous pouvez fermer votre compte en tout temps à partir des paramètres de votre compte ou en communiquant avec nous. Nous pouvons suspendre ou fermer les comptes qui enfreignent les présentes Conditions, qui mettent des animaux ou des personnes en danger, ou dont la fermeture est exigée par la loi. Les réservations déjà en cours seront traitées équitablement."
+    },
+    "law": {
+      "title": "Droit applicable et différends",
+      "p1": "Les présentes Conditions sont régies par les lois de la province de l'Ontario et les lois fédérales du Canada qui s'y appliquent. Veuillez d'abord communiquer avec nous afin que nous puissions tenter de régler tout problème à l'amiable; à défaut, les différends seront entendus par les tribunaux de l'Ontario siégeant à Toronto, à moins que la loi sur la protection du consommateur de votre lieu de résidence ne vous permette d'intenter un recours là où vous habitez."
+    },
+    "changes": {
+      "title": "Modifications et coordonnées",
+      "p1": "Nous pouvons mettre à jour les présentes Conditions de temps à autre. Si une modification est importante, nous vous en aviserons par courriel ou dans l'application au moins 30 jours avant son entrée en vigueur.",
+      "p2": "Des questions? Écrivez à <mail>{email}</mail> ou appelez au {phone}."
+    }
+  },
+  "privacy": {
+    "meta": {
+      "title": "Politique de confidentialité",
+      "description": "Comment WagStays recueille, utilise, communique et protège les renseignements personnels."
+    },
+    "intro": "Votre confiance compte — vous nous ouvrez la porte de votre maison et de la vie de votre animal. Voici ce que nous recueillons, pourquoi, et les choix qui s'offrent à vous.",
+    "scope": {
+      "title": "Qui nous sommes et ce que couvre cette politique",
+      "p1": "La présente Politique de confidentialité explique comment <b>WagStays Technologies Inc.</b> (« WagStays ») traite les renseignements personnels lorsque vous utilisez notre site Web et nos applications. Nous respectons la <em>Loi sur la protection des renseignements personnels et les documents électroniques</em> (LPRPDE) du Canada. Notre <pipeda>Avis LPRPDE</pipeda> résume la façon dont nous appliquons ses dix principes relatifs à l'équité dans le traitement de l'information."
+    },
+    "collect": {
+      "title": "Renseignements que nous recueillons",
+      "given": "Renseignements que vous nous fournissez",
+      "given1": "Données du compte: nom, courriel, numéro de téléphone, mot de passe et photo de profil.",
+      "given2": "Profils des animaux: nom, espèce, race, âge, notes de soins, vaccins et renseignements sur la micropuce.",
+      "given3": "Détails des réservations: dates, adresses, coordonnées d'urgence et vétérinaires, et messages échangés avec les Gardiens.",
+      "given4": "Pour les Gardiens: pièce d'identité avec photo émise par le gouvernement, résultats de la vérification des antécédents en vue d'un travail auprès de personnes vulnérables, certifications, photos du domicile et renseignements de versement.",
+      "auto": "Renseignements recueillis automatiquement",
+      "auto1": "Renseignements sur l'appareil et l'utilisation, comme le type de navigateur, les pages consultées et la position approximative.",
+      "auto2": "Trajets GPS des promenades lorsqu'un Gardien partage des mises à jour en direct pendant une réservation.",
+      "auto3": "Témoins (cookies) nécessaires pour maintenir votre session ouverte et mémoriser vos préférences.",
+      "cards": "Les numéros de carte sont traités par notre fournisseur de paiement; WagStays ne conserve que la marque de la carte et ses quatre derniers chiffres."
+    },
+    "use": {
+      "title": "Comment nous les utilisons",
+      "li1": "Pour créer et gérer votre compte, et afficher les profils de Gardiens et les résultats de recherche.",
+      "li2": "Pour traiter les réservations, les paiements, les remboursements et les WagPoints.",
+      "li3": "Pour vérifier les Gardiens et assurer la sécurité de la communauté, y compris la prévention de la fraude.",
+      "li4": "Pour offrir du soutien à la clientèle et envoyer des messages de service au sujet de vos réservations.",
+      "li5": "Avec votre consentement, pour vous envoyer l'infolettre The Monthly Wag et des offres. Vous pouvez vous désabonner en tout temps.",
+      "li6": "Pour améliorer la Plateforme à l'aide de données agrégées ou dépersonnalisées."
+    },
+    "share": {
+      "title": "Comment nous les communiquons",
+      "p1": "Nous ne vendons pas vos renseignements personnels. Nous les communiquons uniquement au besoin:",
+      "li1": "<b>Entre Propriétaires et Gardiens</b> dans le cadre d'une réservation — par exemple, un Gardien voit votre prénom, les renseignements sur votre animal et l'adresse du rendez-vous.",
+      "li2": "<b>Fournisseurs de services</b> qui agissent en notre nom (hébergement, paiements, vérification des antécédents, courriel) en vertu de contrats qui protègent vos renseignements.",
+      "li3": "<b>Raisons juridiques</b>, lorsque la loi l'exige ou pour protéger la sécurité des personnes ou des animaux.",
+      "li4": "<b>Transferts d'entreprise</b>, comme une fusion, sous réserve de la présente politique."
+    },
+    "transfers": {
+      "title": "Stockage et transferts hors frontières",
+      "p1": "Certains de nos fournisseurs de services peuvent stocker ou traiter des renseignements à l'extérieur de votre province ou du Canada, notamment aux États-Unis. Le cas échéant, vos renseignements pourraient être accessibles aux tribunaux et aux autorités de ces pays. Nous utilisons des mesures de protection contractuelles et techniques pour les protéger."
+    },
+    "retention": {
+      "title": "Durée de conservation",
+      "p1": "Nous conservons les renseignements personnels uniquement le temps nécessaire aux fins indiquées ci-dessus ou exigé par la loi (par exemple, les dossiers fiscaux). Les documents de vérification des Gardiens sont supprimés ou archivés lorsqu'ils ne sont plus nécessaires. Lorsque vous fermez votre compte, nous supprimons ou anonymisons vos renseignements immédiatement, sauf ceux que nous devons conserver (comme les dossiers de réservation et de paiement)."
+    },
+    "security": {
+      "title": "Sécurité",
+      "p1": "Nous utilisons des mesures de protection adaptées à la sensibilité des renseignements, notamment le chiffrement en transit, des contrôles d'accès et la formation du personnel. Aucun système n'est parfaitement sûr; si une atteinte crée un risque réel de préjudice grave, nous vous en aviserons, ainsi que le Commissariat à la protection de la vie privée du Canada, comme l'exige la loi."
+    },
+    "rights": {
+      "title": "Vos choix et vos droits",
+      "li1": "Consultez et corrigez vos renseignements dans les <settings>paramètres de votre compte</settings>. Vous pouvez <export>télécharger une copie de vos données</export> (un fichier JSON) en tout temps, ou nous en demander une.",
+      "li2": "Retirez votre consentement au marketing en tout temps; certains traitements sont nécessaires pour fournir le service.",
+      "li3": "Fermez vous-même votre compte dans les <settings>paramètres de votre compte</settings>. Nous supprimons vos identifiants, vos photos et vos coordonnées et anonymisons le reste; les réservations et paiements passés sont conservés sans votre nom à titre de dossiers financiers, et les avis que vous avez rédigés restent publiés sous « Ancien membre ».",
+      "li4": "Déposez une plainte auprès du Commissariat à la protection de la vie privée du Canada si notre réponse ne vous satisfait pas."
+    },
+    "children": {
+      "title": "Enfants",
+      "p1": "WagStays est destiné aux adultes. Nous ne recueillons pas sciemment de renseignements personnels auprès de personnes de moins de 18 ans."
+    },
+    "contact": {
+      "title": "Modifications et coordonnées",
+      "p1": "Nous publierons toute modification sur cette page et mettrons à jour la date ci-dessus. En cas de modification importante, nous vous aviserons aussi par courriel ou dans l'application.",
+      "p2": "Questions ou demandes: notre responsable de la protection de la vie privée, à <mail>{email}</mail> ou au {phone}."
+    }
+  },
+  "pipeda": {
+    "meta": {
+      "title": "Avis LPRPDE",
+      "description": "Comment WagStays applique les dix principes relatifs à l'équité dans le traitement de l'information de la LPRPDE du Canada."
+    },
+    "intro": "La <em>Loi sur la protection des renseignements personnels et les documents électroniques</em> (LPRPDE) énonce dix principes relatifs à l'équité dans le traitement de l'information. Le présent avis résume la façon dont WagStays applique chacun d'eux.",
+    "accountability": {
+      "title": "Responsabilité",
+      "p1": "WagStays Technologies Inc. est responsable des renseignements personnels dont elle a la gestion et a désigné un responsable de la protection de la vie privée chargé de veiller à notre conformité. Les fournisseurs de services qui traitent des renseignements pour nous sont tenus par contrat de les protéger."
+    },
+    "purposes": {
+      "title": "Détermination des fins",
+      "p1": "Nous expliquons pourquoi nous recueillons des renseignements personnels au moment de la collecte ou avant — pour gérer les comptes, traiter les réservations et les paiements, vérifier les Gardiens, assurer la sécurité de la communauté et offrir du soutien. Les détails figurent dans notre <privacy>Politique de confidentialité</privacy>."
+    },
+    "consent": {
+      "title": "Consentement",
+      "p1": "Nous obtenons un consentement valable pour la collecte, l'utilisation et la communication des renseignements personnels. Nous demandons un consentement exprès pour les renseignements sensibles, comme la vérification des antécédents des Gardiens, et pour le marketing. Vous pouvez retirer votre consentement en tout temps, sous réserve de restrictions légales ou contractuelles; nous vous en expliquerons les conséquences, par exemple qu'une réservation ne peut avoir lieu sans adresse de rendez-vous."
+    },
+    "limitingCollection": {
+      "title": "Limitation de la collecte",
+      "p1": "Nous recueillons uniquement les renseignements nécessaires aux fins déterminées, et nous les recueillons de façon honnête et licite."
+    },
+    "limitingUse": {
+      "title": "Limitation de l'utilisation, de la communication et de la conservation",
+      "p1": "Nous utilisons et communiquons les renseignements personnels uniquement aux fins pour lesquelles ils ont été recueillis, sauf si vous y consentez ou si la loi l'exige. Nous ne les conservons que le temps nécessaire, puis nous les détruisons de façon sécuritaire ou les anonymisons."
+    },
+    "accuracy": {
+      "title": "Exactitude",
+      "p1": "Nous veillons à ce que les renseignements personnels soient aussi exacts, complets et à jour que nécessaire. Vous pouvez mettre à jour la plupart des renseignements vous-même dans les paramètres de votre compte."
+    },
+    "safeguards": {
+      "title": "Mesures de sécurité",
+      "p1": "Nous protégeons les renseignements personnels par des mesures de sécurité adaptées à leur sensibilité — des mesures physiques, organisationnelles et techniques comme le chiffrement en transit, l'accès selon les rôles et les obligations de confidentialité du personnel."
+    },
+    "openness": {
+      "title": "Transparence",
+      "p1": "Nos politiques et pratiques en matière de protection de la vie privée sont accessibles sur ce site en langage clair, et nous répondrons sur demande à toute question à leur sujet."
+    },
+    "access": {
+      "title": "Accès aux renseignements personnels",
+      "p1": "Les membres connectés peuvent <export>télécharger une copie de leurs données</export> et fermer leur compte en tout temps à partir des <settings>paramètres du compte</settings>. La fermeture d'un compte supprime vos identifiants, vos photos et vos coordonnées et anonymise le reste; les dossiers de réservation et de paiement sont conservés sans votre nom, comme l'exige la loi.",
+      "p2": "Vous pouvez aussi présenter une demande écrite: nous vous dirons si nous détenons des renseignements personnels à votre sujet, comment ils ont été utilisés et à qui ils ont été communiqués, et nous vous y donnerons accès — normalement dans un délai de 30 jours et sans frais. Vous pouvez contester leur exactitude et demander des corrections."
+    },
+    "challenging": {
+      "title": "Possibilité de porter plainte",
+      "p1": "Vous pouvez soumettre toute préoccupation quant au respect de ces principes à notre responsable de la protection de la vie privée (ci-dessous). Si notre réponse ne vous satisfait pas, vous pouvez communiquer avec le <opc>Commissariat à la protection de la vie privée du Canada</opc>."
+    },
+    "privacyOfficer": {
+      "title": "Communiquer avec notre responsable de la protection de la vie privée",
+      "name": "Responsable de la protection de la vie privée, WagStays Technologies Inc.",
+      "location": "Toronto (Ontario) Canada",
+      "email": "Courriel: <mail>{email}</mail>",
+      "phone": "Téléphone: {phone}",
+      "mailSubject": "Demande relative à la vie privée",
+      "subjectHint": "Veuillez inscrire « Demande relative à la vie privée » dans l'objet ainsi que l'adresse courriel associée à votre compte."
+    }
+  }
+}

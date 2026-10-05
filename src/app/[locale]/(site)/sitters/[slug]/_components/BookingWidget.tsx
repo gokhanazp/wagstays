@@ -1,6 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
+import { intlLocale } from "@/i18n/routing";
 import { useMemo, useState } from "react";
 import { DatePicker, DateRangePicker } from "@/components/forms/DatePicker";
 import { Select } from "@/components/forms/Select";
@@ -23,12 +25,12 @@ import {
   visitSlots,
   type AvailabilitySnapshot,
 } from "@/lib/availability-core";
-import { SERVICE_LABELS, UNIT_LABELS, type ServiceType } from "@/lib/constants";
+import type { ServiceType } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { holidaysForDates } from "@/lib/holidays";
 import { isPuppy, petCountBlockReason, petLimit, quoteBooking } from "@/lib/quote";
-import { explainLine, feeExplanations, perBookingPhrase, unitWord } from "@/lib/price-details";
+import { explainLine, feeExplanations, perBookingPhrase, priceLineLabel } from "@/lib/price-details";
 import { InfoTip } from "@/components/pricing/InfoTip";
 import { SERVICE_ICONS } from "../../_components/search-url";
 
@@ -55,19 +57,32 @@ export type WidgetPet = {
   blocked: string | null;
 };
 
-const OPTION_SUFFIX: Record<string, (mins: number | null) => string> = {
-  DOG_WALKING: (m) => `${m ?? 60} min`,
-  BOARDING: () => "per night",
-  DAY_CARE: () => "full day",
-  DROP_IN: (m) => `${m ?? 30} min`,
-};
+type ProfileT = ReturnType<typeof useTranslations<"profile">>;
+type CommonT = ReturnType<typeof useTranslations<"common">>;
 
-const TIME_LABEL: Record<string, string> = {
-  DOG_WALKING: "Walk Time",
-  BOARDING: "Drop-off Time",
-  DAY_CARE: "Drop-off Time",
-  DROP_IN: "Visit Time",
-};
+const SERVICE_KEYS = ["DOG_WALKING", "BOARDING", "DAY_CARE", "DROP_IN"] as const;
+const isServiceKey = (v: string): v is ServiceType => (SERVICE_KEYS as readonly string[]).includes(v);
+const UNITS = ["WALK", "NIGHT", "DAY", "VISIT"] as const;
+const isUnit = (u: string): u is (typeof UNITS)[number] => (UNITS as readonly string[]).includes(u);
+/** "walk" / "night" / "day" / "visit" (fallback "visit"), in the current language */
+const unitName = (unit: string, tc: CommonT) => tc(`enums.unit.${isUnit(unit) ? unit : "VISIT"}`);
+
+function optionSuffix(s: WidgetService, t: ProfileT, tc: CommonT) {
+  switch (s.type) {
+    case "DOG_WALKING":
+      return t("booking.option.minutes", { count: s.durationMins ?? 60 });
+    case "BOARDING":
+      return t("booking.option.perNight");
+    case "DAY_CARE":
+      return t("booking.option.fullDay");
+    case "DROP_IN":
+      return t("booking.option.minutes", { count: s.durationMins ?? 30 });
+    default:
+      return isUnit(s.unit) ? tc(`enums.unit.${s.unit}`) : undefined;
+  }
+}
+
+const timeLabel = (type: string, t: ProfileT) => (isServiceKey(type) ? t(`booking.timeLabel.${type}`) : t("booking.time"));
 
 /** Plain dates of each night / day / visit when the availability check couldn't produce them. */
 function fallbackDays(type: string, date: string, endDate: string | null) {
@@ -78,27 +93,27 @@ function fallbackDays(type: string, date: string, endDate: string | null) {
   return out.length ? out : [date];
 }
 
-function lineTitle(s: WidgetService, quantity: number) {
+function lineTitle(s: WidgetService, quantity: number, t: ProfileT, tc: CommonT, locale: string) {
   const mins = s.durationMins;
   switch (s.type) {
     case "DOG_WALKING":
-      return mins && mins % 60 === 0 ? `${mins / 60}-Hour Dog Walk` : `${mins ?? 60}-Min Dog Walk`;
+      return mins && mins % 60 === 0 ? t("booking.walkHours", { count: mins / 60 }) : t("booking.walkMinutes", { count: mins ?? 60 });
     case "BOARDING":
     case "DAY_CARE":
-      return `${quantityLabel(s.type, quantity)} × ${formatMoney(s.priceCents)}`;
+      return `${quantityLabel(s.type, quantity, locale)} × ${formatMoney(s.priceCents, { locale })}`;
     case "DROP_IN":
-      return `${mins ?? 30}-Min Drop-In Visit`;
+      return t("booking.dropInMinutes", { count: mins ?? 30 });
     default:
-      return SERVICE_LABELS[s.type as ServiceType] ?? s.type;
+      return isServiceKey(s.type) ? tc(`enums.service.${s.type}`) : s.type;
   }
 }
 
 const FIELD =
   "w-full h-11 pl-3 pr-9 rounded-xl bg-surface-container-low font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus:bg-surface-container focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer";
 
-function petLabel(p: WidgetPet) {
+function petLabel(p: WidgetPet, t: ProfileT) {
   const breed = p.breed ? (p.breed.length > 10 ? p.breed.split(" ")[0] : p.breed) : null;
-  const age = p.ageYears != null ? (p.ageYears < 1 ? "puppy" : `${Math.floor(p.ageYears)}y`) : null;
+  const age = p.ageYears != null ? (p.ageYears < 1 ? t("booking.puppy") : t("booking.ageYears", { count: Math.floor(p.ageYears) })) : null;
   const meta = [breed, age].filter(Boolean).join(", ");
   return meta ? `${p.name} (${meta})` : p.name;
 }
@@ -140,6 +155,10 @@ export function BookingWidget({
   /** City.provinceCode — statutory holidays for the holiday rate */
   provinceCode: string;
 }) {
+  const t = useTranslations("profile");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+  const money = (cents: number, exact = false) => formatMoney(cents, { exact, locale });
   const router = useRouter();
   const snap = availability;
   const now = nowMs;
@@ -167,8 +186,8 @@ export function BookingWidget({
   const petCount = Math.max(1, petIds.length);
 
   const slots = useMemo(
-    () => (!date ? [] : stay ? dropOffSlots(snap, date, now) : visitSlots(snap, date, duration, now)),
-    [snap, date, now, stay, duration],
+    () => (!date ? [] : stay ? dropOffSlots(snap, date, now, locale) : visitSlots(snap, date, duration, now, undefined, locale)),
+    [snap, date, now, stay, duration, locale],
   );
   // keep the chosen time if it's still free, otherwise the first free one
   const chosen = slots.find((s) => s.minute === minute && s.available) ?? slots.find((s) => s.available);
@@ -184,26 +203,31 @@ export function BookingWidget({
       { type, date, endDate: stay ? endDate : null, minute: chosen.minute, durationMins: service?.durationMins, petCount },
       repeat ? weeks : 1,
       now,
+      locale,
     );
-  }, [snap, type, date, endDate, stay, chosen, service?.durationMins, repeat, weeks, now, petCount]);
+  }, [snap, type, date, endDate, stay, chosen, service?.durationMins, repeat, weeks, now, petCount, locale]);
   const first = rows?.[0]?.check;
   const quantity = first?.ok ? first.quantity : stay ? 0 : 1;
   const conflicts = rows?.filter((r) => !r.check.ok) ?? [];
   // Pets this sitter can't take (kind / dog size / dog walking for non-dogs) can't be booked.
-  const petReason = (p: WidgetPet) => p.blocked ?? (type === "DOG_WALKING" && !p.isDog ? "Dog walking is for dogs only" : null);
+  const petReason = (p: WidgetPet) => p.blocked ?? (type === "DOG_WALKING" && !p.isDog ? t("booking.dogsOnly") : null);
   const selectedPets = useMemo(() => petIds.map((id) => pets?.find((p) => p.id === id)).filter((p): p is WidgetPet => !!p), [petIds, pets]);
   const petBlocked = selectedPets.some((p) => petReason(p));
-  const countBlocked = service ? petCountBlockReason(service, selectedPets.length, firstName) : null;
+  const countBlocked = service ? petCountBlockReason(service, selectedPets.length, firstName, locale) : null;
   const valid = !!rows && conflicts.length === 0 && !petBlocked && !countBlocked;
   // "Adding Biscuit: +$12 per walk" for every pet after the first, plus puppy surcharges.
-  const per = service ? unitWord(service.unit) : "visit";
+  const per = service ? unitName(service.unit, tc) : tc("enums.unit.VISIT");
   const addNotes = service
     ? selectedPets.flatMap((p, i) => {
         const out: string[] = [];
         if (i > 0 && service.additionalPetPriceCents != null) {
-          out.push(service.additionalPetPriceCents ? `Adding ${p.name}: +${formatMoney(service.additionalPetPriceCents)} per ${per}` : `Adding ${p.name}: no extra charge`);
+          out.push(
+            service.additionalPetPriceCents
+              ? t("booking.addingPet", { name: p.name, amount: money(service.additionalPetPriceCents), unit: per })
+              : t("booking.addingPetFree", { name: p.name }),
+          );
         }
-        if (service.puppyPriceCents && isPuppy(p)) out.push(`${p.name} is a puppy: +${formatMoney(service.puppyPriceCents)} per ${per}`);
+        if (service.puppyPriceCents && isPuppy(p)) out.push(t("booking.puppyExtra", { name: p.name, amount: money(service.puppyPriceCents), unit: per }));
         return out;
       })
     : [];
@@ -229,7 +253,7 @@ export function BookingWidget({
   const prices = useMemo(() => quotes.map((q) => priceBooking({ subtotalCents: q.subtotalCents, taxRateBps, fees })), [quotes, taxRateBps, fees]);
   const quote = quotes[0];
   const price = prices[0] ?? null;
-  const feeText = useMemo(() => feeExplanations(fees, taxRateBps, taxLabel, provinceCode), [fees, taxRateBps, taxLabel, provinceCode]);
+  const feeText = useMemo(() => feeExplanations(fees, taxRateBps, taxLabel, provinceCode, locale), [fees, taxRateBps, taxLabel, provinceCode, locale]);
   const seriesTotal = prices.reduce((sum, p) => sum + p.totalCents, 0);
   const loggedIn = pets !== null;
   const profilePath = `/sitters/${slug}`;
@@ -274,8 +298,8 @@ export function BookingWidget({
   if (!service || !price || !quote) {
     return (
       <div className="bg-surface-container-lowest p-space-xl rounded-3xl shadow-xl flex flex-col gap-space-md" id="booking-card">
-        <h3 className="font-headline-sm text-headline-sm text-on-surface">Book with {firstName}</h3>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">{firstName} isn&apos;t taking new bookings right now.</p>
+        <h3 className="font-headline-sm text-headline-sm text-on-surface">{t("booking.title", { name: firstName })}</h3>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">{t("booking.unavailable", { name: firstName })}</p>
       </div>
     );
   }
@@ -285,8 +309,8 @@ export function BookingWidget({
       <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-xl flex flex-col gap-space-lg relative overflow-hidden" id="booking-card">
         <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/30">
           <div>
-            <span className="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider block">Fast &amp; Secure</span>
-            <h3 className="font-headline-sm text-headline-sm text-on-surface">Book with {firstName}</h3>
+            <span className="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider block">{t("booking.fastSecure")}</span>
+            <h3 className="font-headline-sm text-headline-sm text-on-surface">{t("booking.title", { name: firstName })}</h3>
           </div>
           <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
             <span className="material-symbols-outlined">calendar_month</span>
@@ -301,9 +325,9 @@ export function BookingWidget({
         >
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="service-select">
-              <span>Service Type</span>
+              <span>{t("booking.serviceType")}</span>
               <span className="text-primary font-bold">
-                {formatMoney(service.priceCents)} / {UNIT_LABELS[service.unit] ?? service.unit.toLowerCase()}
+                {t("booking.pricePer", { amount: money(service.priceCents), unit: isUnit(service.unit) ? tc(`enums.unit.${service.unit}`) : service.unit.toLowerCase() })}
               </span>
             </label>
             <Select
@@ -312,7 +336,7 @@ export function BookingWidget({
               onChange={changeService}
               options={services.map((s) => ({
                 value: s.id,
-                label: `${SERVICE_LABELS[s.type as ServiceType] ?? s.type} (${OPTION_SUFFIX[s.type]?.(s.durationMins) ?? UNIT_LABELS[s.unit]}) - ${formatMoney(s.priceCents)}`,
+                label: `${isServiceKey(s.type) ? tc(`enums.service.${s.type}`) : s.type} (${optionSuffix(s, t, tc)}) - ${money(s.priceCents)}`,
                 icon: SERVICE_ICONS[s.type as ServiceType],
               }))}
               value={service.id}
@@ -321,10 +345,10 @@ export function BookingWidget({
 
           <div className="flex flex-col gap-1.5">
             <span className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between gap-2">
-              <span>{limit > 1 ? "Your Pets" : "Your Pet"}</span>
+              <span>{limit > 1 ? t("booking.yourPets") : t("booking.yourPet")}</span>
               {limit > 1 && loggedIn && pets.length > 1 && (
                 <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
-                  {selectedPets.length} of up to {limit}
+                  {t("booking.selectedOf", { count: selectedPets.length, limit })}
                 </span>
               )}
             </span>
@@ -351,7 +375,7 @@ export function BookingWidget({
                       disabled={!!reason || full}
                       key={p.id}
                       onClick={() => togglePet(p.id)}
-                      title={reason ?? (full ? `Up to ${limit} pets per booking` : undefined)}
+                      title={reason ?? (full ? t("booking.limitTitle", { limit }) : undefined)}
                       type="button"
                     >
                       <span className="flex items-center gap-1.5 min-w-0">
@@ -363,7 +387,7 @@ export function BookingWidget({
                             <span className="material-symbols-outlined text-base">{reason ? "block" : p.icon}</span>
                           )}
                         </span>
-                        <span className="truncate">{petLabel(p)}</span>
+                        <span className="truncate">{petLabel(p, t)}</span>
                       </span>
                       {active && !reason && <span className="material-symbols-outlined text-base">check_circle</span>}
                     </button>
@@ -376,16 +400,16 @@ export function BookingWidget({
                 >
                   <span className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-base">pets</span>
-                    Add your pet
+                    {t("booking.addPet")}
                   </span>
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
                 </Link>
               )}
               <Link
-                aria-label="Add a new pet"
+                aria-label={t("booking.addNewPet")}
                 className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md flex items-center justify-center transition-colors"
                 href={loggedIn ? `/account/pets/new?next=${encodeURIComponent(profilePath)}` : `/login?next=${encodeURIComponent(profilePath)}`}
-                title="Add a new pet"
+                title={t("booking.addNewPet")}
               >
                 <span className="material-symbols-outlined text-lg">add</span>
               </Link>
@@ -402,7 +426,7 @@ export function BookingWidget({
                   <li className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" data-testid="pet-limit-note">
                     <span className="material-symbols-outlined text-sm text-secondary">info</span>
                     <span>
-                      {firstName} takes up to {limit} {perBookingPhrase(type, limit)}.
+                      {t("booking.takesUpTo", { name: firstName, limit, phrase: perBookingPhrase(type, limit, locale) })}
                     </span>
                   </li>
                 )}
@@ -411,7 +435,7 @@ export function BookingWidget({
             {loggedIn && service && limit === 1 && pets.filter((p) => !petReason(p)).length > 1 && (
               <p className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" data-testid="one-pet-note">
                 <span className="material-symbols-outlined text-sm text-secondary">info</span>
-                <span>{petCountBlockReason(service, 2, firstName)}.</span>
+                <span>{petCountBlockReason(service, 2, firstName, locale)}.</span>
               </p>
             )}
             {pets?.some((p) => petReason(p)) && (
@@ -434,7 +458,7 @@ export function BookingWidget({
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
                 <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-range">
-                  {type === "BOARDING" ? "Check-in → Check-out" : "First day → Last day"}
+                  {type === "BOARDING" ? t("booking.rangeBoarding") : t("booking.rangeDays")}
                 </label>
                 <DateRangePicker
                   className={FIELD}
@@ -447,22 +471,22 @@ export function BookingWidget({
                     setDate(s);
                     setEndDate(e ?? "");
                   }}
-                  placeholder={type === "BOARDING" ? "Add check-in & check-out" : "Add dates"}
+                  placeholder={type === "BOARDING" ? t("booking.placeholderBoarding") : t("booking.placeholderDays")}
                   start={date}
                   unitLabel={type === "BOARDING" ? "night" : "day"}
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-slot">
-                  {TIME_LABEL[type] ?? "Time"}
+                  {timeLabel(type, t)}
                 </label>
                 <Select
                   className={FIELD}
                   disabled={!slots.length}
                   id="booking-slot"
                   onChange={(v) => setMinute(Number(v))}
-                  options={slots.map((t) => ({ value: String(t.minute), label: t.label, disabled: !t.available, hint: t.reason === "notice" ? "Too soon" : undefined }))}
-                  placeholder={date ? "Closed that day" : "Pick dates first"}
+                  options={slots.map((sl) => ({ value: String(sl.minute), label: sl.label, disabled: !sl.available, hint: sl.reason === "notice" ? t("booking.tooSoon") : undefined }))}
+                  placeholder={date ? t("booking.closedThatDay") : t("booking.pickDatesFirst")}
                   value={chosen ? String(chosen.minute) : ""}
                 />
               </div>
@@ -472,7 +496,7 @@ export function BookingWidget({
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-date">
-                    Date
+                    {t("booking.date")}
                   </label>
                   <DatePicker
                     className={FIELD}
@@ -486,22 +510,22 @@ export function BookingWidget({
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-label-sm text-label-sm text-on-surface-variant font-medium" htmlFor="booking-slot">
-                    {TIME_LABEL[type] ?? "Time"}
+                    {timeLabel(type, t)}
                   </label>
                   <Select
                     align="end"
                     className={FIELD}
-                    disabled={!slots.some((t) => t.available)}
+                    disabled={!slots.some((sl) => sl.available)}
                     id="booking-slot"
                     onChange={(v) => setMinute(Number(v))}
-                    options={slots.map((t) => ({
-                      value: String(t.minute),
-                      label: t.label,
-                      disabled: !t.available,
-                      hint: t.reason === "booked" ? "Booked" : t.reason === "notice" ? "Too soon" : undefined,
+                    options={slots.map((sl) => ({
+                      value: String(sl.minute),
+                      label: sl.label,
+                      disabled: !sl.available,
+                      hint: sl.reason === "booked" ? t("booking.booked") : sl.reason === "notice" ? t("booking.tooSoon") : undefined,
                     }))}
                     panelMinWidth={220}
-                    placeholder="Fully booked"
+                    placeholder={t("booking.fullyBooked")}
                     value={chosen ? String(chosen.minute) : ""}
                   />
                 </div>
@@ -509,10 +533,10 @@ export function BookingWidget({
               {date && !chosen && (
                 <p className="flex flex-wrap items-center gap-x-1 font-label-sm text-label-sm text-on-surface-variant" role="status">
                   <span className="material-symbols-outlined text-base text-secondary">event_busy</span>
-                  {slots.length ? "Fully booked" : "Not available"} on {formatDayLong(date)}.
+                  {slots.length ? t("booking.fullOn", { date: formatDayLong(date, locale) }) : t("booking.notAvailableOn", { date: formatDayLong(date, locale) })}
                   {nextFree && (
                     <button className="text-primary font-bold hover:underline" onClick={() => setDate(nextFree)} type="button">
-                      Next available: {formatDayLong(nextFree)}
+                      {t("booking.nextAvailable", { date: formatDayLong(nextFree, locale) })}
                     </button>
                   )}
                 </p>
@@ -526,7 +550,7 @@ export function BookingWidget({
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-base text-primary">repeat</span>
                   <label className="font-label-sm text-label-sm text-on-surface cursor-pointer" htmlFor="booking-recurring">
-                    Weekly Recurring Booking
+                    {t("booking.recurring")}
                   </label>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -536,12 +560,12 @@ export function BookingWidget({
               </div>
               {recurring && (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Repeat for</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">{t("booking.repeatFor")}</span>
                   <Select
-                    aria-label="Number of weeks"
+                    aria-label={t("booking.weeksAria")}
                     className="w-36 h-9 pl-3 pr-9 rounded-lg bg-surface-container-lowest font-body-sm text-body-sm text-on-surface text-left focus:outline-none focus-visible:ring-[3px] focus-visible:ring-primary-container/15 cursor-pointer"
                     onChange={(v) => setWeeks(Number(v))}
-                    options={Array.from({ length: MAX_WEEKS - MIN_WEEKS + 1 }, (_, i) => ({ value: String(i + MIN_WEEKS), label: `${i + MIN_WEEKS} weeks` }))}
+                    options={Array.from({ length: MAX_WEEKS - MIN_WEEKS + 1 }, (_, i) => ({ value: String(i + MIN_WEEKS), label: t("booking.weeks", { count: i + MIN_WEEKS }) }))}
                     panelMinWidth={150}
                     value={String(weeks)}
                   />
@@ -564,80 +588,85 @@ export function BookingWidget({
               ) : (
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className="font-bold">
-                    {conflicts.length} of {rows.length} weekly dates aren&apos;t available:
+                    {t("booking.conflicts", { count: conflicts.length, total: rows.length })}
                   </span>
                   {conflicts.slice(0, 4).map((c) => (
-                    <span key={c.req.date}>{formatDayLong(c.req.date)}</span>
+                    <span key={c.req.date}>{formatDayLong(c.req.date, locale)}</span>
                   ))}
-                  {conflicts.length > 4 && <span>and {conflicts.length - 4} more</span>}
+                  {conflicts.length > 4 && <span>{t("booking.andMore", { count: conflicts.length - 4 })}</span>}
                 </div>
               )}
             </div>
           )}
           {stay && date && !endDate && (
             <p className="font-label-sm text-label-sm text-on-surface-variant">
-              {type === "BOARDING" ? "Now pick a check-out date." : "Now pick the last day (the same day for a single day)."}
+              {type === "BOARDING" ? t("booking.pickCheckout") : t("booking.pickLastDay")}
             </p>
           )}
 
           <div className="bg-surface-container p-space-md rounded-2xl flex flex-col gap-space-xs mt-1">
             {quote.lines.map((l, i) => {
-              const ex = explainLine(l, i, { firstName, service, provinceCode, units: quote.units });
+              const ex = explainLine(l, i, { firstName, service, provinceCode, units: quote.units }, locale);
               return (
                 <div className="flex items-start justify-between gap-2 font-body-sm text-body-sm text-on-surface-variant" data-price-line key={`${l.label}-${i}`}>
                   <span className="min-w-0">
-                    {i === 0 && !stay ? lineTitle(service, quantity || 1) : l.label} <InfoTip body={ex.body} title={ex.title} />
+                    {i === 0 && !stay ? lineTitle(service, quantity || 1, t, tc, locale) : priceLineLabel(l, i, locale)} <InfoTip body={ex.body} title={ex.title} />
                   </span>
-                  <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents)}</span>
+                  <span className="font-semibold text-on-surface whitespace-nowrap">{money(l.amountCents)}</span>
                 </div>
               );
             })}
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
-                WagShield Vet Care Cover
+                {t("booking.vetCover")}
                 <InfoTip body={feeText.wagShield.body} title={feeText.wagShield.title} />
               </span>
-              <span className="font-semibold text-on-surface">{formatMoney(price.protectionFeeCents)}</span>
+              <span className="font-semibold text-on-surface">{money(price.protectionFeeCents)}</span>
             </div>
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
-                WagStays Service Fee
+                {t("booking.serviceFee")}
                 <InfoTip body={feeText.serviceFee.body} title={feeText.serviceFee.title} />
               </span>
-              <span className="font-semibold text-on-surface">{formatMoney(price.serviceFeeCents)}</span>
+              <span className="font-semibold text-on-surface">{money(price.serviceFeeCents)}</span>
             </div>
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
-                {taxLabel} ({(taxRateBps / 100).toLocaleString("en-CA", { maximumFractionDigits: 3 })}%)
+                {t("booking.taxRate", { tax: taxLabel, rate: (taxRateBps / 100).toLocaleString(intlLocale(locale), { maximumFractionDigits: 3 }) })}
                 <InfoTip body={feeText.tax.body} title={feeText.tax.title} />
               </span>
-              <span className="font-semibold text-on-surface">{formatMoney(price.taxCents, { exact: true })}</span>
+              <span className="font-semibold text-on-surface">{money(price.taxCents, true)}</span>
             </div>
             <div className="pt-2 mt-1 border-t border-outline-variant/40 flex items-baseline justify-between">
               <div>
-                <span className="font-title-md text-title-md text-on-surface font-bold">Total</span>
+                <span className="font-title-md text-title-md text-on-surface font-bold">{t("booking.total")}</span>
                 <span className="block text-[11px] text-on-surface-variant">
-                  {repeat ? `Per ${stay ? "week" : "visit"} · incl. ${taxLabel}` : `Includes ${taxLabel} & WagShield`}
+                  {repeat
+                    ? stay
+                      ? t("booking.perWeek", { tax: taxLabel })
+                      : t("booking.perVisit", { tax: taxLabel })
+                    : t("booking.includes", { tax: taxLabel })}
                 </span>
               </div>
               <span className="font-headline-md text-headline-md text-secondary font-extrabold" data-testid="widget-total">
-                {formatMoney(price.totalCents, { exact: true })}
+                {money(price.totalCents, true)}
               </span>
             </div>
             {repeat && (
               <div className="flex items-baseline justify-between font-body-sm text-body-sm text-on-surface-variant">
                 <span>
-                  {occurrences} weekly {stay ? "bookings" : "visits"}
-                  {prices.every((p) => p.totalCents === price.totalCents) ? ` × ${formatMoney(price.totalCents, { exact: true })}` : ""}
+                  {prices.every((p) => p.totalCents === price.totalCents)
+                    ? t(stay ? "booking.seriesStayTimes" : "booking.seriesVisitsTimes", { count: occurrences, amount: money(price.totalCents, true) })
+                    : t(stay ? "booking.seriesStay" : "booking.seriesVisits", { count: occurrences })}
                 </span>
                 <span className="font-title-md text-title-md text-on-surface font-bold">
-                  {formatMoney(prices.length === occurrences ? seriesTotal : price.totalCents * occurrences, { exact: true })}
+                  {money(prices.length === occurrences ? seriesTotal : price.totalCents * occurrences, true)}
                 </span>
               </div>
             )}
             <Link className="self-start inline-flex items-center gap-1 font-label-sm text-label-sm text-primary font-bold hover:underline" data-testid="widget-pricing-link" href="/pricing">
               <span className="material-symbols-outlined text-sm">help</span>
-              How pricing works
+              {t("services.howPricing")}
             </Link>
           </div>
 
@@ -653,7 +682,7 @@ export function BookingWidget({
             type="submit"
           >
             <span className={`material-symbols-outlined text-xl ${pending === "book" ? "animate-spin" : ""}`}>{pending === "book" ? "autorenew" : "pets"}</span>
-            <span>{pending === "book" ? "Opening Checkout..." : "Send Booking Request"}</span>
+            <span>{pending === "book" ? t("booking.opening") : t("booking.send")}</span>
           </button>
           <button
             className="w-full h-11 rounded-full bg-surface-container-high hover:bg-surface-dim text-primary font-label-md text-label-md transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -662,35 +691,35 @@ export function BookingWidget({
             type="button"
           >
             <span className={`material-symbols-outlined text-lg ${pending === "meet" ? "animate-spin" : ""}`}>{pending === "meet" ? "autorenew" : "handshake"}</span>
-            <span>Request a Free Meet &amp; Greet First</span>
+            <span>{t("booking.meetGreet")}</span>
           </button>
           <div className="flex items-start gap-2 pt-1 text-center justify-center">
             <span className="material-symbols-outlined text-primary text-base">lock</span>
             <p className="font-label-sm text-label-sm text-on-surface-variant">
-              Your card <strong>won&apos;t be charged</strong> until the sitter accepts your request.
+              {t.rich("booking.notCharged", { b: (c) => <strong>{c}</strong> })}
             </p>
           </div>
         </form>
         <div className="p-3 rounded-2xl bg-primary-fixed/30 flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-2xl">shield</span>
           <div className="text-left font-label-sm text-label-sm">
-            <span className="font-bold text-on-primary-fixed block">100% Satisfaction Guarantee</span>
-            <span className="text-on-primary-fixed-variant">Not happy? Get a free rebooking or a full refund.</span>
+            <span className="font-bold text-on-primary-fixed block">{t("booking.guaranteeTitle")}</span>
+            <span className="text-on-primary-fixed-variant">{t("booking.guaranteeText")}</span>
           </div>
         </div>
       </div>
       <div className="mt-space-md p-space-md rounded-2xl bg-surface-container flex items-center justify-between gap-2 transition-shadow" id="ask-question">
         <div className="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
           <span className="material-symbols-outlined text-lg text-primary">support_agent</span>
-          <span>Have a specific question?</span>
+          <span>{t("booking.question")}</span>
         </div>
         {askHref ? (
           <Link className="font-label-sm text-label-sm text-primary font-bold hover:underline text-right" href={askHref}>
-            Ask {firstName} a Question
+            {t("booking.ask", { name: firstName })}
           </Link>
         ) : (
           <button className="font-label-sm text-label-sm text-primary font-bold hover:underline text-right" onClick={() => go(true)} type="button">
-            Ask {firstName} a Question
+            {t("booking.ask", { name: firstName })}
           </button>
         )}
       </div>

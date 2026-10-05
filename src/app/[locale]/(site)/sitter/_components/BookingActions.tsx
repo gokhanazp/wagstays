@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { respondToBooking, type SitterActionState } from "@/app/actions/sitter";
 import { BTN, TEXTAREA } from "@/components/ui";
@@ -24,6 +25,8 @@ export function BookingActions({
   ownerFirstName: string;
   compact?: boolean;
 }) {
+  const t = useTranslations("sitter.bookingActions");
+  const tc = useTranslations("common.actions");
   const [open, setOpen] = useState<Intent | null>(null);
   const [state, action, pending] = useActionState(async (prev: SitterActionState, fd: FormData) => {
     const res = await respondToBooking(prev, fd);
@@ -54,12 +57,12 @@ export function BookingActions({
         <div className="flex flex-wrap gap-space-sm">
           {canAccept && (
             <button className={btn(BTN.sage)} onClick={() => setOpen("accept")} type="button">
-              <span className="material-symbols-outlined text-lg">check</span>Accept
+              <span className="material-symbols-outlined text-lg">check</span>{t("accept")}
             </button>
           )}
           {canDecline && (
             <button className={btn(BTN.ghost) + " border border-[#EFE7DE]"} onClick={() => setOpen("decline")} type="button">
-              <span className="material-symbols-outlined text-lg">close</span>Decline
+              <span className="material-symbols-outlined text-lg">close</span>{t("decline")}
             </button>
           )}
           {canComplete && (
@@ -67,21 +70,21 @@ export function BookingActions({
               className={btn(BTN.sage)}
               disabled={!started}
               onClick={() => setOpen("complete")}
-              title={started ? undefined : "Available once the booking has started"}
+              title={started ? undefined : t("availableOnceStarted")}
               type="button"
             >
-              <span className="material-symbols-outlined text-lg">task_alt</span>Mark completed
+              <span className="material-symbols-outlined text-lg">task_alt</span>{t("markCompleted")}
             </button>
           )}
           {canCancel && (
             <button className={btn(BTN.danger)} onClick={() => setOpen("cancel")} type="button">
-              <span className="material-symbols-outlined text-lg">event_busy</span>Cancel booking
+              <span className="material-symbols-outlined text-lg">event_busy</span>{t("cancelBooking")}
             </button>
           )}
         </div>
       )}
       {canComplete && !started && !open && !compact && (
-        <p className="font-body-sm text-body-sm text-on-surface-variant">You can mark this booking completed once it has started.</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">{t("completeHint")}</p>
       )}
 
       {open && (
@@ -90,22 +93,22 @@ export function BookingActions({
           <input name="intent" type="hidden" value={open} />
           {open === "accept" && (
             <label className="flex flex-col gap-space-xs">
-              <span className="font-label-lg text-label-lg text-on-surface">Note to {ownerFirstName} (optional)</span>
-              <textarea className={`${TEXTAREA} min-h-[88px]`} maxLength={500} name="note" placeholder="e.g. Can't wait to meet Biscuit! I'll text you when I'm on my way." />
+              <span className="font-label-lg text-label-lg text-on-surface">{t("noteTo", { name: ownerFirstName })}</span>
+              <textarea className={`${TEXTAREA} min-h-[88px]`} maxLength={500} name="note" placeholder={t("notePlaceholder")} />
               {err("note") && <span className="font-body-sm text-body-sm text-error">{err("note")}</span>}
             </label>
           )}
           {(open === "decline" || open === "cancel") && (
             <label className="flex flex-col gap-space-xs">
               <span className="font-label-lg text-label-lg text-on-surface">
-                {open === "decline" ? `Reason for ${ownerFirstName}` : "Why are you cancelling?"} <span className="text-error">*</span>
+                {open === "decline" ? t("reasonFor", { name: ownerFirstName }) : t("whyCancel")} <span className="text-error">*</span>
               </span>
               <textarea
                 className={`${TEXTAREA} min-h-[88px]`}
                 maxLength={500}
                 minLength={5}
                 name="reason"
-                placeholder={open === "decline" ? "e.g. I'm already booked that weekend — sorry!" : "e.g. Family emergency — I won't be in the city that day."}
+                placeholder={open === "decline" ? t("declinePlaceholder") : t("cancelPlaceholder")}
                 required
               />
               {err("reason") && <span className="font-body-sm text-body-sm text-error">{err("reason")}</span>}
@@ -114,13 +117,12 @@ export function BookingActions({
           {open === "cancel" && (
             <p className="flex items-start gap-space-xs p-space-sm rounded-xl bg-tertiary-fixed text-on-tertiary-fixed-variant font-body-sm text-body-sm">
               <span className="material-symbols-outlined text-base">warning</span>
-              Cancelling a confirmed booking affects your reliability rating and may lower your place in search. Any WagPoints the
-              owner used are refunded automatically.
+              {t("cancelWarning")}
             </p>
           )}
           {open === "complete" && (
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Confirm the visit is done. {ownerFirstName} will be invited to leave a review.
+              {t("completeConfirm", { name: ownerFirstName })}
             </p>
           )}
           <div className="flex flex-wrap gap-space-sm">
@@ -129,10 +131,10 @@ export function BookingActions({
               disabled={pending}
               type="submit"
             >
-              {pending ? "Saving…" : { accept: "Confirm & accept", decline: "Decline request", complete: "Yes, mark completed", cancel: "Cancel booking" }[open]}
+              {pending ? tc("saving") : t(`submit.${open}`)}
             </button>
             <button className={btn(BTN.ghost)} disabled={pending} onClick={() => setOpen(null)} type="button">
-              Back
+              {tc("back")}
             </button>
           </div>
         </form>

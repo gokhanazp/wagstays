@@ -1,14 +1,28 @@
 /* eslint-disable @next/next/no-img-element -- plain <img> keeps the design's object-cover layouts identical */
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { SERVICE_SLUGS, type ServiceType } from "@/lib/constants";
+import { intlLocale } from "@/i18n/routing";
+import { SERVICE_SLUGS, VET_COVERAGE_CENTS, type ServiceType } from "@/lib/constants";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
+import { localeAlternates } from "@/lib/seo/site";
 import { defaultHoodOf, getActiveCities, getActiveCity, getFeaturedSitters, getHomeTestimonials, getPlatformStats } from "@/lib/queries";
 import { CarouselControls } from "./_home/CarouselControls";
 import { FeaturedHeart } from "./_home/FeaturedHeart";
 import { HomeSearch } from "./_home/HomeSearch";
 
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+export async function generateMetadata(): Promise<Metadata> {
+  const [t, locale] = await Promise.all([getTranslations("home.meta"), getLocale()]);
+  const title = t("title");
+  const description = t("description");
+  const alternates = localeAlternates("/", locale);
+  return {
+    title: { absolute: title },
+    description,
+    alternates,
+    openGraph: { type: "website", siteName: "WagStays", locale: locale === "fr" ? "fr_CA" : "en_CA", title, description, url: alternates.canonical },
+  };
+}
 
 const FILLED = { fontVariationSettings: "'FILL' 1" } as const;
 
@@ -22,67 +36,49 @@ const SERVICE_CARDS = [
     type: "DOG_WALKING",
     icon: "directions_walk",
     iconBox: "bg-primary-fixed text-primary",
-    eyebrow: "Most Popular",
     accent: "text-primary",
     arrowHover: "group-hover:bg-primary group-hover:text-on-primary",
-    title: "Dog Walking",
-    body: "Live GPS route tracking, pee & poop updates, fresh-water breaks and plenty of sniffing adventures.",
-    chips: ["30 / 60 min", "GPS Map", "Solo Walks"],
-    price: "$28",
-    unit: "/hour",
+    priceCents: 2800,
+    unit: "hour",
   },
   {
     type: "BOARDING",
     icon: "roofing",
     iconBox: "bg-secondary-fixed text-secondary",
-    eyebrow: "Cage-Free Stays",
     accent: "text-secondary",
     arrowHover: "group-hover:bg-secondary group-hover:text-on-secondary",
-    title: "Overnight Boarding",
-    body: "While you're away, your pet stays in a sitter's cosy home: cage-free, loved and treated like family all night.",
-    chips: ["Cosy Home", "Overnight Care", "Special Diets"],
-    price: "$65",
-    unit: "/night",
+    priceCents: 6500,
+    unit: "night",
   },
   {
     type: "DROP_IN",
     icon: "cruelty_free",
     iconBox: "bg-tertiary-fixed text-tertiary",
-    eyebrow: "Ideal for Cats",
     accent: "text-tertiary",
     arrowHover: "group-hover:bg-tertiary group-hover:text-on-tertiary",
-    title: "Cat Visits & Play",
-    body: "In the comfort of their own home: food, fresh water, litter cleaning, brushing and a 30-minute laser play session.",
-    chips: ["Stays at Home", "Litter Cleaning", "Photos & Video"],
-    price: "$22",
-    unit: "/visit",
+    priceCents: 2200,
+    unit: "visit",
   },
   {
     type: "DAY_CARE",
     icon: "sports_baseball",
     iconBox: "bg-primary-fixed-dim text-on-primary-fixed-variant",
-    eyebrow: "For Office Days",
     accent: "text-primary",
     arrowHover: "group-hover:bg-primary group-hover:text-on-primary",
-    title: "Doggy Day Care",
-    body: "No more lonely days at home while you work. Social play sessions, yard zoomies and restful nap times.",
-    chips: ["8 AM – 7 PM", "Social Play", "Nap Time"],
-    price: "$45",
-    unit: "/day",
+    priceCents: 4500,
+    unit: "day",
   },
 ] satisfies {
   type: ServiceType;
   icon: string;
   iconBox: string;
-  eyebrow: string;
   accent: string;
   arrowHover: string;
-  title: string;
-  body: string;
-  chips: string[];
-  price: string;
-  unit: string;
+  priceCents: number;
+  unit: "hour" | "night" | "visit" | "day";
 }[];
+
+const CHIPS = ["chip1", "chip2", "chip3"] as const;
 
 // Per-card colourways from the design, cycled by position.
 const SITTER_TONES = [
@@ -93,12 +89,6 @@ const SITTER_TONES = [
 
 // The service each featured card highlights (design: boarding, walking, drop-in), falling back to the cheapest.
 const SITTER_PRICE_PREF: ServiceType[] = ["BOARDING", "DOG_WALKING", "DROP_IN"];
-const PRICE_LABELS: Record<ServiceType, string> = {
-  BOARDING: "Per Night",
-  DOG_WALKING: "Walk / Hour",
-  DAY_CARE: "Per Day",
-  DROP_IN: "Per Visit",
-};
 
 function Stars({ count = 5 }: { count?: number }) {
   return (
@@ -116,13 +106,18 @@ const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 
 export default async function Home() {
-  const [city, cities, sitters, testimonials, stats] = await Promise.all([
+  const [city, cities, sitters, testimonials, stats, t, locale] = await Promise.all([
     getActiveCity(),
     getActiveCities(),
     getFeaturedSitters(),
     getHomeTestimonials(),
     getPlatformStats(),
+    getTranslations("home"),
+    getLocale(),
   ]);
+  const num = (n: number, digits?: { min?: number; max?: number }) =>
+    new Intl.NumberFormat(intlLocale(locale), { minimumFractionDigits: digits?.min, maximumFractionDigits: digits?.max }).format(n);
+  const highlight = (c: React.ReactNode) => <span className="font-semibold text-secondary">{c}</span>;
 
   const bookings = Math.max(stats.completedBookings, MARKETING_BOOKINGS);
   const rating = stats.completedBookings >= MARKETING_BOOKINGS ? stats.avgRating : MARKETING_RATING;
@@ -147,40 +142,39 @@ export default async function Home() {
                   <span className="material-symbols-outlined text-lg text-secondary" style={FILLED}>
                     pets
                   </span>
-                  <span className="font-label-md text-label-md sm:font-label-lg sm:text-label-lg tracking-wide sm:tracking-wide uppercase">{city.name}&apos;s Most Loved Pet Care Platform</span>
+                  <span className="font-label-md text-label-md sm:font-label-lg sm:text-label-lg tracking-wide sm:tracking-wide uppercase">{t("hero.badge", { city: city.name })}</span>
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 </div>
                 <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-extrabold sm:font-display-lg-mobile sm:text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface leading-tight sm:leading-tight md:leading-tight tracking-tight sm:tracking-tight md:tracking-tight">
-                  For Your Furry Best Friend
+                  {t("hero.titleLine1")}
                   <br />
                   <span className="text-secondary relative inline-block">
-                    Loving & Trusted
+                    {t("hero.titleLine2")}
                     <svg className="absolute -bottom-2 left-0 w-full h-3 text-secondary-container opacity-60" fill="none" preserveAspectRatio="none" viewBox="0 0 250 12">
                       <path d="M2 9C50 3 150 1 248 7" stroke="currentColor" strokeLinecap="round" strokeWidth="4" />
                     </svg>
                   </span>
-                  <span className="text-primary block mt-1">Sitters Right Next Door</span>
+                  <span className="text-primary block mt-1">{t("hero.titleLine3")}</span>
                 </h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl leading-relaxed">
-                  Verified pet lovers in your neighbourhood, professional dog walkers and free 24/7 emergency vet support, so you
-                  can travel with total peace of mind while your pet is in great hands.
+                  {t("hero.intro")}
                 </p>
                 <div className="flex flex-wrap items-center gap-space-lg pt-space-xs text-on-surface-variant">
                   <div className="flex items-center -space-x-3">
-                    <img alt="WagStays sitter holding a tabby kitten" className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-03.jpg" />
-                    <img alt="WagStays sitter with a Golden Retriever" className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-04.jpg" />
-                    <img alt="WagStays sitter with two small dogs" className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-05.jpg" />
+                    <img alt={t("hero.avatarAlt1")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-03.jpg" />
+                    <img alt={t("hero.avatarAlt2")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-04.jpg" />
+                    <img alt={t("hero.avatarAlt3")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-05.jpg" />
                     <div className="w-11 h-11 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shadow-sm">
-                      +{(parents / 1000).toFixed(1).replace(/\.0$/, "")}k
+                      {t("hero.parents", { count: num(Number((parents / 1000).toFixed(1)), { max: 1 }) })}
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center gap-1 text-secondary">
                       <Stars />
-                      <span className="font-title-md text-title-md text-on-surface ml-1">{rating.toFixed(2)} / 5.0</span>
+                      <span className="font-title-md text-title-md text-on-surface ml-1">{t("hero.rating", { rating: num(rating, { min: 2, max: 2 }), max: num(5, { min: 1, max: 1 }) })}</span>
                     </div>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      {bookings.toLocaleString("en-CA")}+ happy bookings completed
+                      {t("hero.bookings", { count: num(bookings) })}
                     </p>
                   </div>
                 </div>
@@ -188,7 +182,7 @@ export default async function Home() {
               {/* Right Hero Visual Collage */}
               <div className="max-lg:order-3 lg:col-span-5 relative">
                 <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-xl bg-surface-container-high">
-                  <img alt="A happy Golden Retriever playing catch with a dog walker in a sunny park" className="w-full h-full object-cover" src="/images/img-06.jpg" />
+                  <img alt={t("hero.photoAlt")} className="w-full h-full object-cover" src="/images/img-06.jpg" />
                   <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/95 backdrop-blur-md p-space-md rounded-2xl shadow-lg flex items-center justify-between">
                     <div className="flex items-center gap-space-sm">
@@ -198,7 +192,7 @@ export default async function Home() {
                         </span>
                       </div>
                       <div>
-                        <div className="font-label-lg text-label-lg text-on-surface">Live Walk in Progress</div>
+                        <div className="font-label-lg text-label-lg text-on-surface">{t("hero.liveWalk")}</div>
                         <div className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-primary inline-block" />
                           Maple & Olive (Woodbine Beach)
@@ -206,7 +200,7 @@ export default async function Home() {
                       </div>
                     </div>
                     <div className="text-right shrink-0 whitespace-nowrap">
-                      <span className="font-headline-sm text-headline-sm text-primary">2.4 km</span>
+                      <span className="font-headline-sm text-headline-sm text-primary">{formatDistance(2.4, locale)}</span>
                       <span className="block font-label-sm text-label-sm text-on-surface-variant">38 min</span>
                     </div>
                   </div>
@@ -215,7 +209,7 @@ export default async function Home() {
                   <span className="text-xl">🩺</span>
                   <div>
                     <p className="font-label-sm text-label-sm text-secondary leading-none">WagStays</p>
-                    <p className="font-label-lg text-label-lg text-on-surface leading-tight">Vet Care Covered</p>
+                    <p className="font-label-lg text-label-lg text-on-surface leading-tight">{t("hero.vetCovered")}</p>
                   </div>
                 </div>
               </div>
@@ -241,13 +235,12 @@ export default async function Home() {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm uppercase tracking-wider mb-2">
                   <span>🐾</span>
-                  Professional Care Options
+                  {t("services.eyebrow")}
                 </div>
-                <h2 className="font-headline-lg text-headline-lg text-on-surface">Loving Care for Every Need of Your Furry Friend</h2>
+                <h2 className="font-headline-lg text-headline-lg text-on-surface">{t("services.title")}</h2>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-md">
-                Every pet has their own habits and personality. Pick the service that suits yours best and start with confidence
-                after a free Meet & Greet.
+                {t("services.text")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
@@ -261,23 +254,23 @@ export default async function Home() {
                     <div className={`w-14 h-14 rounded-2xl ${c.iconBox} flex items-center justify-center mb-space-md group-hover:scale-110 transition-transform`}>
                       <span className="material-symbols-outlined text-3xl">{c.icon}</span>
                     </div>
-                    <span className={`font-label-sm text-label-sm uppercase tracking-wider ${c.accent} font-bold`}>{c.eyebrow}</span>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 mb-2">{c.title}</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed mb-space-md">{c.body}</p>
+                    <span className={`font-label-sm text-label-sm uppercase tracking-wider ${c.accent} font-bold`}>{t(`services.cards.${c.type}.eyebrow`)}</span>
+                    <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 mb-2">{t(`services.cards.${c.type}.title`)}</h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed mb-space-md">{t(`services.cards.${c.type}.body`)}</p>
                     <div className="flex flex-wrap gap-1.5 mb-space-md">
-                      {c.chips.map((chip) => (
+                      {CHIPS.map((chip) => (
                         <span className="px-2.5 py-1 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-sm text-label-sm" key={chip}>
-                          {chip}
+                          {t(`services.cards.${c.type}.${chip}`)}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="pt-space-sm flex items-center justify-between">
                     <div>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant block">From</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant block">{t("services.from")}</span>
                       <span className={`font-headline-sm text-headline-sm ${c.accent}`}>
-                        {c.price}
-                        <span className="font-body-sm text-body-sm text-on-surface-variant"> {c.unit}</span>
+                        {formatMoney(c.priceCents, { locale })}
+                        <span className="font-body-sm text-body-sm text-on-surface-variant"> {t(`services.unit.${c.unit}`)}</span>
                       </span>
                     </div>
                     <span
@@ -302,11 +295,11 @@ export default async function Home() {
                   <span className="material-symbols-outlined text-sm" style={FILLED}>
                     verified
                   </span>
-                  Top Rated Sitters
+                  {t("featured.eyebrow")}
                 </div>
-                <h2 className="font-headline-lg text-headline-lg text-on-surface">Friendly Pet Lovers in Your Neighbourhood</h2>
+                <h2 className="font-headline-lg text-headline-lg text-on-surface">{t("featured.title")}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  Experienced hands, every one interviewed in person, with police and reference checks completed.
+                  {t("featured.text")}
                 </p>
               </div>
               <CarouselControls targetId="featured-sitters" />
@@ -327,7 +320,7 @@ export default async function Home() {
                     <div>
                       <div className="relative w-full h-64 rounded-2xl overflow-hidden mb-space-md bg-surface-container">
                         <img
-                          alt={`${s.displayName}, WagStays sitter`}
+                          alt={t("featured.photoAlt", { name: s.displayName })}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           src={s.cardPhotoUrl ?? s.avatarUrl}
                         />
@@ -336,7 +329,7 @@ export default async function Home() {
                             <span className="material-symbols-outlined text-xs" style={FILLED}>
                               star
                             </span>
-                            {formatRating(s.rating)} ({s.reviewCount} Reviews)
+                            {t("featured.reviews", { rating: formatRating(s.rating, locale), count: s.reviewCount })}
                           </span>
                         </div>
                         <div className="absolute top-3 right-3">
@@ -356,7 +349,7 @@ export default async function Home() {
                           <h3 className="font-headline-sm text-headline-sm text-on-surface">{s.displayName}</h3>
                           <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
                             <span className="material-symbols-outlined text-sm text-primary">location_on</span>
-                            {s.neighbourhood.name} ({formatDistance(s.distanceKm)} away)
+                            {t("featured.away", { hood: s.neighbourhood.name, distance: formatDistance(s.distanceKm, locale) })}
                           </p>
                         </div>
                         {s.credential && (
@@ -369,10 +362,10 @@ export default async function Home() {
                         <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-md italic">&ldquo;{s.quote}&rdquo;</p>
                       )}
                       <div className="flex flex-wrap items-center gap-2 mb-space-md">
-                        {s.tags.slice(0, 2).map((t) => (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm" key={t.id}>
-                            {t.icon && <span className="material-symbols-outlined text-sm">{t.icon}</span>}
-                            {t.label}
+                        {s.tags.slice(0, 2).map((tag) => (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm" key={tag.id}>
+                            {tag.icon && <span className="material-symbols-outlined text-sm">{tag.icon}</span>}
+                            {tag.label}
                           </span>
                         ))}
                       </div>
@@ -381,8 +374,8 @@ export default async function Home() {
                       <div>
                         {svc && (
                           <>
-                            <span className="font-label-sm text-label-sm text-on-surface-variant">{PRICE_LABELS[svc.type as ServiceType]}</span>
-                            <span className="font-headline-sm text-headline-sm text-primary block leading-none">{formatMoney(svc.priceCents)}</span>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">{t(`featured.priceLabel.${svc.type as ServiceType}`)}</span>
+                            <span className="font-headline-sm text-headline-sm text-primary block leading-none">{formatMoney(svc.priceCents, { locale })}</span>
                           </>
                         )}
                       </div>
@@ -390,7 +383,7 @@ export default async function Home() {
                         className="px-space-md py-2.5 rounded-full bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container font-label-lg text-label-lg transition-all shadow-sm"
                         href={`/sitters/${s.slug}`}
                       >
-                        View Profile
+                        {t("featured.viewProfile")}
                       </Link>
                     </div>
                   </div>
@@ -405,11 +398,11 @@ export default async function Home() {
           <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin">
             <div className="text-center max-w-2xl mx-auto mb-space-xl">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm uppercase tracking-wider mb-2">
-                Peace of Mind in 3 Easy Steps
+                {t("howItWorks.eyebrow")}
               </span>
-              <h2 className="font-headline-lg text-headline-lg text-on-surface">How It Works</h2>
+              <h2 className="font-headline-lg text-headline-lg text-on-surface">{t("howItWorks.title")}</h2>
               <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                Choosing the right sitter for your furry family member has never been this easy, transparent and safe.
+                {t("howItWorks.text")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg relative">
@@ -425,13 +418,13 @@ export default async function Home() {
                     1
                   </span>
                 </div>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Browse Local Sitters</h3>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{t("howItWorks.step1.title")}</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  Filter sitters near you by reviews, experience badges, home photos and calendar availability.
+                  {t("howItWorks.step1.body")}
                 </p>
                 <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-sm text-label-sm px-3">
                   <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  Free to Message
+                  {t("howItWorks.step1.chip")}
                 </div>
               </div>
               <div className="relative z-10 bg-surface-container-lowest rounded-3xl p-space-lg flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
@@ -445,15 +438,13 @@ export default async function Home() {
                     2
                   </span>
                 </div>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Book a Meet & Greet</h3>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{t("howItWorks.step2.title")}</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  Before you book, meet your sitter at the park or at home for a free{" "}
-                  <span className="font-semibold text-secondary">&quot;Meet & Greet&quot;</span> and see the chemistry for
-                  yourself.
+                  {t.rich("howItWorks.step2.body", { hl: highlight })}
                 </p>
                 <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-secondary-fixed/60 text-secondary font-label-sm text-label-sm px-3">
                   <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  100% Free First Meeting
+                  {t("howItWorks.step2.chip")}
                 </div>
               </div>
               <div className="relative z-10 bg-surface-container-lowest rounded-3xl p-space-lg flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
@@ -467,20 +458,20 @@ export default async function Home() {
                     3
                   </span>
                 </div>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Relax with Live Updates</h3>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{t("howItWorks.step3.title")}</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  Adorable photos all day long, GPS walk maps and meal reports let you follow every happy moment as it happens.
+                  {t("howItWorks.step3.body")}
                 </p>
                 <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-tertiary-fixed/60 text-tertiary font-label-sm text-label-sm px-3">
                   <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  Daily Live Notifications
+                  {t("howItWorks.step3.chip")}
                 </div>
               </div>
             </div>
             <p className="mt-space-lg text-center font-body-md text-body-md text-on-surface-variant">
-              Clear prices, no surprises — the sitter&apos;s rate plus a flat fee, WagShield vet cover and HST.{" "}
+              {t("howItWorks.pricingNote")}{" "}
               <Link className="inline-flex items-center gap-1 text-primary font-bold hover:underline" data-testid="home-pricing-link" href="/pricing">
-                How pricing works
+                {t("howItWorks.pricingLink")}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </Link>
             </p>
@@ -494,16 +485,15 @@ export default async function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
                 <div className="lg:col-span-5 flex flex-col gap-space-sm">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm uppercase tracking-wider w-fit">
-                    🛡️ Protection, No Strings Attached
+                    {t("wagshield.eyebrow")}
                   </span>
-                  <h2 className="font-headline-lg text-headline-lg text-on-surface">Everything&apos;s Covered with WagShield Protection</h2>
+                  <h2 className="font-headline-lg text-headline-lg text-on-surface">{t("wagshield.title")}</h2>
                   <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                    To us, every pet is family. That&apos;s why every booking on our platform is automatically protected by our
-                    highest safety standards.
+                    {t("wagshield.text")}
                   </p>
                   <div className="pt-2">
                     <Link className="inline-flex items-center gap-2 font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors" href="/#how-it-works">
-                      <span>Learn More About Our Safety Standards</span>
+                      <span>{t("wagshield.learnMore")}</span>
                       <span className="material-symbols-outlined text-sm">arrow_forward</span>
                     </Link>
                   </div>
@@ -513,36 +503,36 @@ export default async function Home() {
                     <div className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">health_and_safety</span>
                     </div>
-                    <h4 className="font-title-md text-title-md text-on-surface">Free Vet Care Coverage</h4>
+                    <h4 className="font-title-md text-title-md text-on-surface">{t("wagshield.vetTitle")}</h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      If something unexpected happens during a booking, we cover up to $5,000 in vet treatment costs.
+                      {t("wagshield.vetText", { amount: formatMoney(VET_COVERAGE_CENTS, { locale }) })}
                     </p>
                   </div>
                   <div className="p-space-md rounded-2xl bg-surface-container-low flex flex-col gap-2">
                     <div className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">ring_volume</span>
                     </div>
-                    <h4 className="font-title-md text-title-md text-on-surface">24/7 Emergency Vet Line</h4>
+                    <h4 className="font-title-md text-title-md text-on-surface">{t("wagshield.lineTitle")}</h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      You or your sitter can reach our emergency vet video line with a single tap, any time of day or night.
+                      {t("wagshield.lineText")}
                     </p>
                   </div>
                   <div className="p-space-md rounded-2xl bg-surface-container-low flex flex-col gap-2">
                     <div className="w-10 h-10 rounded-xl bg-tertiary text-on-tertiary flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">badge</span>
                     </div>
-                    <h4 className="font-title-md text-title-md text-on-surface">Rigorous Sitter Vetting</h4>
+                    <h4 className="font-title-md text-title-md text-on-surface">{t("wagshield.vettingTitle")}</h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Only 2 in 10 applicants are accepted, after ID verification, a home check and a Police Vulnerable Sector Check.
+                      {t("wagshield.vettingText")}
                     </p>
                   </div>
                   <div className="p-space-md rounded-2xl bg-surface-container-low flex flex-col gap-2">
                     <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center">
                       <span className="material-symbols-outlined text-xl">lock</span>
                     </div>
-                    <h4 className="font-title-md text-title-md text-on-surface">Secure Hold Payments</h4>
+                    <h4 className="font-title-md text-title-md text-on-surface">{t("wagshield.paymentsTitle")}</h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Your payment is held securely and only released to the sitter once the stay is complete and you confirm.
+                      {t("wagshield.paymentsText")}
                     </p>
                   </div>
                 </div>
@@ -556,33 +546,33 @@ export default async function Home() {
           <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin">
             <div className="text-center max-w-2xl mx-auto mb-space-xl">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-secondary font-label-sm text-label-sm uppercase tracking-wider mb-2">
-                Real Reviews, Happy Pets
+                {t("testimonials.eyebrow")}
               </span>
-              <h2 className="font-headline-lg text-headline-lg text-on-surface">What Pet Parents Are Saying</h2>
+              <h2 className="font-headline-lg text-headline-lg text-on-surface">{t("testimonials.title")}</h2>
               <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                Just a few of the thousands of families who enjoy the deep peace of mind that comes from knowing their pet is safe.
+                {t("testimonials.text")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
-              {testimonials.map((t) => (
-                <div className="bg-surface-container-low rounded-3xl p-space-lg flex flex-col justify-between shadow-sm" key={t.id}>
+              {testimonials.map((r) => (
+                <div className="bg-surface-container-low rounded-3xl p-space-lg flex flex-col justify-between shadow-sm" key={r.id}>
                   <div>
-                    <div aria-label={`${t.rating} out of 5 stars`} className="flex items-center gap-1 text-secondary mb-space-sm" role="img">
-                      <Stars count={t.rating} />
+                    <div aria-label={t("testimonials.stars", { rating: r.rating })} className="flex items-center gap-1 text-secondary mb-space-sm" role="img">
+                      <Stars count={r.rating} />
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface leading-relaxed mb-space-md italic">&ldquo;{t.body}&rdquo;</p>
+                    <p className="font-body-md text-body-md text-on-surface leading-relaxed mb-space-md italic">&ldquo;{r.body}&rdquo;</p>
                   </div>
                   <div className="flex items-center gap-space-sm pt-space-sm">
-                    {t.authorAvatar ? (
-                      <img alt={t.authorName} className="w-12 h-12 rounded-full object-cover shadow-sm bg-surface-container-high" src={t.authorAvatar} />
+                    {r.authorAvatar ? (
+                      <img alt={r.authorName} className="w-12 h-12 rounded-full object-cover shadow-sm bg-surface-container-high" src={r.authorAvatar} />
                     ) : (
                       <span className="w-12 h-12 rounded-full shadow-sm bg-primary-container text-on-primary font-title-md text-title-md flex items-center justify-center">
-                        {t.authorName.charAt(0)}
+                        {r.authorName.charAt(0)}
                       </span>
                     )}
                     <div>
-                      <div className="font-title-md text-title-md text-on-surface leading-snug">{t.authorName}</div>
-                      {t.petLabel && <div className="font-body-sm text-body-sm text-on-surface-variant">{t.petLabel}</div>}
+                      <div className="font-title-md text-title-md text-on-surface leading-snug">{r.authorName}</div>
+                      {r.petLabel && <div className="font-body-sm text-body-sm text-on-surface-variant">{r.petLabel}</div>}
                     </div>
                   </div>
                 </div>
@@ -603,17 +593,19 @@ export default async function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center relative z-10">
                 <div className="lg:col-span-8 flex flex-col gap-space-md">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-on-primary/10 text-on-primary font-label-sm text-label-sm uppercase tracking-wider w-fit">
-                    🐶 Join the WagStays Pack
+                    {t("cta.eyebrow")}
                   </span>
                   <h2 className="font-display-lg text-[2rem] sm:text-display-lg text-on-primary leading-tight break-words">
-                    Do You Love Animals as Much as We Do?
+                    {t("cta.title1")}
                     <br />
-                    <span className="text-primary-fixed">Earn Extra Income as a Sitter in Your Neighbourhood!</span>
+                    <span className="text-primary-fixed">{t("cta.title2")}</span>
                   </h2>
                   <p className="font-body-lg text-body-lg text-on-primary/90 max-w-2xl leading-relaxed">
-                    Set your own hours, choose the pets you welcome and name your own rates. Spend your days with adorable pets
-                    and earn{" "}
-                    <span className="font-bold underline decoration-primary-fixed">$1,500 – $3,500</span> a month.
+                    {t.rich("cta.text", {
+                      min: formatMoney(150_000, { locale }),
+                      max: formatMoney(350_000, { locale }),
+                      hl: (c) => <span className="font-bold underline decoration-primary-fixed">{c}</span>,
+                    })}
                   </p>
                   <div className="flex flex-wrap items-center gap-space-md pt-2">
                     <Link
@@ -621,23 +613,23 @@ export default async function Home() {
                       href="/become-a-sitter"
                     >
                       <span className="material-symbols-outlined text-xl">pets</span>
-                      <span>Become a Sitter 🐾</span>
+                      <span>{t("cta.become")}</span>
                     </Link>
                     <Link
                       className="px-space-lg py-4 rounded-full bg-on-primary/10 hover:bg-on-primary/20 text-on-primary font-label-lg text-label-lg transition-all flex items-center gap-2"
                       href="/become-a-sitter"
                     >
                       <span className="material-symbols-outlined text-xl">play_circle</span>
-                      <span>How to Become a Sitter (2-Min Video)</span>
+                      <span>{t("cta.video")}</span>
                     </Link>
                   </div>
                 </div>
                 <div className="lg:col-span-4 flex justify-center">
                   <div className="relative w-64 h-64 lg:w-72 lg:h-72 rounded-3xl overflow-hidden shadow-2xl bg-surface-container">
-                    <img alt="A happy pet sitter sitting on the grass with three playful dogs" className="w-full h-full object-cover" src="/images/img-13.jpg" />
+                    <img alt={t("cta.photoAlt")} className="w-full h-full object-cover" src="/images/img-13.jpg" />
                     <div className="absolute bottom-3 left-3 right-3 bg-surface-container-lowest/90 backdrop-blur-md p-space-sm rounded-xl text-on-surface text-center">
-                      <span className="font-headline-sm text-headline-sm text-primary block">Avg. $2,450</span>
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">Monthly earnings of active sitters</span>
+                      <span className="font-headline-sm text-headline-sm text-primary block">{t("cta.avg", { amount: formatMoney(245_000, { locale }) })}</span>
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">{t("cta.avgNote")}</span>
                     </div>
                   </div>
                 </div>

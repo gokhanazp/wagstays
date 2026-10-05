@@ -1,10 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { startTransition, useActionState, useEffect, useState, type ReactNode } from "react";
 import { submitApplication } from "@/app/actions/application";
 import { Select } from "@/components/forms/Select";
 import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
-import { PET_SIZE_LABELS, PET_SIZES, SERVICE_LABELS, type ServiceType } from "@/lib/constants";
+import { PET_SIZE_LABELS, PET_SIZES, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
 import { PetKindPicker } from "@/components/PetKinds";
 import { FileUploadRow, HomePhotos } from "./Uploads";
@@ -17,54 +18,39 @@ const SERVICES: {
   type: ServiceType;
   icon: string;
   iconBox: string;
-  blurb: string;
-  rateLabel: string;
-  unit: string;
   defaultOn: boolean;
 }[] = [
-  { type: "DOG_WALKING", icon: "directions_walk", iconBox: "bg-primary-fixed text-on-primary-fixed", blurb: "45–60 min brisk walk", rateLabel: "Hourly Base Rate:", unit: "/hour", defaultOn: true },
-  { type: "BOARDING", icon: "night_shelter", iconBox: "bg-secondary-fixed text-on-secondary-fixed", blurb: "Overnight stays in your home", rateLabel: "Nightly Base Rate:", unit: "/night", defaultOn: true },
-  { type: "DROP_IN", icon: "cruelty_free", iconBox: "bg-tertiary-fixed text-on-tertiary-fixed", blurb: "Food, litter & 30–40 min of play", rateLabel: "Per-Visit Rate:", unit: "/visit", defaultOn: true },
-  { type: "DAY_CARE", icon: "wb_sunny", iconBox: "bg-surface-container-highest text-primary", blurb: "8:30 AM – 6:30 PM", rateLabel: "Daily Base Rate:", unit: "/day", defaultOn: false },
+  { type: "DOG_WALKING", icon: "directions_walk", iconBox: "bg-primary-fixed text-on-primary-fixed", defaultOn: true },
+  { type: "BOARDING", icon: "night_shelter", iconBox: "bg-secondary-fixed text-on-secondary-fixed", defaultOn: true },
+  { type: "DROP_IN", icon: "cruelty_free", iconBox: "bg-tertiary-fixed text-on-tertiary-fixed", defaultOn: true },
+  { type: "DAY_CARE", icon: "wb_sunny", iconBox: "bg-surface-container-highest text-primary", defaultOn: false },
 ];
 
-const SERVICE_TITLES: Partial<Record<ServiceType, string>> = { DROP_IN: "Cat & Home Visits" };
-
-const EXPERIENCE = [
-  { value: "1-3", label: "1 – 3 Years" },
-  { value: "3-6", label: "3 – 6 Years ⭐" },
-  { value: "6+", label: "6+ Years" },
-  { value: "VET", label: "Vet / Trainer" },
-];
+const EXPERIENCE = ["1-3", "3-6", "6+", "VET"] as const;
 
 const SIZE_FIELDS = { SMALL: "acceptsSmall", MEDIUM: "acceptsMedium", LARGE: "acceptsLarge", GIANT: "acceptsGiant" } as const;
 
-const CERTS = [
-  { name: "certFirstAid", title: "Vet / Pet First Aid & CPR Certificate", blurb: "Know exactly what to do in an emergency" },
-  { name: "certMedication", title: "Oral & Liquid Medication", blurb: "For pets on a regular medication routine" },
-  { name: "certPuppy", title: "Puppy & Kitten Care Specialist", blurb: "House-training and high-energy handling" },
-  { name: "certBehaviour", title: "Behaviour / Reactive Dog Training", blurb: "Working with anxious or reactive pets" },
-];
+const CERTS = ["certFirstAid", "certMedication", "certPuppy", "certBehaviour"] as const;
 
 const HOME_TYPES = [
-  { value: "HOUSE_WITH_YARD", icon: "fence", title: "House with Yard", blurb: "Private space with secure fencing" },
-  { value: "APARTMENT", icon: "apartment", title: "Apartment", blurb: "Spacious living room, elevator building" },
-  { value: "CONDO_BALCONY", icon: "balcony", title: "Condo with Netted Balcony", blurb: "Cat-safe balcony netting installed" },
-];
+  { value: "HOUSE_WITH_YARD", icon: "fence" },
+  { value: "APARTMENT", icon: "apartment" },
+  { value: "CONDO_BALCONY", icon: "balcony" },
+] as const;
 
 const HOME_CRITERIA = [
-  { name: "smokeFree", icon: "smoke_free", label: "Strictly smoke-free home" },
-  { name: "noChildren", icon: "child_friendly", label: "No children aged 0–10 at home" },
-  { name: "ownPets", icon: "pets", label: "I have my own friendly pet(s)" },
-  { name: "fencedYard", icon: "yard", label: "Fully enclosed, fenced yard" },
-];
+  { name: "smokeFree", icon: "smoke_free" },
+  { name: "noChildren", icon: "child_friendly" },
+  { name: "ownPets", icon: "pets" },
+  { name: "fencedYard", icon: "yard" },
+] as const;
 
 const STEPS = [
-  { title: "Personal Info", icon: "person", anchor: "section-personal" },
-  { title: "Services & Pricing", icon: "payments", anchor: "section-services" },
-  { title: "Experience & Home", icon: "pets", anchor: "section-experience" },
-  { title: "ID & Verification", icon: "shield", anchor: "section-verification" },
-];
+  { key: "personal", icon: "person", anchor: "section-personal" },
+  { key: "services", icon: "payments", anchor: "section-services" },
+  { key: "experience", icon: "pets", anchor: "section-experience" },
+  { key: "verification", icon: "shield", anchor: "section-verification" },
+] as const;
 
 const BIO_MIN = 80;
 const BIO_MAX = 500;
@@ -100,6 +86,8 @@ const phoneOk = (v: string) => v.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "")
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }: Props) {
+  const t = useTranslations("apply.form");
+  const tc = useTranslations("common");
   const [state, formAction, pending] = useActionState(submitApplication, undefined);
   const [cleared, setCleared] = useState<Set<string>>(new Set());
 
@@ -172,14 +160,14 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
   return (
     <>
-      <section aria-label="Application steps" className="mb-space-lg md:mb-space-xl">
+      <section aria-label={t("stepsAria")} className="mb-space-lg md:mb-space-xl">
         <div className="bg-surface-container-lowest p-space-md md:p-space-lg rounded-2xl shadow-sm">
           {/* Mobile: four compact icon + title tiles in one row; md+: the full cards with status line */}
           <div className="grid grid-cols-4 gap-space-xs md:gap-space-md">
             {STEPS.map((step, i) => {
               const done = stepDone[i];
               const current = i === currentStep;
-              const status = done ? "Done" : current ? "Current" : "Up Next";
+              const status = t(done ? "stepStatus.done" : current ? "stepStatus.current" : "stepStatus.upNext");
               return (
                 <button
                   className={`flex flex-col md:flex-row items-center gap-1 md:gap-space-sm p-space-xs md:p-space-sm rounded-xl text-center md:text-left transition-all ${
@@ -189,7 +177,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                         ? "bg-surface-container-low/60"
                         : "bg-surface-container-low/30 opacity-70"
                   }`}
-                  key={step.title}
+                  key={step.key}
                   onClick={() => scrollTo(step.anchor)}
                   type="button"
                 >
@@ -215,14 +203,14 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                         done ? "text-primary font-bold" : current ? "text-secondary font-bold" : "text-on-surface-variant"
                       }`}
                     >
-                      Step {i + 1} • {status}
+                      {t("stepLabel", { n: i + 1, status })}
                     </span>
                     <span
                       className={`font-label-sm text-label-sm md:font-label-lg md:text-label-lg leading-tight md:leading-[20px] md:truncate ${
                         done ? "text-on-surface" : current ? "text-on-surface font-extrabold" : "text-on-surface-variant"
                       }`}
                     >
-                      {step.title}
+                      {t(`steps.${step.key}`)}
                     </span>
                   </div>
                 </button>
@@ -236,10 +224,12 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
             />
           </div>
           <div className="flex justify-between items-center gap-2 mt-2 font-label-sm text-label-sm text-on-surface-variant">
-            <span>Application progress</span>
+            <span>{t("progressLabel")}</span>
             <span className="font-bold text-secondary text-right">
-              {pct}% Complete —{" "}
-              {stepsLeft === 0 ? "Ready to submit!" : stepsLeft === 1 ? "Last step!" : `${stepsLeft} steps to go!`}
+              {t("progressSummary", {
+                pct,
+                next: stepsLeft === 0 ? t("readyToSubmit") : stepsLeft === 1 ? t("lastStep") : t("stepsToGo", { count: stepsLeft }),
+              })}
             </span>
           </div>
         </div>
@@ -261,25 +251,25 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
             >
               <div className="flex items-start justify-between gap-space-md">
                 <div>
-                  <SectionLabel icon="person">Getting Started</SectionLabel>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Tell Us About You</h2>
+                  <SectionLabel icon="person">{t("personal.label")}</SectionLabel>
+                  <h2 className="font-headline-md text-headline-md text-on-surface">{t("personal.title")}</h2>
                   <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                    We&apos;ll use these details to set up your sitter profile and reach you about your application.
+                    {t("personal.text")}
                   </p>
                 </div>
                 {isLoggedIn && (
                   <span className="hidden sm:inline-flex px-3 py-1 bg-surface-container rounded-full text-primary font-label-md text-label-md whitespace-nowrap">
-                    From your account
+                    {t("personal.fromAccount")}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
                 {(
                   [
-                    { name: "firstName", label: "First name", type: "text", auto: "given-name", ph: "Megan" },
-                    { name: "lastName", label: "Last name", type: "text", auto: "family-name", ph: "Robinson" },
-                    { name: "email", label: "Email", type: "email", auto: "email", ph: "you@example.com" },
-                    { name: "phone", label: "Mobile phone", type: "tel", auto: "tel", ph: "(416) 555-0123" },
+                    { name: "firstName", label: t("personal.firstName"), type: "text", auto: "given-name", ph: t("personal.firstNamePlaceholder") },
+                    { name: "lastName", label: t("personal.lastName"), type: "text", auto: "family-name", ph: t("personal.lastNamePlaceholder") },
+                    { name: "email", label: t("personal.email"), type: "email", auto: "email", ph: t("personal.emailPlaceholder") },
+                    { name: "phone", label: t("personal.phone"), type: "tel", auto: "tel", ph: t("personal.phonePlaceholder") },
                   ] as const
                 ).map((f) => (
                   <div className="flex flex-col gap-space-xs" key={f.name}>
@@ -301,7 +291,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 ))}
                 <div className="flex flex-col gap-space-xs sm:col-span-2">
                   <label className="font-label-lg text-label-lg text-on-surface" htmlFor="neighbourhood">
-                    Your neighbourhood
+                    {t("personal.neighbourhood")}
                   </label>
                   <Select
                     aria-invalid={!!err("neighbourhood") || undefined}
@@ -317,7 +307,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                       const i = n.label.lastIndexOf(", ");
                       return i > 0 ? { value: n.id, label: n.label, group: n.label.slice(i + 2) } : { value: n.id, label: n.label };
                     })}
-                    placeholder="Choose where you'll host and walk…"
+                    placeholder={t("personal.neighbourhoodPlaceholder")}
                     value={personal.neighbourhood}
                   />
                   <FieldError msg={err("neighbourhood")} />
@@ -332,14 +322,14 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
             >
               <div className="flex items-start justify-between gap-space-md">
                 <div>
-                  <SectionLabel icon="tune">Section 1 / 5</SectionLabel>
-                  <h2 className="font-headline-md text-headline-md text-on-surface">Services You&apos;ll Offer & Pricing</h2>
+                  <SectionLabel icon="tune">{t("section", { n: 1 })}</SectionLabel>
+                  <h2 className="font-headline-md text-headline-md text-on-surface">{t("services.title")}</h2>
                   <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                    You can change these anytime. Suggested market rates for your area are filled in.
+                    {t("services.text")}
                   </p>
                 </div>
                 <span className="hidden sm:inline-flex px-3 py-1 bg-surface-container rounded-full text-primary font-label-md text-label-md whitespace-nowrap">
-                  Set Your Rates
+                  {t("services.badge")}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
@@ -360,14 +350,14 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                           </div>
                           <div>
                             <h3 className="font-title-md text-title-md text-on-surface">
-                              {SERVICE_TITLES[s.type] ?? SERVICE_LABELS[s.type]}
+                              {s.type === "DROP_IN" ? t("services.dropInTitle") : tc(`enums.service.${s.type}`)}
                             </h3>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant">{s.blurb}</p>
+                            <p className="font-body-sm text-body-sm text-on-surface-variant">{t(`services.types.${s.type}.blurb`)}</p>
                           </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer shrink-0">
                           <input
-                            aria-label={`Offer ${SERVICE_LABELS[s.type]}`}
+                            aria-label={t("services.offerAria", { service: tc(`enums.service.${s.type}`) })}
                             checked={services[s.type].on}
                             className="sr-only peer"
                             name={`service_${s.type}`}
@@ -381,11 +371,11 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                       </div>
                       <div>
                         <div className="flex items-center justify-between pt-space-xs">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">{s.rateLabel}</span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">{t(`services.types.${s.type}.rateLabel`)}</span>
                           <div className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl shadow-xs">
                             <span className="font-label-lg text-label-lg text-secondary">$</span>
                             <input
-                              aria-label={`${SERVICE_LABELS[s.type]} rate in dollars`}
+                              aria-label={t("services.rateAria", { service: tc(`enums.service.${s.type}`) })}
                               className="w-16 font-headline-sm text-headline-sm text-on-surface text-right focus:outline-none bg-transparent"
                               inputMode="numeric"
                               max={rule.max}
@@ -397,7 +387,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                               type="number"
                               value={services[s.type].price}
                             />
-                            <span className="font-label-sm text-label-sm text-on-surface-variant">{s.unit}</span>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">{t(`services.types.${s.type}.unit`)}</span>
                           </div>
                         </div>
                         <FieldError msg={priceErr} />
@@ -414,30 +404,30 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
               className="bg-surface-container-lowest p-space-lg md:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-lg scroll-mt-28"
               id="section-experience"
             >
-              <SectionLabel icon="psychology">Section 2 / 5</SectionLabel>
+              <SectionLabel icon="psychology">{t("section", { n: 2 })}</SectionLabel>
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Experience & Pet Preferences</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface">{t("experience.title")}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  Share the expertise that will help pet parents book you with confidence.
+                  {t("experience.text")}
                 </p>
               </div>
               <div className="flex flex-col gap-space-xs">
                 <span className="font-title-md text-title-md text-on-surface">
-                  How many years of pet care experience do you have?
+                  {t("experience.yearsQuestion")}
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-1">
                   {EXPERIENCE.map((x) => (
-                    <label className="cursor-pointer" key={x.value}>
+                    <label className="cursor-pointer" key={x}>
                       <input
-                        checked={experience === x.value}
+                        checked={experience === x}
                         className="peer sr-only"
                         name="experience"
-                        onChange={() => setExperience(x.value)}
+                        onChange={() => setExperience(x)}
                         type="radio"
-                        value={x.value}
+                        value={x}
                       />
                       <div className="p-space-sm text-center rounded-2xl bg-surface-container-low text-on-surface-variant font-label-lg text-label-lg peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary transition-all">
-                        {x.label}
+                        {t(`experience.years.${x}`)}
                       </div>
                     </label>
                   ))}
@@ -445,15 +435,15 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 <FieldError msg={err("experience")} />
               </div>
               <div className="flex flex-col gap-space-xs pt-space-xs">
-                <span className="font-title-md text-title-md text-on-surface">Which pets will you care for?</span>
+                <span className="font-title-md text-title-md text-on-surface">{t("experience.petsQuestion")}</span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Pick every kind you&apos;re comfortable with — owners can only book you for these.
-                  {services.DOG_WALKING.on && " Dogs stay selected while you offer Dog Walking."}
+                  {t("experience.petsHint")}
+                  {services.DOG_WALKING.on && ` ${t("experience.dogsLocked")}`}
                 </p>
                 <div className="pt-1">
                   <PetKindPicker
                     locked={services.DOG_WALKING.on ? ["DOG"] : []}
-                    lockedHint="You're offering Dog Walking"
+                    lockedHint={t("experience.lockedHint")}
                     name="acceptedKinds"
                     onChange={setKinds}
                     value={kinds}
@@ -462,9 +452,9 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 <FieldError msg={err("acceptedKinds")} />
               </div>
               <div className={`flex flex-col gap-space-xs pt-space-xs ${kinds.includes("DOG") ? "" : "hidden"}`}>
-                <span className="font-title-md text-title-md text-on-surface">Dog sizes you can welcome</span>
+                <span className="font-title-md text-title-md text-on-surface">{t("experience.sizesTitle")}</span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Tick the options that suit your home and physical strength.
+                  {t("experience.sizesHint")}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-1">
                   {PET_SIZES.map((size) => (
@@ -484,28 +474,28 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                         />
                       </div>
                       <span className="font-label-lg text-label-lg text-on-surface mt-2">
-                        {PET_SIZE_LABELS[size].label} Breed
+                        {t(`experience.sizes.${size}`)}
                       </span>
                       <span className="font-label-sm text-label-sm text-on-surface-variant">
                         {PET_SIZE_LABELS[size].range.replace(" – ", "–")}
-                        {size === "GIANT" ? " (Great Dane, etc.)" : ""}
+                        {size === "GIANT" ? t("experience.giantExample") : ""}
                       </span>
                     </label>
                   ))}
                 </div>
               </div>
               <div className="flex flex-col gap-space-xs pt-space-xs">
-                <span className="font-title-md text-title-md text-on-surface">Special Skills & Certifications</span>
+                <span className="font-title-md text-title-md text-on-surface">{t("experience.certsTitle")}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-1">
                   {CERTS.map((c) => (
                     <label
                       className="flex items-start gap-3 p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer"
-                      key={c.name}
+                      key={c}
                     >
-                      <input className="mt-1 w-5 h-5 accent-primary rounded shrink-0" name={c.name} type="checkbox" />
+                      <input className="mt-1 w-5 h-5 accent-primary rounded shrink-0" name={c} type="checkbox" />
                       <div className="flex flex-col">
-                        <span className="font-label-lg text-label-lg text-on-surface">{c.title}</span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">{c.blurb}</span>
+                        <span className="font-label-lg text-label-lg text-on-surface">{t(`experience.certs.${c}.title`)}</span>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">{t(`experience.certs.${c}.blurb`)}</span>
                       </div>
                     </label>
                   ))}
@@ -515,15 +505,15 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
             {/* SECTION C: Home & Environment */}
             <fieldset className="bg-surface-container-lowest p-space-lg md:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-lg">
-              <SectionLabel icon="cottage">Section 3 / 5</SectionLabel>
+              <SectionLabel icon="cottage">{t("section", { n: 3 })}</SectionLabel>
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Home & Living Environment</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface">{t("home.title")}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  For boarding and day care especially, the details of your home matter a lot to pet parents.
+                  {t("home.text")}
                 </p>
               </div>
               <div className="flex flex-col gap-space-xs">
-                <span className="font-title-md text-title-md text-on-surface">Where Pets Will Stay</span>
+                <span className="font-title-md text-title-md text-on-surface">{t("home.whereTitle")}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
                   {HOME_TYPES.map((h) => (
                     <label className="cursor-pointer" key={h.value}>
@@ -537,8 +527,8 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                       />
                       <div className="h-full p-space-md rounded-2xl bg-surface-container-low peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary transition-all flex flex-col gap-2">
                         <span className="material-symbols-outlined text-2xl">{h.icon}</span>
-                        <span className="font-title-md text-title-md">{h.title}</span>
-                        <span className="font-body-sm text-body-sm opacity-80">{h.blurb}</span>
+                        <span className="font-title-md text-title-md">{t(`home.types.${h.value}.title`)}</span>
+                        <span className="font-body-sm text-body-sm opacity-80">{t(`home.types.${h.value}.blurb`)}</span>
                       </div>
                     </label>
                   ))}
@@ -546,13 +536,13 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 <FieldError msg={err("homeType")} />
               </div>
               <div className="flex flex-col gap-space-xs pt-space-xs">
-                <span className="font-title-md text-title-md text-on-surface">Home Safety & Suitability</span>
+                <span className="font-title-md text-title-md text-on-surface">{t("home.safetyTitle")}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-1">
                   {HOME_CRITERIA.map((c) => (
                     <label className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-low cursor-pointer" key={c.name}>
                       <input className="w-5 h-5 accent-primary rounded shrink-0" name={c.name} type="checkbox" />
                       <span className="material-symbols-outlined text-primary text-xl">{c.icon}</span>
-                      <span className="font-label-lg text-label-lg text-on-surface">{c.label}</span>
+                      <span className="font-label-lg text-label-lg text-on-surface">{t(`home.criteria.${c.name}`)}</span>
                     </label>
                   ))}
                 </div>
@@ -562,25 +552,24 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
             {/* SECTION D: Biography */}
             <fieldset className="bg-surface-container-lowest p-space-lg md:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-lg">
-              <SectionLabel icon="edit_note">Section 4 / 5</SectionLabel>
+              <SectionLabel icon="edit_note">{t("section", { n: 4 })}</SectionLabel>
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Introduce Yourself (Bio)</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface">{t("bio.title")}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  Pet parents read this part of your profile first. The warmer and more detailed it is, the faster
-                  you&apos;ll land your first booking.
+                  {t("bio.text")}
                 </p>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="relative">
                   <textarea
-                    aria-label="Your bio"
+                    aria-label={t("bio.aria")}
                     className={`w-full p-4 rounded-2xl bg-surface-container-low focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary text-on-surface font-body-md text-body-md placeholder:text-outline transition-all resize-none shadow-inner ${
                       err("bio") ? errorRing : ""
                     }`}
                     maxLength={BIO_MAX}
                     name="bio"
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="e.g. Hi! I grew up with cats and dogs and have been caring for my neighbours' pets for six years. I have a calm, fully vaccinated tabby at home, I send photo and video updates every day, and I'm careful with special diets and medication routines…"
+                    placeholder={t("bio.placeholder")}
                     rows={5}
                     value={bio}
                   />
@@ -589,18 +578,18 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   {bio.trim().length >= BIO_MIN ? (
                     <span className="text-primary font-bold flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">sentiment_satisfied</span>
-                      Great bio — pet parents will love it!
+                      {t("bio.great")}
                     </span>
                   ) : (
                     <span className="text-on-surface-variant flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">edit</span>
                       {bio.trim().length === 0
-                        ? `Aim for at least ${BIO_MIN} characters`
-                        : `${BIO_MIN - bio.trim().length} more characters to go`}
+                        ? t("bio.aim", { min: BIO_MIN })
+                        : t("bio.more", { count: BIO_MIN - bio.trim().length })}
                     </span>
                   )}
                   <span className="text-on-surface-variant whitespace-nowrap">
-                    {bio.length} / {BIO_MAX} characters
+                    {t("bio.counter", { count: bio.length, max: BIO_MAX })}
                   </span>
                 </div>
                 <FieldError msg={err("bio")} />
@@ -608,9 +597,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-surface-container-low">
                 <span className="material-symbols-outlined text-tertiary-container text-xl mt-0.5">lightbulb</span>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  <strong className="text-on-surface">Tip:</strong> Mention how often you can walk each day, your
-                  nearest emergency vet and how much time you can give pets during the day — it doubles your approval
-                  speed.
+                  {t.rich("bio.tip", { b: (c) => <strong className="text-on-surface">{c}</strong> })}
                 </p>
               </div>
             </fieldset>
@@ -620,19 +607,18 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
               className="bg-surface-container-lowest p-space-lg md:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-lg scroll-mt-28"
               id="section-verification"
             >
-              <SectionLabel icon="security">Section 5 / 5</SectionLabel>
+              <SectionLabel icon="security">{t("section", { n: 5 })}</SectionLabel>
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Verification & Safety Declaration</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface">{t("verification.title")}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  To keep the WagStays community 100% safe, every sitter applicant goes through ID and background
-                  screening.
+                  {t("verification.text")}
                 </p>
               </div>
               <div className="flex flex-col gap-space-md">
                 <FileUploadRow
                   buttonIcon="cloud_upload"
-                  buttonLabel="Upload Document"
-                  description="Encrypted with 256-bit SSL and handled under PIPEDA"
+                  buttonLabel={t("verification.idButton")}
+                  description={t("verification.idDescription")}
                   draftId={draftId}
                   error={err("idDocumentName")}
                   fileField="idDocumentFile"
@@ -641,13 +627,13 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   iconBox="bg-primary-fixed text-primary"
                   name="idDocumentName"
                   onFile={setIdDoc}
-                  title="Government-Issued Photo ID"
+                  title={t("verification.idTitle")}
                   value={idDoc}
                 />
                 <FileUploadRow
                   buttonIcon="attach_file"
-                  buttonLabel="Upload PDF"
-                  description="Issued by your local police service within the last 6 months"
+                  buttonLabel={t("verification.vscButton")}
+                  description={t("verification.vscDescription")}
                   draftId={draftId}
                   error={err("backgroundCheckName")}
                   fileField="backgroundCheckFile"
@@ -656,7 +642,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                   iconBox="bg-secondary-fixed text-secondary"
                   name="backgroundCheckName"
                   onFile={setVscDoc}
-                  title="Police Vulnerable Sector Check"
+                  title={t("verification.vscTitle")}
                   value={vscDoc}
                 />
                 <div className="flex flex-col gap-3 pt-space-xs">
@@ -670,15 +656,18 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                         type="checkbox"
                       />
                       <span className="font-body-sm text-body-sm text-on-surface leading-relaxed">
-                        I have read and agree to the WagStays{" "}
-                        <a className="text-primary font-semibold underline underline-offset-2" href="#">
-                          Sitter Service Agreement
-                        </a>{" "}
-                        and{" "}
-                        <a className="text-primary font-semibold underline underline-offset-2" href="#">
-                          Pet Safety Standards
-                        </a>
-                        .
+                        {t.rich("verification.agreeTerms", {
+                          agreement: (c) => (
+                            <a className="text-primary font-semibold underline underline-offset-2" href="#">
+                              {c}
+                            </a>
+                          ),
+                          standards: (c) => (
+                            <a className="text-primary font-semibold underline underline-offset-2" href="#">
+                              {c}
+                            </a>
+                          ),
+                        })}
                       </span>
                     </label>
                     <FieldError msg={err("agreeTerms")} />
@@ -693,8 +682,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                         type="checkbox"
                       />
                       <span className="font-body-sm text-body-sm text-on-surface leading-relaxed">
-                        I confirm that all the experience and home details I&apos;ve provided are complete and accurate,
-                        and I agree to an in-home check if required.
+                        {t("verification.agreeAccuracy")}
                       </span>
                     </label>
                     <FieldError msg={err("agreeAccuracy")} />
@@ -723,14 +711,14 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 type="button"
               >
                 <span className="material-symbols-outlined text-base">arrow_back</span>
-                Previous Step
+                {t("previousStep")}
               </button>
               <button
                 className="w-full sm:w-auto px-space-md sm:px-space-xl py-3.5 rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-md flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-wait"
                 disabled={pending}
                 type="submit"
               >
-                <span>{pending ? "Submitting your application…" : "Submit Application & Send for Review"}</span>
+                <span>{pending ? t("submitting") : t("submit")}</span>
                 <span
                   className={`material-symbols-outlined text-lg transition-transform ${
                     pending ? "animate-spin" : "group-hover:translate-x-1"
@@ -748,19 +736,19 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
       {/* Mobile: the submit button is ~5 screens down — keep progress and the next step (or submit) in reach. */}
       <MobileStickyBar targetId="application-actions">
         <div className="flex flex-col min-w-0">
-          <span className="font-label-lg text-label-lg text-on-surface">{pct}% complete</span>
+          <span className="font-label-lg text-label-lg text-on-surface">{t("sticky.complete", { pct })}</span>
           <span className="font-label-sm text-label-sm text-secondary font-bold truncate">
-            {stepsLeft === 0 ? "Ready to submit!" : `Next: ${STEPS[currentStep].title}`}
+            {stepsLeft === 0 ? t("readyToSubmit") : t("sticky.next", { step: t(`steps.${STEPS[currentStep].key}`) })}
           </span>
         </div>
         {stepsLeft === 0 ? (
           <button className={`${STICKY_BAR_BTN} disabled:opacity-70`} disabled={pending} form="sitterApplicationForm" type="submit">
             <span className={`material-symbols-outlined text-lg ${pending ? "animate-spin" : ""}`}>{pending ? "progress_activity" : "rocket_launch"}</span>
-            {pending ? "Submitting…" : "Submit"}
+            {pending ? t("sticky.submitting") : t("sticky.submit")}
           </button>
         ) : (
           <button className={STICKY_BAR_BTN} onClick={() => scrollTo(STEPS[currentStep].anchor)} type="button">
-            Continue
+            {t("sticky.continue")}
             <span className="material-symbols-outlined text-lg">arrow_downward</span>
           </button>
         )}

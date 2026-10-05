@@ -1,12 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useState } from "react";
 import { formatDistance, formatMoney, formatRating } from "@/lib/format";
 import { PetKindIcons } from "@/components/PetKinds";
 import type { MapPin } from "./map-types";
-import { UNIT_SHORT } from "./search-url";
+
+const UNITS = ["WALK", "NIGHT", "DAY", "VISIT"] as const;
+type Unit = (typeof UNITS)[number];
+const asUnit = (u: string): Unit => ((UNITS as readonly string[]).includes(u) ? (u as Unit) : "VISIT");
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
@@ -26,6 +30,8 @@ export function SitterMap({
   liveLabel: string;
   heightClass?: string;
 }) {
+  const t = useTranslations("search.map");
+  const locale = useLocale();
   const [selectedId, setSelectedId] = useState<string | undefined>(focusIds[0] ?? pins[0]?.id);
   const [recenter, setRecenter] = useState(0);
   // Re-select the first visible card whenever the result page changes (filters / sort / page).
@@ -46,7 +52,7 @@ export function SitterMap({
           <span>{liveLabel}</span>
         </div>
         <button
-          aria-label="Recentre map"
+          aria-label={t("recentre")}
           className="pointer-events-auto w-9 h-9 rounded-full bg-surface-container-lowest/90 backdrop-blur-md shadow-md flex items-center justify-center text-on-surface hover:text-primary transition-colors"
           onClick={() => setRecenter((n) => n + 1)}
           type="button"
@@ -66,14 +72,14 @@ export function SitterMap({
             <div className="flex items-center justify-between gap-2">
               <span className="font-label-lg text-label-lg text-on-surface font-bold truncate">{selected.displayName}</span>
               <span className="font-label-sm text-label-sm text-primary font-extrabold shrink-0">
-                {formatMoney(selected.priceCents)}/{UNIT_SHORT[selected.unit] ?? "visit"}
+                {formatMoney(selected.priceCents, { locale })}/{t(`unitShort.${asUnit(selected.unit)}`)}
               </span>
             </div>
             <div className="flex items-center gap-1 text-xs text-on-surface-variant mt-0.5 min-w-0">
               <span className="material-symbols-outlined text-xs text-secondary">star</span>
-              <span className="font-bold">{formatRating(selected.rating)}</span>
+              <span className="font-bold">{formatRating(selected.rating, locale)}</span>
               <span className="truncate">
-                • {selected.locationNote ?? "Nearby"} ({formatDistance(selected.distanceKm)})
+                • {selected.locationNote ?? t("nearby")} ({formatDistance(selected.distanceKm, locale)})
               </span>
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">

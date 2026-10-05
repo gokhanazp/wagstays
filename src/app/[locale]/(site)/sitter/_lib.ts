@@ -1,4 +1,5 @@
-import { PET_SIZE_LABELS, SERVICE_LABELS, type PetSize, type ServiceType } from "@/lib/constants";
+import { intlLocale } from "@/i18n/routing";
+import type { PetSize, ServiceType } from "@/lib/constants";
 
 export const SERVICE_ICONS: Record<string, string> = {
   DOG_WALKING: "directions_walk",
@@ -7,23 +8,26 @@ export const SERVICE_ICONS: Record<string, string> = {
   DROP_IN: "door_front",
 };
 
-export const serviceLabel = (type: string) => SERVICE_LABELS[type as ServiceType] ?? type;
+/** `common` message key of a service label: t(serviceKey(type)) with getTranslations("common"). */
+export const serviceKey = (type: string) => `enums.service.${type as ServiceType}` as const;
 
 /** "Emily R." — owners are shown by first name + last initial in the sitter area. */
 export const ownerShortName = (o: { firstName: string; lastName: string }) =>
   `${o.firstName} ${o.lastName ? `${o.lastName[0]}.` : ""}`.trim();
 
-export const petSizeLabel = (size: string | null) => (size ? PET_SIZE_LABELS[size as PetSize]?.label ?? size : null);
+/** `common` message key of a pet size label. */
+export const petSizeKey = (size: string) => `enums.petSize.${size as PetSize}` as const;
 
 /** "10:00 a.m. – 11:00 a.m." style range in the city's time zone, plus the date. */
-export function bookingWhen(start: Date, end: Date, tz: string) {
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(start);
-  const time = new Intl.DateTimeFormat("en-CA", { timeZone: tz, hour: "numeric", minute: "2-digit" });
+export function bookingWhen(start: Date, end: Date, tz: string, locale = "en") {
+  const loc = intlLocale(locale);
+  const day = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(start);
+  const time = new Intl.DateTimeFormat(loc, { timeZone: tz, hour: "numeric", minute: "2-digit" });
   const sameDay =
     new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "short" }).format(start) ===
     new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "short" }).format(end);
   if (sameDay) return `${day} · ${time.format(start)} – ${time.format(end)}`;
-  const endDay = new Intl.DateTimeFormat("en-CA", { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(end);
+  const endDay = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(end);
   return `${day}, ${time.format(start)} → ${endDay}, ${time.format(end)}`;
 }
 

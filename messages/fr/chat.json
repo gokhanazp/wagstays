@@ -1,1 +1,59 @@
-{}
+{
+  "meta": {
+    "messages": "Messages",
+    "newMessage": "Nouveau message",
+    "conversation": "Conversation"
+  },
+  "inbox": {
+    "title": "Messages",
+    "newCount": "{count, plural, one {# nouveau} other {# nouveaux}}",
+    "emptyTitle": "Aucune conversation pour l'instant",
+    "emptyText": "Écrivez à un gardien à partir de son profil pour poser des questions sur ses disponibilités, la routine de votre animal ou une rencontre préalable.",
+    "unread": "Non lu",
+    "yourSitter": "Votre gardien",
+    "petParent": "Propriétaire",
+    "youPrefix": "Vous: {body}",
+    "noMessages": "Aucun message pour l'instant",
+    "pickTitle": "Choisissez une conversation",
+    "pickText": "Choisissez une discussion à gauche pour la lire et y répondre. Gardez les paiements et les réservations sur WagStays pour rester couvert par WagShield."
+  },
+  "new": {
+    "backToMessages": "Retour aux messages",
+    "selfTitle": "Vous ne pouvez pas vous écrire à vous-même",
+    "selfSitterText": "Ceci est votre propre profil de gardien — les propriétaires peuvent vous écrire à partir de celui-ci.",
+    "selfOwnerText": "Choisissez plutôt un propriétaire dont vous gardez l'animal.",
+    "pausedTitle": "La messagerie est en pause",
+    "pausedText": "{name} n'accepte pas de nouvelles demandes pour le moment.",
+    "findAnother": "Trouver un autre gardien"
+  },
+  "thread": {
+    "back": "Retour aux messages",
+    "verified": "Identité et antécédents vérifiés",
+    "viewProfile": "Voir le profil",
+    "book": "Réserver",
+    "petParent": "Propriétaire",
+    "noUpcoming": "Aucune réservation à venir avec {name} pour l'instant.",
+    "upcomingWith": "À venir avec {name}",
+    "sayHello": "Dites bonjour à {name}",
+    "helloText": "Décrivez la routine de votre animal, informez-vous des disponibilités ou proposez une rencontre préalable.",
+    "sending": "Envoi…",
+    "composerLabel": "Écrire à {name}",
+    "composerPlaceholder": "Écrire à {name}…",
+    "send": "Envoyer le message",
+    "hint": "Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne"
+  },
+  "time": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "now": "à l'instant",
+    "minutes": "{count} min",
+    "hours": "{count} h"
+  },
+  "errors": {
+    "empty": "Écrivez d'abord un message.",
+    "tooLong": "Les messages peuvent contenir jusqu'à {max} caractères.",
+    "signIn": "Veuillez vous reconnecter pour envoyer des messages.",
+    "invalid": "Message non valide.",
+    "notFound": "Conversation introuvable."
+  }
+}

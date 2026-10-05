@@ -62,12 +62,23 @@ export async function currentSubscription(): Promise<PushSubscription | null> {
   return reg ? reg.pushManager.getSubscription() : null;
 }
 
-/** Asks for permission (must be called from a user gesture), subscribes and stores the subscription. */
-export async function enablePush(vapidKey: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!pushSupported()) return { ok: false, error: "This browser doesn't support notifications." };
+export type PushErrorTexts = Record<"unsupported" | "blocked" | "notGranted" | "failed", string>;
+const EN_ERRORS: PushErrorTexts = {
+  unsupported: "This browser doesn't support notifications.",
+  blocked: "Notifications are blocked. Allow them in your browser's site settings.",
+  notGranted: "Permission wasn't granted.",
+  failed: "Couldn't turn on notifications in this browser.",
+};
+
+/**
+ * Asks for permission (must be called from a user gesture), subscribes and stores the subscription.
+ * `errors` are the translated messages (common.push); English by default.
+ */
+export async function enablePush(vapidKey: string, errors: PushErrorTexts = EN_ERRORS): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!pushSupported()) return { ok: false, error: errors.unsupported };
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
-    return { ok: false, error: permission === "denied" ? "Notifications are blocked. Allow them in your browser's site settings." : "Permission wasn't granted." };
+    return { ok: false, error: permission === "denied" ? errors.blocked : errors.notGranted };
   }
   try {
     const reg = await registration();
@@ -85,7 +96,7 @@ export async function enablePush(vapidKey: string): Promise<{ ok: true } | { ok:
     return res.ok ? { ok: true } : { ok: false, error: res.error };
   } catch (e) {
     console.warn("[pwa] subscribe failed", e);
-    return { ok: false, error: "Couldn't turn on notifications in this browser." };
+    return { ok: false, error: errors.failed };
   }
 }
 
