@@ -96,7 +96,18 @@ model Pet {
   archivedAt    DateTime? // archived pets keep their booking history but are hidden from the owner
   traits        PetTrait[]
   bookings      Booking[]
+  bookingPets   BookingPet[]
   createdAt     DateTime  @default(now())
+}
+
+model BookingPet {
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  petId     String
+  pet       Pet     @relation(fields: [petId], references: [id])
+
+  @@id([bookingId, petId])
+  @@index([petId])
 }
 
 model PetTrait {
@@ -261,6 +272,11 @@ model Service {
   description  String?
   extraNote    String?
   active       Boolean       @default(true)
+  // Rate add-ons (all optional; null = not offered / no surcharge)
+  maxPetsPerBooking       Int  @default(3)  // most pets in one booking (e.g. dogs per walk); boarding also limited by capacity
+  additionalPetPriceCents Int? // per extra pet, per night/day/visit; null = only one pet per booking
+  holidayPriceCents       Int? // replaces the base price on statutory holidays (see src/lib/holidays.ts)
+  puppyPriceCents         Int? // surcharge per puppy (< 1 year) per night/day/visit
   bookings     Booking[]
 }
 
@@ -273,7 +289,9 @@ model Booking {
   serviceId          String
   service            Service       @relation(fields: [serviceId], references: [id])
   petId              String
-  pet                Pet           @relation(fields: [petId], references: [id])
+  pet                Pet           @relation(fields: [petId], references: [id]) // primary pet (first selected)
+  pets               BookingPet[]  // every pet in the booking, including the primary one
+  petCount           Int           @default(1)  // counts towards the sitter's capacity
   startAt            DateTime
   endAt              DateTime
   recurringWeekly    Boolean       @default(false)
@@ -291,7 +309,9 @@ model Booking {
   emergencyPhone     String?
   vetClinic          String?
   vetPhone           String?
-  subtotalCents      Int           @default(0)
+  subtotalCents      Int           @default(0)  // base + extras (before fees and tax)
+  extrasCents        Int           @default(0)  // additional pets, holiday and puppy surcharges included in the subtotal
+  priceLines         Json?         // [{ label, amountCents }] as quoted at booking time
   protectionFeeCents Int           @default(0)
   serviceFeeCents    Int           @default(0)
   discountCents      Int           @default(0)
