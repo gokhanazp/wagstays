@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { InstallAppButton } from "./pwa/InstallAppButton";
 
 /**
  * Header account dropdown. Opens on hover for mouse users (with a short close delay so the pointer can travel
@@ -76,7 +75,6 @@ export function AccountMenu({ trigger, children }: { trigger: React.ReactNode; c
       >
         <div className="w-64 p-space-sm rounded-2xl bg-surface-container-lowest shadow-[0_20px_36px_-6px_rgba(83,72,62,0.12)] border border-surface-container-high flex flex-col gap-space-xs">
           {children}
-          <InstallAppButton />
         </div>
       </div>
     </div>

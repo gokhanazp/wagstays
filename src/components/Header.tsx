@@ -5,10 +5,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { logout } from "@/app/actions/auth";
 import { getUnreadCount } from "@/lib/messaging";
+import { formatMoney } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { Logo } from "./Logo";
 import { BecomeSitterPill, HeaderNav } from "./HeaderNav";
 import { MobileMenu } from "./MobileMenu";
+import { InstallAppButton } from "./pwa/InstallAppButton";
 
 const ICON_BTN =
   "w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors";
@@ -24,6 +26,7 @@ export async function Header() {
         { href: "/account/pets", label: "My Pets", icon: "pets" },
         { href: "/messages", label: "Messages", icon: "chat_bubble" },
         { href: "/favourites", label: "Favourites", icon: "favorite" },
+        { href: "/account/wagpoints", label: "WagPoints", icon: "toll", meta: formatMoney(user.wagPointsCents, { exact: true }) },
         { href: "/account/settings", label: "Account Settings", icon: "manage_accounts" },
       ]
     : [];
@@ -111,9 +114,13 @@ export async function Header() {
               {menu.map((m) => (
                 <Link key={m.href} className="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low" href={m.href}>
                   <span className="material-symbols-outlined text-lg text-on-surface-variant">{m.icon}</span>
-                  {m.label}
+                  <span className="flex-1">{m.label}</span>
+                  {"meta" in m && (
+                    <span className="font-label-sm text-label-sm text-secondary bg-secondary-fixed/60 px-2 py-0.5 rounded-full">{m.meta}</span>
+                  )}
                 </Link>
               ))}
+              <InstallAppButton />
               <form action={logout}>
                 <button className="w-full flex items-center gap-space-sm text-left px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-secondary hover:bg-surface-container-low" type="submit">
                   <span className="material-symbols-outlined text-lg">logout</span>

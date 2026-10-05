@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { LogoMark, Wordmark } from "./Logo";
 import { InstallAppButton } from "./pwa/InstallAppButton";
 
-type MenuLink = { href: string; label: string; icon: string; badge?: number };
+type MenuLink = { href: string; label: string; icon: string; badge?: number; meta?: string };
 type MenuUser = { firstName: string; lastName: string; email: string; avatarUrl: string | null; badge: string };
 
 const MAIN: MenuLink[] = [
@@ -190,6 +190,9 @@ export function MobileMenu({
                     <span className="material-symbols-outlined text-xl">{l.icon}</span>
                   </span>
                   <span className="flex-1">{l.label}</span>
+                  {l.meta && (
+                    <span className="font-label-sm text-label-sm text-secondary bg-secondary-fixed/60 px-2 py-0.5 rounded-full">{l.meta}</span>
+                  )}
                   {!!l.badge && (
                     <span className="min-w-6 h-6 px-1.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm flex items-center justify-center">
                       {l.badge}
@@ -201,7 +204,7 @@ export function MobileMenu({
           )}
 
           <div className="flex flex-col gap-1">
-            <InstallAppButton className={`${ROW} w-full text-primary`} />
+            <InstallAppButton className={`${ROW} w-full text-left text-primary`} iconClassName={`${ICON_BOX} bg-[#EBF3EF] text-primary`} />
             <Link className={ROW} href="/account/support/new" onClick={close}>
               <span className={`${ICON_BOX} bg-surface-container-low text-on-surface-variant`}>
                 <span className="material-symbols-outlined text-xl">support_agent</span>
