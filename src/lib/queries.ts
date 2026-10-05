@@ -7,6 +7,7 @@ import { getCurrentUser } from "./session";
 import { PET_KINDS, normalizeKinds, type PetKind } from "./pets";
 import { freeSittersForRange } from "./availability";
 import { formatDayRange, isIsoDay, todayIn } from "./availability-core";
+import { petLimitBadge, takesPets } from "./price-details";
 
 export const DEFAULT_CITY_SLUG = "toronto";
 
@@ -186,18 +187,25 @@ export async function searchSitters(f: SearchFilters) {
     favoriteIds(),
   ]);
 
-  // Price shown on cards: the selected service, otherwise dog walking, otherwise the cheapest service.
+  // Pets in one booking (search "2 pets"): a service only qualifies when the sitter takes that many pets
+  // per booking — an additional-pet rate is set and maxPetsPerBooking is high enough (src/lib/quote.ts petLimit).
+  const petCount = f.petCount ?? 1;
+  const fits = (x: (typeof all)[number]["services"][number]) => takesPets(x, petCount);
+
+  // Price shown on cards: the selected service, otherwise dog walking, otherwise the cheapest service —
+  // among the services that can take `petCount` pets.
   const withPrice = all.map((s) => {
+    const ok = s.services.filter(fits);
     const svc =
-      (f.service && s.services.find((x) => x.type === f.service)) ||
-      s.services.find((x) => x.type === "DOG_WALKING") ||
-      [...s.services].sort((a, b) => a.priceCents - b.priceCents)[0];
+      (f.service && ok.find((x) => x.type === f.service)) ||
+      (!f.service && (ok.find((x) => x.type === "DOG_WALKING") || [...ok].sort((a, b) => a.priceCents - b.priceCents)[0])) ||
+      undefined;
     return { ...s, price: svc, distanceKm: distanceKm(centreHood, s), isFavorite: favs.has(s.id) };
   });
 
   // Facet counts ignore the service filter itself so users can see alternatives.
   const serviceCounts = Object.fromEntries(
-    (["DOG_WALKING", "BOARDING", "DAY_CARE", "DROP_IN"] as const).map((t) => [t, all.filter((s) => s.services.some((x) => x.type === t)).length]),
+    (["DOG_WALKING", "BOARDING", "DAY_CARE", "DROP_IN"] as const).map((t) => [t, all.filter((s) => s.services.some((x) => x.type === t && fits(x))).length]),
   ) as Record<ServiceType, number>;
   const medicalCount = all.filter((s) => s.vetKnowledge).length;
   const kindCounts = Object.fromEntries(PET_KINDS.map((k) => [k, all.filter((s) => s.species.some((x) => x.kind === k)).length])) as Record<PetKind, number>;
@@ -268,7 +276,7 @@ export async function searchSitters(f: SearchFilters) {
     pageSize: SEARCH_PAGE_SIZE,
     sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE),
     /** every match, for map pins */
-    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind) })),
+    allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind), petNote: petLimitBadge(s.price!) })),
     serviceCounts,
     medicalCount,
     kindCounts,

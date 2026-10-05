@@ -6,7 +6,14 @@
 import { formatDay, quantityLabel } from "./availability-core";
 import { formatMoney } from "./format";
 
-export type PriceLine = { label: string; amountCents: number };
+export type PriceLine = {
+  label: string;
+  amountCents: number;
+  /** what the line is for — drives the plain-words explanation popovers (src/lib/price-details.ts) */
+  kind?: "base" | "extraPet" | "holiday" | "puppy";
+  /** holiday lines: the holiday's name ("Christmas Day") */
+  holiday?: string;
+};
 
 export type QuoteService = {
   type: string;
@@ -74,12 +81,12 @@ export function quoteBooking(opts: {
   const lines: PriceLine[] = [];
 
   const baseCents = units * service.priceCents;
-  lines.push({ label: `${unitsLabel} × ${formatMoney(service.priceCents)}`, amountCents: baseCents });
+  lines.push({ label: `${unitsLabel} × ${formatMoney(service.priceCents)}`, amountCents: baseCents, kind: "base" });
 
   let extrasCents = 0;
-  const add = (label: string, amountCents: number) => {
+  const add = (label: string, amountCents: number, kind: PriceLine["kind"], holiday?: string) => {
     if (amountCents <= 0) return;
-    lines.push({ label, amountCents });
+    lines.push({ label, amountCents, kind, ...(holiday && { holiday }) });
     extrasCents += amountCents;
   };
 
@@ -91,6 +98,7 @@ export function quoteBooking(opts: {
     add(
       units === 1 ? `Extra ${word} × ${extraPets} · ${formatMoney(each)} each` : `Extra ${word} × ${extraPets} · ${unitsLabel} × ${formatMoney(each)}`,
       extraPets * units * each,
+      "extraPet",
     );
   }
 
@@ -99,7 +107,7 @@ export function quoteBooking(opts: {
   if (holidayPrice != null && holidayPrice > service.priceCents && opts.holidays) {
     const diff = holidayPrice - service.priceCents;
     for (const d of opts.dates) {
-      if (opts.holidays[d]) add(`Holiday rate · ${formatDay(d)} (+${formatMoney(diff)})`, diff);
+      if (opts.holidays[d]) add(`Holiday rate · ${opts.holidays[d]}, ${formatDay(d)} (+${formatMoney(diff)})`, diff, "holiday", opts.holidays[d]);
     }
   }
 
@@ -109,7 +117,7 @@ export function quoteBooking(opts: {
     for (const p of opts.pets) {
       if (!isPuppy(p)) continue;
       const who = p.name ? ` · ${p.name}` : "";
-      add(units === 1 ? `Puppy surcharge${who}` : `Puppy surcharge${who} · ${unitsLabel} × ${formatMoney(puppy)}`, units * puppy);
+      add(units === 1 ? `Puppy surcharge${who}` : `Puppy surcharge${who} · ${unitsLabel} × ${formatMoney(puppy)}`, units * puppy, "puppy");
     }
   }
 
@@ -122,9 +130,14 @@ export function parsePriceLines(json: unknown): PriceLine[] | null {
   const out: PriceLine[] = [];
   for (const l of json) {
     if (!l || typeof l !== "object") return null;
-    const { label, amountCents } = l as Record<string, unknown>;
+    const { label, amountCents, kind, holiday } = l as Record<string, unknown>;
     if (typeof label !== "string" || typeof amountCents !== "number") return null;
-    out.push({ label, amountCents });
+    out.push({
+      label,
+      amountCents,
+      ...(kind === "base" || kind === "extraPet" || kind === "holiday" || kind === "puppy" ? { kind } : {}),
+      ...(typeof holiday === "string" && { holiday }),
+    });
   }
   return out;
 }

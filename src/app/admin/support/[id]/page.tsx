@@ -9,6 +9,8 @@ import { BTN, Card, CardHeader, PageHeader, StatusChip, formatDate, formatDateTi
 import { AuditList } from "../../_components/AuditList";
 import { auditInclude, toAuditRows } from "../../_components/audit-rows";
 import { shortRef } from "../../bookings/_lib";
+import { PetChips } from "@/components/booking/PetChips";
+import { bookingPets } from "@/lib/pets";
 import { AdminReplyForm, ReopenButton, ResolveForm, StatusPriorityForm } from "./_components/TicketActions";
 
 export async function generateMetadata({ params }: PageProps<"/admin/support/[id]">): Promise<Metadata> {
@@ -47,7 +49,8 @@ export default async function AdminTicketPage({ params }: PageProps<"/admin/supp
           discountCents: true,
           ownerId: true,
           owner: { select: { id: true, firstName: true, lastName: true } },
-          pet: { select: { name: true } },
+          pet: { select: { id: true, name: true, breed: true, photoUrl: true } },
+          pets: { select: { pet: { select: { id: true, name: true, breed: true, photoUrl: true } } } },
           service: { select: { type: true } },
           sitter: { select: { id: true, displayName: true, userId: true, city: { select: { timeZone: true } } } },
         },
@@ -233,7 +236,9 @@ export default async function AdminTicketPage({ params }: PageProps<"/admin/supp
                       {b.sitter.displayName}
                     </Link>
                   </Row>
-                  <Row label="Pet">{b.pet.name}</Row>
+                  <Row label={bookingPets(b).length > 1 ? `Pets (${bookingPets(b).length})` : "Pet"}>
+                    <PetChips className="justify-end" pets={bookingPets(b)} />
+                  </Row>
                   <Row label="Total">{formatMoney(b.totalCents, { exact: true })}</Row>
                 </dl>
                 {openerRole && <p className="font-body-sm text-body-sm text-on-surface-variant">{openerRole}.</p>}

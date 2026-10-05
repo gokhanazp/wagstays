@@ -28,7 +28,9 @@ import { SERVICE_LABELS, UNIT_LABELS, type ServiceType } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { holidaysForDates } from "@/lib/holidays";
-import { petCountBlockReason, petLimit, quoteBooking } from "@/lib/quote";
+import { isPuppy, petCountBlockReason, petLimit, quoteBooking } from "@/lib/quote";
+import { explainLine, feeExplanations, perBookingPhrase, unitWord } from "@/lib/price-details";
+import { InfoTip } from "@/components/pricing/InfoTip";
 import { SERVICE_ICONS } from "../../_components/search-url";
 
 export type WidgetService = {
@@ -194,6 +196,20 @@ export function BookingWidget({
   const petBlocked = selectedPets.some((p) => petReason(p));
   const countBlocked = service ? petCountBlockReason(service, selectedPets.length, firstName) : null;
   const valid = !!rows && conflicts.length === 0 && !petBlocked && !countBlocked;
+  // "Adding Biscuit: +$12 per walk" for every pet after the first, plus puppy surcharges.
+  const per = service ? unitWord(service.unit) : "visit";
+  const addNotes = service
+    ? selectedPets.flatMap((p, i) => {
+        const out: string[] = [];
+        if (i > 0 && service.additionalPetPriceCents != null) {
+          out.push(service.additionalPetPriceCents ? `Adding ${p.name}: +${formatMoney(service.additionalPetPriceCents)} per ${per}` : `Adding ${p.name}: no extra charge`);
+        }
+        if (service.puppyPriceCents && isPuppy(p)) out.push(`${p.name} is a puppy: +${formatMoney(service.puppyPriceCents)} per ${per}`);
+        return out;
+      })
+    : [];
+  const selectable = pets?.filter((p) => !petReason(p)).length ?? 0;
+  const limitReached = limit > 1 && selectedPets.length >= limit && selectable > limit;
   const occurrences = repeat ? weeks : 1;
 
   // Same quote + fees as checkout and the server: one quote per weekly occurrence (holiday rates differ).
@@ -214,6 +230,7 @@ export function BookingWidget({
   const prices = useMemo(() => quotes.map((q) => priceBooking({ subtotalCents: q.subtotalCents, taxRateBps, fees })), [quotes, taxRateBps, fees]);
   const quote = quotes[0];
   const price = prices[0] ?? null;
+  const feeText = useMemo(() => feeExplanations(fees, taxRateBps, taxLabel, provinceCode), [fees, taxRateBps, taxLabel, provinceCode]);
   const seriesTotal = prices.reduce((sum, p) => sum + p.totalCents, 0);
   const loggedIn = pets !== null;
   const profilePath = `/sitters/${slug}`;
@@ -374,6 +391,24 @@ export function BookingWidget({
                 <span className="material-symbols-outlined text-lg">add</span>
               </Link>
             </div>
+            {loggedIn && (addNotes.length > 0 || limitReached) && (
+              <ul aria-live="polite" className="flex flex-col gap-0.5" data-testid="pet-add-notes">
+                {addNotes.map((n) => (
+                  <li className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" key={n}>
+                    <span className="material-symbols-outlined text-sm text-primary">add_circle</span>
+                    <span>{n}</span>
+                  </li>
+                ))}
+                {limitReached && (
+                  <li className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" data-testid="pet-limit-note">
+                    <span className="material-symbols-outlined text-sm text-secondary">info</span>
+                    <span>
+                      {firstName} takes up to {limit} {perBookingPhrase(type, limit)}.
+                    </span>
+                  </li>
+                )}
+              </ul>
+            )}
             {loggedIn && service && limit === 1 && pets.filter((p) => !petReason(p)).length > 1 && (
               <p className="flex items-start gap-1 font-label-sm text-label-sm text-on-surface-variant" data-testid="one-pet-note">
                 <span className="material-symbols-outlined text-sm text-secondary">info</span>
@@ -547,31 +582,35 @@ export function BookingWidget({
           )}
 
           <div className="bg-surface-container p-space-md rounded-2xl flex flex-col gap-space-xs mt-1">
-            {quote.lines.map((l, i) => (
-              <div className="flex items-start justify-between gap-2 font-body-sm text-body-sm text-on-surface-variant" data-price-line key={`${l.label}-${i}`}>
-                <span className="min-w-0">{i === 0 && !stay ? lineTitle(service, quantity || 1) : l.label}</span>
-                <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents)}</span>
-              </div>
-            ))}
+            {quote.lines.map((l, i) => {
+              const ex = explainLine(l, i, { firstName, service, provinceCode, units: quote.units });
+              return (
+                <div className="flex items-start justify-between gap-2 font-body-sm text-body-sm text-on-surface-variant" data-price-line key={`${l.label}-${i}`}>
+                  <span className="min-w-0">
+                    {i === 0 && !stay ? lineTitle(service, quantity || 1) : l.label} <InfoTip body={ex.body} title={ex.title} />
+                  </span>
+                  <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents)}</span>
+                </div>
+              );
+            })}
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
                 WagShield Vet Care Cover
-                <span
-                  className="material-symbols-outlined text-xs text-primary cursor-pointer"
-                  title={`Up to ${formatMoney(fees.vetCoverageCents)} in emergency vet care coverage`}
-                >
-                  info
-                </span>
+                <InfoTip body={feeText.wagShield.body} title={feeText.wagShield.title} />
               </span>
               <span className="font-semibold text-on-surface">{formatMoney(price.protectionFeeCents)}</span>
             </div>
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-              <span>WagStays Service Fee</span>
+              <span className="flex items-center gap-1">
+                WagStays Service Fee
+                <InfoTip body={feeText.serviceFee.body} title={feeText.serviceFee.title} />
+              </span>
               <span className="font-semibold text-on-surface">{formatMoney(price.serviceFeeCents)}</span>
             </div>
             <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant">
-              <span>
+              <span className="flex items-center gap-1">
                 {taxLabel} ({(taxRateBps / 100).toLocaleString("en-CA", { maximumFractionDigits: 3 })}%)
+                <InfoTip body={feeText.tax.body} title={feeText.tax.title} />
               </span>
               <span className="font-semibold text-on-surface">{formatMoney(price.taxCents, { exact: true })}</span>
             </div>
@@ -597,6 +636,10 @@ export function BookingWidget({
                 </span>
               </div>
             )}
+            <Link className="self-start inline-flex items-center gap-1 font-label-sm text-label-sm text-primary font-bold hover:underline" data-testid="widget-pricing-link" href="/pricing">
+              <span className="material-symbols-outlined text-sm">help</span>
+              How pricing works
+            </Link>
           </div>
 
           {readinessHint && (

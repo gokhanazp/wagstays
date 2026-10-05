@@ -47,6 +47,16 @@ Other sitters log in as `<slug>@wagstays.ca`; extra owners: `noah.campbell@examp
 `PENDING` (owner requests) → `CONFIRMED` / `DECLINED` (sitter or admin) → `COMPLETED` (sitter or admin, after start) → owner can review.
 `CANCELLED` by the owner (pending/confirmed), the sitter (confirmed) or an admin. WagPoints used are refunded on cancel/decline.
 
+## Pricing
+
+One pipeline, used by the profile widget, checkout, the booking server action (authoritative — it recomputes from DB prices) and `/pricing`:
+
+1. `src/lib/quote.ts` → `quoteBooking({ service, pets, dates, holidays })` — the sitter's part: base rate × units, **extra pets** (`additionalPetPriceCents` per pet after the first, per unit; `null` = one pet per booking, limit `petLimit()` = `maxPetsPerBooking`), **holiday rate** (`holidayPriceCents` replaces the base on statutory holidays from `src/lib/holidays.ts`, by `City.provinceCode`) and **puppy surcharge** (`puppyPriceCents` per pet under 1 year). Each line carries a `kind` (+ `holiday` name) and is stored in `Booking.priceLines`.
+2. `src/lib/pricing.ts` → `priceBooking({ subtotalCents: quote.subtotalCents, taxRateBps, fees })` — adds the flat WagShield fee and service fee (`PlatformSettings`), subtracts WagPoints, then tax (`City.taxRateBps`). Weekly series: one quote + price per occurrence.
+3. `src/lib/price-details.ts` — plain-words copy on top (search badge "Up to 2 dogs · +$12 each", the profile "Price details" list in `src/components/pricing/PriceDetails.tsx`, line explanations for the `InfoTip` popovers). Search (`searchSitters`, `petCount`) only keeps services where `petLimit(service) >= petCount`.
+
+Demo add-on rates: `node --env-file=.env node_modules/.bin/tsx scripts/demo-addon-rates.ts` (idempotent, demo sitters only).
+
 ## Cities
 
 Only Toronto is active (`City.isActive`). Other cities are seeded inactive and are switched on from `/admin/cities` (a city needs at least one neighbourhood). Active cities automatically appear in the home search suggestions, the search location picker (`/sitters?city=<slug>`) and the sitter application form; approved sitters are placed in the city of the neighbourhood they applied for. Taxes come from `City.taxRateBps`, time zones from `City.timeZone` (date formatting still defaults to Toronto time — pass `city.timeZone` through when a second time zone goes live).

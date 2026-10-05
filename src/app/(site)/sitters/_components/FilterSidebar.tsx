@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { PET_SIZES, PET_SIZE_LABELS, SERVICE_LABELS, type PetSize, type ServiceType } from "@/lib/constants";
 import type { SearchFilters } from "@/lib/queries";
 import { PET_KINDS, PET_KIND_META, type PetKind } from "@/lib/pets";
+import { MAX_PETS_LIMIT } from "@/lib/quote";
 import { RATE_LABEL, buildSearchHref, type SearchExtras } from "./search-url";
 import { useSearchNav } from "./useSearchNav";
 
@@ -74,12 +75,14 @@ export function FilterSidebar({
   const togglePet = (k: PetKind) =>
     update({ pets: filters.pets.includes(k) ? filters.pets.filter((x) => x !== k) : PET_KINDS.filter((x) => x === k || filters.pets.includes(x)) });
   const showSizes = !filters.pets.length || filters.pets.includes("DOG");
+  const petCount = filters.petCount ?? 1;
 
   const activeCount =
     (filters.service ? 1 : 0) +
     filters.pets.length +
     (filters.maxPrice !== undefined ? 1 : 0) +
     filters.sizes.length +
+    ((filters.petCount ?? 1) > 1 ? 1 : 0) +
     (["yard", "smokeFree", "noPets", "noKids", "superSitter", "vet", "trainer", "idVerified"] as const).filter((k) => filters[k]).length;
 
   const maxLabel = max >= priceRange.max ? `$${priceRange.max}+` : `$${max}`;
@@ -159,6 +162,41 @@ export function FilterSidebar({
               <span className="font-label-sm text-label-sm text-outline">{medicalCount}</span>
             </label>
           </div>
+        </div>
+
+        {/* Pets in one booking: only sitters who take that many (extra-pet rate + max pets per booking) */}
+        <div className="flex flex-col gap-1.5 pt-space-xs" data-testid="pet-count-filter">
+          <div className="flex items-center justify-between gap-space-sm">
+            <span className="font-label-lg text-label-lg text-on-surface" id="pet-count-label">
+              Number of pets
+            </span>
+            <div aria-labelledby="pet-count-label" className="flex items-center gap-1 bg-surface-container rounded-full p-0.5" role="group">
+              <button
+                aria-label="One pet fewer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-container-lowest disabled:text-outline disabled:hover:bg-transparent transition-colors"
+                disabled={petCount <= 1}
+                onClick={() => update({ petCount: petCount - 1 > 1 ? petCount - 1 : undefined })}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-lg">remove</span>
+              </button>
+              <span aria-live="polite" className="w-6 text-center font-label-lg text-label-lg text-on-surface" data-testid="pet-count-value">
+                {petCount}
+              </span>
+              <button
+                aria-label="One pet more"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-container-lowest disabled:text-outline disabled:hover:bg-transparent transition-colors"
+                disabled={petCount >= MAX_PETS_LIMIT}
+                onClick={() => update({ petCount: petCount + 1 })}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+              </button>
+            </div>
+          </div>
+          <p className="font-body-sm text-body-sm text-outline">
+            {petCount > 1 ? `Showing sitters who take ${petCount} pets in one booking.` : "In one booking. Extra pets usually cost a little more."}
+          </p>
         </div>
 
         {/* Pet types (sitter must accept every selected kind) */}

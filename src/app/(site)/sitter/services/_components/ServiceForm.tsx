@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { ADDON_BOUNDS, SERVICE_DURATIONS, SERVICE_PRICE_BOUNDS, SERVICE_UNITS, dollarsToCents } from "@/lib/sitter";
 import { quoteBooking } from "@/lib/quote";
+import { PriceDetails } from "@/components/pricing/PriceDetails";
 import { Feedback } from "../../_components/Feedback";
 import { useFormAction } from "../../_components/useFormAction";
 
@@ -31,9 +32,11 @@ type Props = {
   fees: Fees;
   taxRateBps: number;
   taxLabel: string;
+  /** City.provinceCode — statutory holidays in the preview */
+  provinceCode: string;
 };
 
-export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, taxLabel }: Props) {
+export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, taxLabel, provinceCode }: Props) {
   const { state, pending, onSubmit } = useFormAction(updateService);
   const [active, setActive] = useState(s.exists && s.active);
   const [price, setPrice] = useState((s.priceCents / 100).toString());
@@ -75,6 +78,20 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
           holidays: { "2026-12-25": "Christmas Day" },
         })
       : null;
+  // Live "What pet parents will see" — the same list as the profile (src/components/pricing/PriceDetails.tsx).
+  const shown = (c: number | null) => (c !== null && Number.isFinite(c) ? c : null);
+  const maxN = Number(maxPets);
+  const seen = {
+    type,
+    unit: SERVICE_UNITS[type],
+    priceCents: valid ? cents : s.priceCents,
+    durationMins: s.durationMins,
+    maxPetsPerBooking: maxN,
+    additionalPetPriceCents: multi ? (shown(extraCents) ?? 0) : null,
+    holidayPriceCents: shown(holidayCents),
+    puppyPriceCents: shown(puppyCents),
+  };
+  const say = (t: string) => `Pet parents see “${t}”.`;
   const UNIT_NOUN: Record<string, string> = { DOG_WALKING: "walk", BOARDING: "night", DAY_CARE: "day at day care", DROP_IN: "visit" };
   const previewLabel = `${multi ? `2 ${petWord}s` : `1 ${petWord}`} on a ${holidayCents ? "holiday " : ""}${UNIT_NOUN[type] ?? unit}`;
 
@@ -134,7 +151,7 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
             <span className="flex flex-col min-w-0">
               <span className="font-label-lg text-label-lg text-on-surface">I take more than one {petWord}</span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                {multi ? `Owners can book several ${petWord}s together.` : `Owners book one ${petWord} at a time.`}
+                {multi ? `Owners can book several ${petWord}s together.` : `Owners book one ${petWord} at a time — ${say("One pet per booking").toLowerCase()}`}
               </span>
             </span>
             <label className="flex items-center cursor-pointer shrink-0">
@@ -145,7 +162,7 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
           </div>
           {multi && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-              <Field error={err("additionalPet")} hint={`Per extra ${petWord}, per ${unit}. $0 is fine.`} label={`Additional ${petWord} (CAD)`}>
+              <Field error={err("additionalPet")} hint={`Per extra ${petWord}, per ${unit}. $0 is fine. ${say(extraCents ? `+${formatMoney(extraCents)} per extra ${petWord}` : `Extra ${petWord}s at no charge`)}`} label={`Additional ${petWord} (CAD)`}>
                 <div className="relative">
                   <span className="absolute left-space-md top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant">$</span>
                   <input
@@ -161,7 +178,7 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
                   />
                 </div>
               </Field>
-              <Field error={err("maxPets")} label={walk ? "Max dogs per walk" : "Max pets per booking"}>
+              <Field error={err("maxPets")} hint={say(`up to ${maxN} ${petWord}${maxN === 1 ? "" : "s"}`)} label={walk ? "Max dogs per walk" : "Max pets per booking"}>
                 <Select
                   aria-label={walk ? "Max dogs per walk" : "Max pets per booking"}
                   name="maxPets"
@@ -176,7 +193,7 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-            <Field error={err("holiday")} hint={`Optional. Replaces your price on statutory holidays (at least ${valid ? formatMoney(cents) : "your price"}).`} label="Holiday rate (CAD)">
+            <Field error={err("holiday")} hint={`Optional. Replaces your price on statutory holidays (at least ${valid ? formatMoney(cents) : "your price"}).${holidayCents && holidayCents > cents ? ` ${say(`Statutory holidays: ${formatMoney(holidayCents)} per ${unit}`)}` : ""}`} label="Holiday rate (CAD)">
               <div className="relative">
                 <span className="absolute left-space-md top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant">$</span>
                 <input
@@ -192,7 +209,7 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
                 />
               </div>
             </Field>
-            <Field error={err("puppy")} hint={`Optional. Added per puppy under 1 year, per ${unit}.`} label="Puppy surcharge (CAD)">
+            <Field error={err("puppy")} hint={`Optional. Added per puppy under 1 year, per ${unit}.${puppyCents ? ` ${say(`Puppies under 1 year +${formatMoney(puppyCents)} per ${unit}`)}` : ""}`} label="Puppy surcharge (CAD)">
               <div className="relative">
                 <span className="absolute left-space-md top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant">$</span>
                 <input
@@ -218,6 +235,14 @@ export function ServiceForm({ type, title, icon, service: s, fees, taxRateBps, t
             </p>
           )}
         </fieldset>
+
+        <div className="flex flex-col gap-space-xs p-space-md rounded-2xl border border-dashed border-outline-variant" data-testid="owner-preview">
+          <span className="flex items-center gap-1 font-label-md text-label-md text-on-surface">
+            <span className="material-symbols-outlined text-lg text-primary">visibility</span>
+            What pet parents will see
+          </span>
+          <PriceDetails provinceCode={provinceCode} service={seen} />
+        </div>
 
         <Field error={err("description")} hint="What's included — shown on your profile." label="Description">
           <textarea className={`${TEXTAREA} min-h-[88px]`} defaultValue={s.description} maxLength={300} name="description" />

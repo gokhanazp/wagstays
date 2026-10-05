@@ -187,6 +187,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/boo
             id: service.id,
             type: service.type,
             unitPriceCents: service.priceCents,
+            unit: service.unit,
+            durationMins: service.durationMins,
             line: serviceLine(service),
             maxPetsPerBooking: service.maxPetsPerBooking,
             additionalPetPriceCents: service.additionalPetPriceCents,

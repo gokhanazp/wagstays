@@ -9,6 +9,7 @@ const STATIC: { path: string; changeFrequency: "daily" | "weekly" | "monthly" | 
   { path: "/", changeFrequency: "daily", priority: 1 },
   { path: "/sitters", changeFrequency: "daily", priority: 0.9 },
   { path: "/become-a-sitter", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/pricing", changeFrequency: "monthly", priority: 0.6 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.2 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.2 },
   { path: "/pipeda", changeFrequency: "yearly", priority: 0.2 },

@@ -4,12 +4,14 @@ import { formatDistance, formatMoney, formatRating } from "@/lib/format";
 import type { SitterCard } from "@/lib/queries";
 import { PetKindIcons } from "@/components/PetKinds";
 import { UNIT_LONG } from "./search-url";
+import { petLimitBadge } from "@/lib/price-details";
 
 const SECONDARY_ICONS = new Set(["photo_camera", "videocam", "favorite", "monitor_heart"]);
 
 export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
   const href = `/sitters/${sitter.slug}`;
   const price = sitter.price!;
+  const petNote = petLimitBadge(price);
   return (
     <article className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row gap-space-lg group">
       {/* Photo Gallery Column */}
@@ -85,11 +87,24 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
               <span className="font-label-sm text-label-sm text-outline">/ per {UNIT_LONG[price.unit] ?? "visit"}</span>
             </div>
           </div>
-          {sitter.availableLabel && (
-            <span className="self-start px-2.5 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-sm text-label-sm font-semibold flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">event_available</span>
-              {sitter.availableLabel}
-            </span>
+          {(sitter.availableLabel || petNote) && (
+            <div className="flex flex-wrap gap-1.5">
+              {sitter.availableLabel && (
+                <span className="px-2.5 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">event_available</span>
+                  {sitter.availableLabel}
+                </span>
+              )}
+              {petNote && (
+                <span
+                  className="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1"
+                  data-testid="pet-limit-badge"
+                >
+                  <span className="material-symbols-outlined text-xs text-primary">pets</span>
+                  {petNote}
+                </span>
+              )}
+            </div>
           )}
           <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2 mt-1">{sitter.bio}</p>
           {/* Badges and Traits */}

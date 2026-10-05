@@ -7,6 +7,8 @@ import { getPlatformSettings } from "@/lib/settings";
 import { categoryLabel, statusLabel } from "@/lib/support";
 import { Card, StatusChip, formatDateTime } from "@/components/ui";
 import { bookingRef, bookingWhen, serviceLabel } from "../../_lib";
+import { PetChips } from "@/components/booking/PetChips";
+import { bookingPets, petNames } from "@/lib/pets";
 import { SafetyBanner } from "../_components/SafetyBanner";
 import { TicketReplyForm } from "../_components/TicketReplyForm";
 import { ResolveTicketButton } from "../_components/ResolveTicketButton";
@@ -39,7 +41,8 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/a
           startAt: true,
           endAt: true,
           service: { select: { type: true } },
-          pet: { select: { name: true } },
+          pet: { select: { id: true, name: true, breed: true, photoUrl: true } },
+          pets: { select: { pet: { select: { id: true, name: true, breed: true, photoUrl: true } } } },
           sitter: { select: { displayName: true, userId: true, city: { select: { timeZone: true } } } },
         },
       },
@@ -160,8 +163,9 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/a
               <div className="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
                 <span className="font-label-md text-label-md text-on-surface-variant">Related booking</span>
                 <span className="font-label-lg text-label-lg text-on-surface">
-                  {serviceLabel(b.service.type)} · {b.pet.name}
+                  {serviceLabel(b.service.type)} · {petNames(bookingPets(b).map((p) => p.name))}
                 </span>
+                <PetChips className="my-0.5" pets={bookingPets(b)} />
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
                   {bookingRef(b.id)} · {bookingWhen(b.startAt, b.endAt, b.sitter.city.timeZone)}
                 </span>

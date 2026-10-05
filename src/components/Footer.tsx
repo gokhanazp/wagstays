@@ -15,6 +15,7 @@ const SERVICES = [
   { label: "In-Home Boarding", href: "/sitters?service=boarding" },
   { label: "Doggy Day Care", href: "/sitters?service=day-care" },
   { label: "Pet Taxi", href: "/sitters" },
+  { label: "How pricing works", href: "/pricing" },
 ];
 
 const TRUST: { icon: string; label: string; href?: string }[] = [

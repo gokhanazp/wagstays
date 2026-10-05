@@ -43,6 +43,7 @@ export default async function SitterServicesPage() {
                 holidayPriceCents: s?.holidayPriceCents ?? null,
                 puppyPriceCents: s?.puppyPriceCents ?? null,
               }}
+              provinceCode={profile.city.provinceCode}
               taxLabel={taxLabel}
               taxRateBps={profile.city.taxRateBps}
               title={SERVICE_LABELS[type]}

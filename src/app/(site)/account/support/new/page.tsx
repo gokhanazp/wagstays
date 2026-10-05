@@ -7,6 +7,7 @@ import { TICKET_CATEGORIES, type TicketCategory } from "@/lib/support";
 import { Card } from "@/components/ui";
 import { bookingDate, bookingRef, serviceLabel } from "../../_lib";
 import { NewTicketForm, type BookingOption } from "../_components/NewTicketForm";
+import { bookingPets, petNames } from "@/lib/pets";
 
 export const metadata: Metadata = { title: "New support request | WagStays" };
 
@@ -22,7 +23,8 @@ export default async function NewTicketPage({ searchParams }: PageProps<"/accoun
     ownerId: true,
     startAt: true,
     owner: { select: { firstName: true } },
-    pet: { select: { name: true } },
+    pet: { select: { id: true, name: true } },
+    pets: { select: { pet: { select: { id: true, name: true } } } },
     service: { select: { type: true } },
     sitter: { select: { displayName: true, userId: true, city: { select: { timeZone: true } } } },
   } as const;
@@ -37,7 +39,8 @@ export default async function NewTicketPage({ searchParams }: PageProps<"/accoun
 
   const bookings: BookingOption[] = all.map((b) => {
     const asOwner = b.ownerId === user.id;
-    const who = asOwner ? `with ${b.sitter.displayName.split(" ")[0]}` : `for ${b.pet.name} (${b.owner.firstName})`;
+    const names = petNames(bookingPets(b).map((p) => p.name));
+    const who = asOwner ? `for ${names} with ${b.sitter.displayName.split(" ")[0]}` : `for ${names} (${b.owner.firstName})`;
     return {
       value: b.id,
       label: `${serviceLabel(b.service.type)} ${who}`,

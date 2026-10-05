@@ -170,7 +170,10 @@ export function SearchTopBar({
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pet Type</span>
-              <span className={value}>{petTypeLabel(pets, sizes, PET_SIZE_LABELS)}</span>
+              <span className={value}>
+                {(filters.petCount ?? 1) > 1 && <span data-testid="topbar-pet-count">{filters.petCount} pets · </span>}
+                {petTypeLabel(pets, sizes, PET_SIZE_LABELS)}
+              </span>
             </div>
             <Select
               aria-label="Pet type"

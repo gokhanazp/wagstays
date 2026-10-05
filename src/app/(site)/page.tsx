@@ -451,6 +451,13 @@ export default async function Home() {
                 </div>
               </div>
             </div>
+            <p className="mt-space-lg text-center font-body-md text-body-md text-on-surface-variant">
+              Clear prices, no surprises — the sitter&apos;s rate plus a flat fee, WagShield vet cover and HST.{" "}
+              <Link className="inline-flex items-center gap-1 text-primary font-bold hover:underline" data-testid="home-pricing-link" href="/pricing">
+                How pricing works
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </Link>
+            </p>
           </div>
         </section>
 

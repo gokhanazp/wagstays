@@ -9,7 +9,9 @@ import { formatMoney, formatRating } from "@/lib/format";
 import { priceBooking, type Fees } from "@/lib/pricing";
 import { holidaysForDates } from "@/lib/holidays";
 import { petNames } from "@/lib/pets";
-import { quoteBooking } from "@/lib/quote";
+import { isPuppy, quoteBooking } from "@/lib/quote";
+import { explainLine, feeExplanations, perBookingPhrase, unitWord } from "@/lib/price-details";
+import { InfoTip } from "@/components/pricing/InfoTip";
 import { SERVICE_ICONS, plainTrait } from "../_lib";
 import { EarnPointsNote } from "@/components/points/EarnPointsNote";
 
@@ -44,6 +46,8 @@ type Props = {
     id: string;
     type: string;
     unitPriceCents: number;
+    unit: string;
+    durationMins: number | null;
     line: string;
     maxPetsPerBooking: number;
     additionalPetPriceCents: number | null;
@@ -252,7 +256,20 @@ export function CheckoutForm({
   }
 
   const error = clientError ?? state?.error;
-  const unitWord = service.type === "DOG_WALKING" ? "walks" : "bookings";
+  const detailService = { ...service, priceCents: service.unitPriceCents };
+  const feeText = feeExplanations(fees, taxRateBps, "HST", provinceCode);
+  const per = unitWord(service.unit);
+  // "Adding Biscuit: +$12 per walk" for every pet after the first, plus puppy surcharges.
+  const addNotes = selected.flatMap((p, i) => {
+    const out: string[] = [];
+    if (i > 0 && service.additionalPetPriceCents != null) {
+      out.push(service.additionalPetPriceCents ? `Adding ${p.name}: +${formatMoney(service.additionalPetPriceCents)} per ${per}` : `Adding ${p.name}: no extra charge`);
+    }
+    if (service.puppyPriceCents && isPuppy(p)) out.push(`${p.name} is a puppy: +${formatMoney(service.puppyPriceCents)} per ${per}`);
+    return out;
+  });
+  const limitReached = multi && selected.length >= service.petLimit && pets.filter((p) => !p.blocked).length > service.petLimit;
+  const doneWord = service.type === "DOG_WALKING" ? "walks" : "bookings";
 
   return (
     <form action={formAction} onSubmit={onSubmit} className="w-full max-w-[1240px] mx-auto px-margin-mobile md:px-margin py-space-lg md:py-space-xl">
@@ -329,10 +346,26 @@ export function CheckoutForm({
                     );
                   })}
                 </div>
+                {(addNotes.length > 0 || limitReached) && (
+                  <ul aria-live="polite" className="flex flex-col gap-0.5" data-testid="checkout-pet-notes">
+                    {addNotes.map((n) => (
+                      <li className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface" key={n}>
+                        <span className="material-symbols-outlined text-base text-primary">add_circle</span>
+                        {n}
+                      </li>
+                    ))}
+                    {limitReached && (
+                      <li className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="material-symbols-outlined text-base text-secondary">info</span>
+                        {sitter.firstName} takes up to {service.petLimit} {perBookingPhrase(service.type, service.petLimit)}.
+                      </li>
+                    )}
+                  </ul>
+                )}
                 <p className="flex items-start gap-1 font-body-sm text-body-sm text-on-surface-variant">
                   <span className="material-symbols-outlined text-base text-primary">info</span>
                   {multi
-                    ? `Up to ${service.petLimit} ${service.type === "DOG_WALKING" ? "dogs per walk" : "pets per booking"} · ${formatMoney(service.additionalPetPriceCents ?? 0)} for each extra pet.`
+                    ? `Up to ${service.petLimit} ${perBookingPhrase(service.type, service.petLimit)} · ${service.additionalPetPriceCents ? `+${formatMoney(service.additionalPetPriceCents)} per ${per} for each extra ${service.type === "DOG_WALKING" ? "dog" : "pet"}` : "extra pets at no charge"}.`
                     : `${service.oneNote ?? `${sitter.firstName} takes one pet per booking for this service`}.`}
                 </p>
               </div>
@@ -751,7 +784,7 @@ export function CheckoutForm({
                   )}
                 </div>
                 <div className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  {sitter.completedBookings}+ {unitWord} completed
+                  {sitter.completedBookings}+ {doneWord} completed
                 </div>
               </div>
             </div>
@@ -836,24 +869,25 @@ export function CheckoutForm({
                   data-price-line
                   key={`${l.label}-${i}`}
                 >
-                  <span className="min-w-0">{i === 0 && !stay ? `${quote.units}x ${service.line}` : l.label}</span>
+                  <span className="min-w-0">
+                    {i === 0 && !stay ? `${quote.units}x ${service.line}` : l.label}{" "}
+                    <InfoTip {...explainLine(l, i, { firstName: sitter.firstName, service: detailService, provinceCode, units: quote.units })} />
+                  </span>
                   <span className="font-semibold text-on-surface whitespace-nowrap">{formatMoney(l.amountCents, { exact: true })}</span>
                 </div>
               ))}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
                 <span className="flex items-center gap-1">
                   WagShield Vet Protection
-                  <span
-                    className="material-symbols-outlined text-xs text-primary"
-                    title={`Emergency vet care coverage up to ${formatMoney(fees.vetCoverageCents)}`}
-                  >
-                    help_outline
-                  </span>
+                  <InfoTip {...feeText.wagShield} />
                 </span>
                 <span className="font-semibold text-on-surface">{formatMoney(price.protectionFeeCents, { exact: true })}</span>
               </div>
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
-                <span>Platform Service Fee</span>
+                <span className="flex items-center gap-1">
+                  Platform Service Fee
+                  <InfoTip {...feeText.serviceFee} />
+                </span>
                 <span className="font-semibold text-on-surface">{formatMoney(price.serviceFeeCents, { exact: true })}</span>
               </div>
               {price.discountCents > 0 && (
@@ -861,12 +895,16 @@ export function CheckoutForm({
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">local_offer</span>
                     WagPoints Discount{series ? " (first visit)" : ""}
+                    <InfoTip {...feeText.wagPoints} />
                   </span>
                   <span>-{formatMoney(price.discountCents, { exact: true })}</span>
                 </div>
               )}
               <div className="flex justify-between items-center gap-space-sm font-body-md text-body-md text-on-surface-variant">
-                <span>HST ({taxRateBps / 100}%)</span>
+                <span className="flex items-center gap-1">
+                  HST ({taxRateBps / 100}%)
+                  <InfoTip {...feeText.tax} />
+                </span>
                 <span className="font-semibold text-on-surface">{formatMoney(price.taxCents, { exact: true })}</span>
               </div>
               {series && (
@@ -897,6 +935,15 @@ export function CheckoutForm({
               </div>
             </div>
             <EarnPointsNote className="justify-center -mt-space-xs" earnRateBps={earnRateBps} subtotalCents={price.subtotalCents} />
+            <Link
+              className="self-center -mt-space-xs inline-flex items-center gap-1 font-label-sm text-label-sm text-primary font-bold hover:underline"
+              data-testid="checkout-pricing-link"
+              href="/pricing"
+              target="_blank"
+            >
+              <span className="material-symbols-outlined text-sm">help</span>
+              How pricing works
+            </Link>
 
             <button
               className="w-full py-4 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-space-sm group disabled:opacity-70 disabled:pointer-events-none"

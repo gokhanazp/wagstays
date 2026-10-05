@@ -76,7 +76,15 @@ export function SitterMap({
                 • {selected.locationNote ?? "Nearby"} ({formatDistance(selected.distanceKm)})
               </span>
             </div>
-            <PetKindIcons className="mt-0.5" kinds={selected.kinds} />
+            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+              <PetKindIcons kinds={selected.kinds} />
+              {selected.petNote && (
+                <span className="truncate text-[11px] text-on-surface-variant flex items-center gap-0.5" data-testid="map-pet-note">
+                  <span className="material-symbols-outlined text-[12px] text-primary">pets</span>
+                  {selected.petNote}
+                </span>
+              )}
+            </div>
           </div>
           <span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors">
             <span className="material-symbols-outlined text-base">arrow_forward</span>
