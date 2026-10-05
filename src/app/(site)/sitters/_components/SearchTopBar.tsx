@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_PETS_LIMIT } from "@/lib/quote";
 import { useEffect, useRef, useState } from "react";
 import { RangePanel } from "@/components/forms/DatePicker";
 import { Select } from "@/components/forms/Select";
@@ -197,8 +198,34 @@ export function SearchTopBar({
           </div>
         </div>
         <div className="flex items-center gap-space-sm">
+          {/* Phones/tablets: the pet-count filter lives in the collapsed sidebar, so surface it here too */}
+          <div aria-label="Number of pets" className="lg:hidden shrink-0 h-12 sm:h-14 flex items-center gap-1 pl-space-md pr-1 rounded-full bg-surface-container-lowest shadow-sm" role="group">
+            <span className="material-symbols-outlined text-lg text-secondary">pets</span>
+            <span className="font-label-md text-label-md text-on-surface-variant mr-1">Pets</span>
+            <button
+              aria-label="One pet fewer"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-primary bg-surface-container hover:bg-surface-container-high disabled:text-outline disabled:bg-transparent transition-colors"
+              disabled={(filters.petCount ?? 1) <= 1 || pending}
+              onClick={() => update({ petCount: (filters.petCount ?? 1) - 1 > 1 ? (filters.petCount ?? 1) - 1 : undefined })}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-lg">remove</span>
+            </button>
+            <span aria-live="polite" className="w-6 text-center font-label-lg text-label-lg text-on-surface">
+              {filters.petCount ?? 1}
+            </span>
+            <button
+              aria-label="One pet more"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-primary bg-surface-container hover:bg-surface-container-high disabled:text-outline disabled:bg-transparent transition-colors"
+              disabled={(filters.petCount ?? 1) >= MAX_PETS_LIMIT || pending}
+              onClick={() => update({ petCount: (filters.petCount ?? 1) + 1 })}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-lg">add</span>
+            </button>
+          </div>
           <button
-            className="w-full xl:w-auto h-12 sm:h-14 px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
+            className="flex-1 xl:flex-none w-full xl:w-auto h-12 sm:h-14 px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
             disabled={pending}
             onClick={apply}
             type="button"

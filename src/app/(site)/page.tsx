@@ -415,18 +415,35 @@ export default async function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-space-lg relative">
               <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-1 bg-surface-container-highest -translate-y-8 z-0" />
               <div className="relative z-10 bg-surface-container-lowest rounded-3xl p-space-lg flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-display-lg text-2xl font-bold mb-space-md shadow-md relative">
-                  1<span className="absolute -top-2 -right-2 text-lg">🔍</span>
+                <div className="relative mb-space-md">
+                  <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-primary-container to-primary text-white flex items-center justify-center shadow-[0_10px_24px_-6px_rgba(83,72,62,0.25)]">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: "'FILL' 1, 'wght' 500" }}>
+                      person_search
+                    </span>
+                  </div>
+                  <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-label-lg text-label-lg flex items-center justify-center shadow-md ring-2 ring-surface-container-lowest">
+                    1
+                  </span>
                 </div>
                 <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Browse Local Sitters</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                   Filter sitters near you by reviews, experience badges, home photos and calendar availability.
                 </p>
-                <div className="mt-space-md p-space-xs rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm px-3">✓ Free to Message</div>
+                <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-[#EBF3EF] text-primary font-label-sm text-label-sm px-3">
+                  <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  Free to Message
+                </div>
               </div>
               <div className="relative z-10 bg-surface-container-lowest rounded-3xl p-space-lg flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 rounded-2xl bg-secondary text-on-secondary flex items-center justify-center font-display-lg text-2xl font-bold mb-space-md shadow-md relative">
-                  2<span className="absolute -top-2 -right-2 text-lg">🤝</span>
+                <div className="relative mb-space-md">
+                  <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-secondary-container to-secondary text-white flex items-center justify-center shadow-[0_10px_24px_-6px_rgba(83,72,62,0.25)]">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: "'FILL' 1, 'wght' 500" }}>
+                      handshake
+                    </span>
+                  </div>
+                  <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-surface-container-lowest text-secondary font-label-lg text-label-lg flex items-center justify-center shadow-md ring-2 ring-surface-container-lowest">
+                    2
+                  </span>
                 </div>
                 <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Book a Meet & Greet</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
@@ -434,20 +451,29 @@ export default async function Home() {
                   <span className="font-semibold text-secondary">&quot;Meet & Greet&quot;</span> and see the chemistry for
                   yourself.
                 </p>
-                <div className="mt-space-md p-space-xs rounded-full bg-surface-container-low text-secondary font-label-sm text-label-sm px-3">
-                  ✓ 100% Free First Meeting
+                <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-secondary-fixed/60 text-secondary font-label-sm text-label-sm px-3">
+                  <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  100% Free First Meeting
                 </div>
               </div>
               <div className="relative z-10 bg-surface-container-lowest rounded-3xl p-space-lg flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 rounded-2xl bg-tertiary text-on-tertiary flex items-center justify-center font-display-lg text-2xl font-bold mb-space-md shadow-md relative">
-                  3<span className="absolute -top-2 -right-2 text-lg">📸</span>
+                <div className="relative mb-space-md">
+                  <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-tertiary-fixed-dim to-tertiary text-white flex items-center justify-center shadow-[0_10px_24px_-6px_rgba(83,72,62,0.25)]">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[40px]" style={{ fontVariationSettings: "'FILL' 1, 'wght' 500" }}>
+                      add_a_photo
+                    </span>
+                  </div>
+                  <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-surface-container-lowest text-tertiary font-label-lg text-label-lg flex items-center justify-center shadow-md ring-2 ring-surface-container-lowest">
+                    3
+                  </span>
                 </div>
                 <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Relax with Live Updates</h3>
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                   Adorable photos all day long, GPS walk maps and meal reports let you follow every happy moment as it happens.
                 </p>
-                <div className="mt-space-md p-space-xs rounded-full bg-surface-container-low text-tertiary font-label-sm text-label-sm px-3">
-                  ✓ Daily Live Notifications
+                <div className="mt-space-md inline-flex items-center gap-1 py-1 rounded-full bg-tertiary-fixed/60 text-tertiary font-label-sm text-label-sm px-3">
+                  <span aria-hidden="true" className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  Daily Live Notifications
                 </div>
               </div>
             </div>

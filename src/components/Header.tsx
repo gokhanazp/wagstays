@@ -7,7 +7,8 @@ import { logout } from "@/app/actions/auth";
 import { getUnreadCount } from "@/lib/messaging";
 import { getCurrentUser } from "@/lib/session";
 import { Logo } from "./Logo";
-import { BecomeSitterPill, HeaderNav, MobileMenu } from "./HeaderNav";
+import { BecomeSitterPill, HeaderNav } from "./HeaderNav";
+import { MobileMenu } from "./MobileMenu";
 
 const ICON_BTN =
   "w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container hover:text-on-surface transition-colors";
@@ -51,9 +52,29 @@ export async function Header() {
               <span className="material-symbols-outlined text-xl">chat_bubble</span>
               {unread > 0 && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
             </Link>
-            <MobileMenu signedIn={!!user} />
+            <MobileMenu
+              accountLinks={menu.map((m) => (m.href === "/messages" ? { ...m, badge: unread } : m))}
+              logoutAction={logout}
+              user={
+                user
+                  ? {
+                      firstName: user.firstName,
+                      lastName: user.lastName,
+                      email: user.email,
+                      avatarUrl: user.avatarUrl,
+                      badge:
+                        user.role === "ADMIN" && !user._count.pets
+                          ? "Admin"
+                          : user.role === "SITTER" && !user._count.pets
+                            ? "Sitter"
+                            : `${user._count.pets} ${user._count.pets === 1 ? "Pet" : "Pets"}`,
+                    }
+                  : null
+              }
+            />
           </div>
           {user ? (
+            <div className="hidden lg:block">
             <AccountMenu
               trigger={
                 <>
@@ -100,6 +121,7 @@ export async function Header() {
                 </button>
               </form>
             </AccountMenu>
+            </div>
           ) : (
             <div className="hidden sm:flex items-center gap-space-sm pl-space-sm">
               <Link className="px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface hover:bg-surface-container transition-all" href="/login">
