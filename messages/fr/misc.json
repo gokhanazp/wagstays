@@ -32,5 +32,21 @@
     "notNow": "Pas maintenant",
     "gotIt": "Compris",
     "dismiss": "Fermer"
+  },
+  "comingSoon": {
+    "metaTitle": "Bientôt disponible",
+    "badge": "Bientôt à Toronto",
+    "title": "Des gardiens d'animaux attentionnés et fiables —",
+    "titleAccent": "c'est pour bientôt",
+    "text": "WagStays met en relation les propriétaires d'animaux de Toronto avec des gardiens et des promeneurs de chiens vérifiés près de chez eux. Nous mettons la touche finale au site — laissez votre courriel et nous vous préviendrons le jour de l'ouverture.",
+    "features": {
+      "verified": "Gardiens aux antécédents vérifiés",
+      "meet": "Rencontre préalable gratuite avant de réserver",
+      "prices": "Des prix clairs, sans surprise"
+    },
+    "notifyTitle": "Soyez les premiers informés",
+    "notifyText": "Un seul courriel au lancement. Jamais de pourriel.",
+    "becomeSitter": "Envie de devenir gardien avec nous? Les candidatures ouvriront au lancement.",
+    "copyright": "© 2026 WagStays Technologies Inc."
   }
 }

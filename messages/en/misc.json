@@ -32,5 +32,21 @@
     "notNow": "Not now",
     "gotIt": "Got it",
     "dismiss": "Dismiss"
+  },
+  "comingSoon": {
+    "metaTitle": "Coming soon",
+    "badge": "Opening soon in Toronto",
+    "title": "Loving, trusted pet sitters —",
+    "titleAccent": "almost here",
+    "text": "WagStays connects Toronto pet parents with verified local sitters and dog walkers. We're putting the finishing touches on the site — leave your email and we'll tell you the day we open.",
+    "features": {
+      "verified": "Background-checked sitters",
+      "meet": "Free Meet & Greet before you book",
+      "prices": "Clear prices, no surprises"
+    },
+    "notifyTitle": "Be the first to know",
+    "notifyText": "One email when we launch. No spam, ever.",
+    "becomeSitter": "Want to sit pets with us? Sitter applications open at launch.",
+    "copyright": "© 2026 WagStays Technologies Inc."
   }
 }

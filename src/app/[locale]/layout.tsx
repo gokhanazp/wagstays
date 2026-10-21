@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { baseMetadata, RootDocument } from "@/app/_root/RootDocument";
 import { routing } from "@/i18n/routing";
+import { isLive } from "@/lib/site-mode";
 
 export const viewport: Viewport = { themeColor: "#226150" };
 
@@ -15,6 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: { ...baseMetadata.openGraph, locale: locale === "fr" ? "fr_CA" : "en_CA" },
     title: { default: t("defaultTitle"), template: "%s · WagStays" },
     description: t("description"),
+    // pre-launch: no page may be indexed (pages can't override this back on)
+    ...(isLive() ? {} : { robots: { index: false, follow: false } }),
   };
 }
 
