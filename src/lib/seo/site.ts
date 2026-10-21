@@ -1,4 +1,4 @@
-const FALLBACK = "https://wagstays.vercel.app";
+const FALLBACK = "https://www.wagstays.ca";
 
 /**
  * Public origin for canonical URLs, the sitemap, robots.txt and JSON-LD.

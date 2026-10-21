@@ -14,7 +14,7 @@ Copy the values from your local `.env` (never commit them):
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://yvateuufdvxmaowgcjch.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | service role key (server-only) |
-| `NEXT_PUBLIC_SITE_URL` | your production URL, e.g. `https://wagstays.vercel.app` (later the real domain) |
+| `NEXT_PUBLIC_SITE_URL` | your production URL, `https://www.wagstays.ca` (wagstays.vercel.app redirects there) |
 
 `npm install` runs `prisma generate` automatically (postinstall). Migrations are **not** run on deploy —
 run `npx prisma migrate deploy` locally (it uses `DIRECT_URL`) whenever a new migration is added, before pushing.

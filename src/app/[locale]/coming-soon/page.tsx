@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
 import { LanguageChip } from "@/components/LanguageSwitcher";
-import { LogoMark, Wordmark } from "@/components/Logo";
+import { LogoFull } from "@/components/Logo";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import type { Locale } from "@/i18n/routing";
 
@@ -34,10 +34,7 @@ export default async function ComingSoonPage({ params }: { params: Promise<{ loc
       <div aria-hidden="true" className="absolute -bottom-32 -right-24 w-[520px] h-[520px] rounded-full bg-secondary-fixed/50 blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[1100px] mx-auto px-margin-mobile md:px-margin py-space-lg flex items-center justify-between gap-space-md">
-        <span className="flex items-center gap-space-sm">
-          <LogoMark className="w-10 h-10" />
-          <Wordmark />
-        </span>
+        <LogoFull height={44} priority />
         <Suspense>
           <LanguageChip />
         </Suspense>

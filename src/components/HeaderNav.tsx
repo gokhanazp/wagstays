@@ -12,7 +12,7 @@ const NAV = [
 ] as const;
 
 const BASE =
-  "whitespace-nowrap px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all";
+  "whitespace-nowrap px-3 min-[1440px]:px-space-md py-space-sm rounded-full font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-all";
 const ACTIVE = "whitespace-nowrap bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full shadow-sm";
 
 function useActiveKey() {
@@ -35,7 +35,7 @@ export function HeaderNav() {
         <Link
           key={item.key}
           aria-current={active === item.key ? "page" : undefined}
-          className={active === item.key ? `px-space-md py-space-sm ${ACTIVE}` : BASE}
+          className={active === item.key ? `px-3 min-[1440px]:px-space-md py-space-sm ${ACTIVE}` : BASE}
           href={item.href}
         >
           {t(item.label)}

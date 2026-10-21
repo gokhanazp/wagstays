@@ -47,7 +47,7 @@ export async function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(83,72,62,0.05)]">
       {user && <InboxLive channel={`inbox:${user.id}`} />}
       <div className="h-20 max-w-[1440px] mx-auto px-margin-mobile md:px-margin flex items-center justify-between gap-space-lg">
-        <div className="flex items-center gap-space-xl">
+        <div className="flex items-center gap-space-lg min-[1440px]:gap-space-xl">
           <Logo />
           <Suspense>
             <HeaderNav />

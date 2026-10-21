@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { createPortal } from "react-dom";
-import { LogoMark, Wordmark } from "./Logo";
+import { LogoFull } from "./Logo";
 import { LanguageRow } from "./LanguageSwitcher";
 import { InstallAppButton } from "./pwa/InstallAppButton";
 
@@ -94,8 +94,7 @@ export function MobileMenu({
         {/* top bar */}
         <div className="flex items-center justify-between px-space-lg pt-space-lg pb-space-md">
           <Link className="flex items-center gap-space-sm" href="/" onClick={close}>
-            <LogoMark className="w-9 h-9" />
-            <Wordmark className="!text-[20px]" />
+            <LogoFull height={36} />
           </Link>
           <button
             aria-label={t("menu.close")}

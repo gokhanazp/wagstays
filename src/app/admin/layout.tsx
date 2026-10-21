@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { baseMetadata, RootDocument } from "@/app/_root/RootDocument";
 import Link from "next/link";
 import { DashboardNav } from "@/components/DashboardNav";
-import { LogoMark, Wordmark } from "@/components/Logo";
+import { LogoFull } from "@/components/Logo";
 import { logout } from "@/app/actions/auth";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -26,12 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-[264px_1fr]">
       <aside className="lg:sticky lg:top-0 lg:h-screen bg-surface-container-low border-b lg:border-b-0 lg:border-r border-[#EFE7DE] flex flex-col gap-space-lg p-space-md lg:p-space-lg">
         <div className="flex items-center justify-between">
-          <Link className="flex items-center gap-space-sm" href="/admin">
-            <LogoMark className="w-9 h-9" />
-            <span className="flex flex-col leading-none">
-              <Wordmark className="!text-[19px]" />
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mt-1">Admin</span>
-            </span>
+          <Link className="flex flex-col items-start gap-1" href="/admin">
+            <LogoFull height={34} />
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant pl-1">Admin</span>
           </Link>
           <Link className="lg:hidden font-label-md text-label-md text-primary" href="/">
             View site

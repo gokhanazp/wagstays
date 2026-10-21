@@ -17,8 +17,15 @@ const GATE_OPEN = ["/coming-soon", "/fr/coming-soon", "/preview", "/api/cron", "
 const intl = createIntlMiddleware(routing);
 const under = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);
 
+// Old production hostname → the real domain (keeps API/cron calls working on the old host)
+const LEGACY_HOST = "wagstays.vercel.app";
+const CANONICAL_ORIGIN = "https://www.wagstays.ca";
+
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  if (request.headers.get("host") === LEGACY_HOST && !pathname.startsWith("/api/")) {
+    return NextResponse.redirect(`${CANONICAL_ORIGIN}${pathname}${search}`, 308);
+  }
   const { cookies, signedIn } = await refreshSession(request);
   request.headers.set("x-pathname", pathname + search);
 

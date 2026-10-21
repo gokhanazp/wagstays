@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/format";
 import { VET_COVERAGE_CENTS } from "@/lib/constants";
 import { LanguageChip } from "./LanguageSwitcher";
-import { LogoMark, Wordmark } from "./Logo";
+import { LogoFull } from "./Logo";
 import { NewsletterForm } from "./NewsletterForm";
 import { popularNeighbourhoods } from "@/lib/seo/landing";
 
@@ -37,10 +37,7 @@ export async function Footer() {
       <div className="max-w-[1440px] mx-auto px-margin-mobile md:px-margin">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl pb-space-xl">
           <div className="flex flex-col gap-space-md">
-            <div className="flex items-center gap-space-sm">
-              <LogoMark className="w-8 h-8" />
-              <Wordmark className="!text-headline-sm" />
-            </div>
+            <LogoFull height={40} />
             <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
               {t("tagline")}
             </p>
