@@ -57,9 +57,9 @@ export async function Header() {
           <BecomeSitterPill />
           <div className="flex items-center gap-space-xs text-on-surface-variant">
             <Suspense>
-              <LanguageButton className="hidden lg:inline-flex" />
+              <LanguageButton className="hidden lg:block" />
             </Suspense>
-            <Link aria-label={t("nav.favourites")} className={`${ICON_BTN} relative`} href={user ? "/favourites" : "/login?next=/favourites"}>
+            <Link aria-label={t("nav.favourites")} className={`${ICON_BTN} relative max-[359px]:hidden`} href={user ? "/favourites" : "/login?next=/favourites"}>
               <span className="material-symbols-outlined text-xl">favorite</span>
               {!!user?._count.favorites && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary" />}
             </Link>

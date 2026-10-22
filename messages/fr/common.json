@@ -1,7 +1,7 @@
 {
   "meta": {
     "defaultTitle": "WagStays — Gardiens d'animaux et promeneurs de chiens de confiance à Toronto",
-    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Antécédents vérifiés, suivi GPS des promenades et couverture vétérinaire à chaque réservation."
+    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Chaque gardien est examiné par notre équipe, avec une rencontre préalable gratuite et une couverture vétérinaire à chaque réservation."
   },
   "nav": {
     "findSitter": "Trouver un gardien",
@@ -59,7 +59,6 @@
       "catVisits": "Visites pour chats",
       "boarding": "Pension à domicile",
       "dayCare": "Garderie pour chiens",
-      "petTaxi": "Taxi pour animaux",
       "pricing": "Nos tarifs expliqués"
     },
     "safety": "Sécurité et normes",

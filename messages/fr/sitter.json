@@ -200,7 +200,7 @@
     "meetGreetRequested": "Rencontre préalable demandée",
     "weekOf": "Semaine {index} sur {total}",
     "repeatsWeekly": "Chaque semaine",
-    "gpsOn": "Suivi GPS activé",
+    "gpsOn": "Le propriétaire demande des nouvelles par message",
     "youEarn": "Vos revenus",
     "message": "Écrire à {name}",
     "reportProblem": "Signaler un problème",
@@ -282,7 +282,7 @@
     "noTags": "Aucune étiquette pour l'instant.",
     "icon": "Icône",
     "tag": "Étiquette",
-    "tagPlaceholder": "p. ex. Suivi GPS en direct",
+    "tagPlaceholder": "p. ex. Grande cour",
     "tagCount": "{count}/{max} étiquettes — elles s'affichent sur votre carte de recherche."
   },
   "profileForm": {

@@ -5,8 +5,12 @@ import { distanceKm } from "./format";
 import { PET_SIZES, SERVICE_SLUGS, serviceFromSlug, type PetSize, type ServiceType } from "./constants";
 import { getCurrentUser } from "./session";
 import { PET_KINDS, normalizeKinds, type PetKind } from "./pets";
-import { freeSittersForRange } from "./availability";
-import { formatDayRange, isIsoDay, todayIn } from "./availability-core";
+import { freeSittersWithSnapshots } from "./availability";
+import { addDays, eachDate, formatDayRange, isIsoDay, isOpenDay, isStayService, todayIn, type AvailabilitySnapshot } from "./availability-core";
+import { holidaysForDates } from "./holidays";
+import { priceBooking, type Fees } from "./pricing";
+import { petLimit, quoteBooking } from "./quote";
+import { getFees } from "./settings";
 import { petLimitBadge, takesPets } from "./price-details";
 import { createTranslator } from "next-intl";
 import searchEn from "../../messages/en/search.json";
@@ -74,16 +78,13 @@ export async function getHomeTestimonials() {
   return db.review.findMany({ where: { featuredOnHome: true, hidden: false }, orderBy: { createdAt: "desc" }, take: 3 });
 }
 
+/** Platform-wide numbers from real activity only (completed bookings; reviews left on an actual booking). */
 export async function getPlatformStats() {
-  const [sitters, reviews] = await Promise.all([
-    db.sitterProfile.aggregate({ _sum: { completedBookings: true, reviewCount: true }, _count: true, where: { status: "ACTIVE", user: { suspended: false } } }),
-    db.review.aggregate({ _avg: { rating: true } }),
+  const [realCompletedBookings, reviews] = await Promise.all([
+    db.booking.count({ where: { status: "COMPLETED" } }),
+    db.review.aggregate({ _avg: { rating: true }, _count: true, where: { hidden: false, bookingId: { not: null } } }),
   ]);
-  return {
-    activeSitters: sitters._count,
-    completedBookings: sitters._sum.completedBookings ?? 0,
-    avgRating: reviews._avg.rating ?? 5,
-  };
+  return { realCompletedBookings, realReviews: reviews._count, realAvgRating: reviews._avg.rating ?? 0 };
 }
 
 // ---------- Search ----------
@@ -185,12 +186,66 @@ export function toSearchQuery(f: Partial<SearchFilters>) {
   return s ? `?${s}` : "";
 }
 
+/** Card estimate for the searched dates / pets: the same quote + fees + tax as the profile widget and checkout. */
+export type SearchEstimate = {
+  totalCents: number;
+  /** nights / days / walks / visits priced */
+  units: number;
+  /** service type the estimate is for (drives "3 nights" vs "1 walk") */
+  type: string;
+  petCount: number;
+  /** "dogs" for dog walking or a dogs-only search, "cats" for a cats-only search, otherwise "pets" */
+  petWord: "DOG" | "CAT" | "other";
+};
+
+type EstimateService = Parameters<typeof quoteBooking>[0]["service"] & { type: string };
+
+/**
+ * Prices one booking of `service` for the searched range, like BookingWidget: boarding = each night from
+ * `from` to the night before `to` (one night when only `from` is set), day care = each open day of the range,
+ * walks / drop-ins = one visit on `from`. Null when it can't be priced (a stay without dates, too many pets,
+ * a day-care range with no open day).
+ */
+function estimateFor(opts: {
+  service: EstimateService;
+  from?: string;
+  to?: string;
+  snap?: AvailabilitySnapshot;
+  petCount: number;
+  provinceCode: string;
+  taxRateBps: number;
+  fees: Fees;
+}): Omit<SearchEstimate, "petWord"> | null {
+  const { service, from, to, petCount } = opts;
+  if (petLimit(service) < petCount) return null;
+  let dates: string[] = [];
+  if (isStayService(service.type)) {
+    if (!from) return null;
+    const end = to && to >= from ? to : from;
+    if (service.type === "BOARDING") dates = eachDate(from, addDays(end > from ? end : addDays(from, 1), -1));
+    else dates = eachDate(from, end).filter((d) => !opts.snap || isOpenDay(opts.snap, d));
+    if (!dates.length) return null;
+  } else if (from) {
+    dates = [from];
+  }
+  const quote = quoteBooking({
+    service,
+    pets: Array.from({ length: petCount }, () => ({})),
+    dates,
+    holidays: holidaysForDates(dates, opts.provinceCode),
+    quantity: 1,
+  });
+  const price = priceBooking({ subtotalCents: quote.subtotalCents, taxRateBps: opts.taxRateBps, fees: opts.fees });
+  return { totalCents: price.totalCents, units: quote.units, type: service.type, petCount };
+}
+
 export async function searchSitters(f: SearchFilters, locale = "en") {
   const city = await getActiveCity(f.city);
   const centreHood = city.neighbourhoods.find((n) => n.slug === f.hood) ?? defaultHoodOf(city) ?? city.neighbourhoods[0];
-  const [all, favs] = await Promise.all([
+  const [all, favs, fees] = await Promise.all([
     db.sitterProfile.findMany({ where: { cityId: city.id, status: "ACTIVE", user: { suspended: false } }, include: sitterCardInclude }),
     favoriteIds(),
+    getFees(),
   ]);
 
   // Pets in one booking (search "2 pets"): a service only qualifies when the sitter takes that many pets
@@ -246,15 +301,18 @@ export async function searchSitters(f: SearchFilters, locale = "en") {
   // Dates: only sitters free for the whole range (for the chosen service, or any service they offer).
   // Past or reversed ranges are ignored so old shared links still show results.
   const from = f.from ?? (f.to ? f.to : undefined);
-  if (from && from >= todayIn(city.timeZone, Date.now())) {
-    const to = f.to && f.to >= from ? f.to : undefined;
-    const free = await freeSittersForRange(
+  const datesOk = !!from && from >= todayIn(city.timeZone, Date.now());
+  const to = datesOk && f.to && f.to >= from ? f.to : undefined;
+  let snaps: Map<string, AvailabilitySnapshot> | undefined;
+  if (datesOk) {
+    const { free, snaps: loaded } = await freeSittersWithSnapshots(
       results.map((s) => s.id),
       from,
       to,
       f.service,
       f.petCount ?? 1,
     );
+    snaps = loaded;
     const label = searchT(locale)("availableRange", { range: formatDayRange(from, to, locale) });
     results = results.filter((s) => free.has(s.id)).map((s) => ({ ...s, availableLabel: label }));
   }
@@ -270,6 +328,24 @@ export async function searchSitters(f: SearchFilters, locale = "en") {
   };
   results = results.sort(sorters[f.sort]);
 
+  // "≈ $214 total · 3 nights, 2 dogs" on the cards of this page (in-memory, no extra queries).
+  const petWord: SearchEstimate["petWord"] =
+    f.service === "DOG_WALKING" || (f.pets.length === 1 && f.pets[0] === "DOG") ? "DOG" : f.pets.length === 1 && f.pets[0] === "CAT" ? "CAT" : "other";
+  const estimate = (s: (typeof results)[number]): SearchEstimate | undefined => {
+    if (!datesOk && petCount <= 1) return undefined;
+    const e = estimateFor({
+      service: s.price!,
+      from: datesOk ? from : undefined,
+      to,
+      snap: snaps?.get(s.id),
+      petCount,
+      provinceCode: city.provinceCode,
+      taxRateBps: city.taxRateBps,
+      fees,
+    });
+    return e ? { ...e, petWord: e.type === "DOG_WALKING" ? "DOG" : petWord } : undefined;
+  };
+
   const total = results.length;
   const pageCount = Math.max(1, Math.ceil(total / SEARCH_PAGE_SIZE));
   const page = Math.min(f.page, pageCount);
@@ -280,7 +356,7 @@ export async function searchSitters(f: SearchFilters, locale = "en") {
     page,
     pageCount,
     pageSize: SEARCH_PAGE_SIZE,
-    sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE),
+    sitters: results.slice((page - 1) * SEARCH_PAGE_SIZE, page * SEARCH_PAGE_SIZE).map((s): typeof s & { estimate?: SearchEstimate } => ({ ...s, estimate: estimate(s) })),
     /** every match, for map pins */
     allMatches: results.map((s) => ({ id: s.id, slug: s.slug, displayName: s.displayName, lat: s.lat, lng: s.lng, priceCents: s.price!.priceCents, unit: s.price!.unit, rating: s.rating, avatarUrl: s.mapPhotoUrl ?? s.avatarUrl, locationNote: s.locationNote, distanceKm: s.distanceKm, kinds: s.species.map((x) => x.kind), petNote: petLimitBadge(s.price!, locale) })),
     serviceCounts,
@@ -307,6 +383,8 @@ export const getSitterBySlug = cache(async (slug: string) => {
       species: { select: { kind: true } },
       reviews: { where: { hidden: false }, orderBy: { createdAt: "desc" } },
       _count: { select: { photos: true } },
+      // Verification record behind the trust badges (server-only; never sent to the client as is)
+      application: { select: { status: true, reviewedAt: true, meetGreetAt: true, idDocumentName: true, backgroundCheckName: true, certFirstAid: true } },
     },
   });
   // Hidden when the account is suspended or the city hasn't been opened yet.

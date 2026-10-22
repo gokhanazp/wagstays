@@ -281,9 +281,9 @@
       "notes": "Notes spéciales et message à votre gardien",
       "notesDefault": "Ne le laissez pas sans laisse sur le gazon à Kew Gardens — gardez-le toujours sur la longe. Il y a un bol d'eau dans le sac à dos; il adore boire quand vous faites une pause vers la 20e minute.",
       "notesPlaceholder": "p. ex. Jamais sans laisse au parc. Nous aimerions que vous essuyiez ses pattes avec le linge humide près de la porte au retour…",
-      "gpsTitle": "Suivi GPS en direct et photos",
-      "gpsText": "Recevez une carte du trajet en direct et au moins 3 photos ou vidéos adorables, par texto et dans l'appli.",
-      "gpsLabel": "Suivi GPS en direct et envoi de photos"
+      "gpsTitle": "Nouvelles pendant la réservation",
+      "gpsText": "Demandez à votre gardien de vous donner des nouvelles par message pendant la réservation. Vous recevrez une notification chaque fois qu'il écrit.",
+      "gpsLabel": "Demander des nouvelles par message à mon gardien"
     },
     "payment": {
       "title": "Mode de paiement sécurisé",

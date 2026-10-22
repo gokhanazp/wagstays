@@ -215,6 +215,7 @@ export default async function BecomeASitterPage() {
                 phone: user?.phone ?? "",
               }}
               sidebar={sidebar}
+              userId={user?.id ?? null}
             />
           </div>
         </div>

@@ -13,6 +13,7 @@ import { DEFAULT_SLOT_INDEX, formatRelativeDayTime, getSuggestedSlots } from "@/
 import { CopyCode } from "./_components/CopyCode";
 import { MeetGreetPicker } from "./_components/MeetGreetPicker";
 import { ScrollToPicker } from "./_components/ScrollToPicker";
+import { ClearApplicationDraft } from "../_components/ClearApplicationDraft";
 import { localizedPath } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -142,6 +143,7 @@ export default async function ApplicationSubmittedPage({ searchParams }: { searc
 
   return (
     <main className="w-full pt-20 bg-background min-h-[calc(100vh-320px)]">
+      <ClearApplicationDraft />
       <div className="flex flex-col w-full">
         <div className="max-w-[1440px] w-full mx-auto px-margin-mobile md:px-margin py-space-lg flex flex-col gap-space-xl">
           {/* Breadcrumb & Step Progress Pill */}

@@ -57,21 +57,37 @@
   "trust": {
     "title": "Normes de sécurité et de vérification WagStays",
     "notVerified": "Pas encore vérifié",
+    "howChecked": "Comment cela a été vérifié: {title}",
+    "pendingDetail": "WagStays n'a encore aucune trace de cette vérification pour {name}.",
     "id": {
       "title": "Pièce d'identité vérifiée",
-      "note": "Pièce d'identité officielle avec photo"
+      "note": "Pièce d'identité officielle avec photo",
+      "detailApplication": "WagStays a examiné une pièce d'identité avec photo délivrée par le gouvernement, téléversée par {name} avec sa candidature (approuvée en {date}).",
+      "detailTeam": "L'équipe WagStays a indiqué que la pièce d'identité avec photo de {name} a été vérifiée. Ce profil n'est pas lié à une candidature en ligne; la date de la vérification n'est donc pas affichée."
     },
     "police": {
       "title": "Vérification des antécédents (secteur vulnérable)",
-      "note": "Dossier vierge, délivré par la police"
+      "note": "Délivrée par la police, examinée par WagStays",
+      "detailApplication": "{name} a téléversé avec sa candidature une vérification des antécédents en vue d'un travail auprès de personnes vulnérables, délivrée par la police. WagStays l'a examinée avant d'approuver la candidature (approuvée en {date}). WagStays n'effectue pas la vérification elle-même.",
+      "detailTeam": "L'équipe WagStays a indiqué que la vérification des antécédents de {name} a été vérifiée. Cette vérification est délivrée par la police, et non par WagStays. Ce profil n'est pas lié à une candidature en ligne; la date n'est donc pas affichée."
     },
     "firstAid": {
       "title": "Premiers soins et RCR animaliers",
-      "note": "Certifié en soins d'urgence"
+      "noteSitter": "Fourni par le gardien",
+      "noteTeam": "Ajouté par l'équipe WagStays",
+      "detailSitter": "Fourni par le gardien: dans sa candidature, {name} a indiqué avoir une formation en premiers soins et RCR animaliers. WagStays n'a pas vérifié de certificat.",
+      "detailTeam": "Ajouté à ce profil par l'équipe WagStays. Aucun certificat n'est versé au dossier en ligne; l'organisme et la date ne sont donc pas affichés."
     },
     "interview": {
       "title": "Entrevue réussie",
-      "note": "Évaluation du comportement en personne"
+      "note": "Rencontre préalable avec WagStays",
+      "detail": "{name} a eu une rencontre préalable avec l'équipe WagStays ({date}) avant l'approbation de sa candidature."
+    },
+    "approved": {
+      "title": "Profil approuvé",
+      "note": "Examiné par l'équipe WagStays",
+      "detailApplication": "L'équipe WagStays a examiné la candidature de {name} et l'a approuvée ({date}). Aucune entrevue n'est consignée.",
+      "detailTeam": "L'équipe WagStays a approuvé le profil de {name} avant sa mise en ligne. Aucune entrevue n'est consignée pour ce profil."
     }
   },
   "about": {
@@ -175,7 +191,13 @@
     },
     "usualHours": "Heures habituelles de {name}",
     "closed": "Fermé",
-    "timeNote": "Heures de {zone} · réservez au moins {hours} h à l'avance."
+    "timeNote": "Heures de {zone} · réservez au moins {hours} h à l'avance.",
+    "dayLabel": {
+      "available": "{date} — disponible",
+      "full": "{date} — complet",
+      "away": "{date} — absent",
+      "closed": "{date} — ne travaille pas"
+    }
   },
   "booking": {
     "title": "Réserver avec {name}",

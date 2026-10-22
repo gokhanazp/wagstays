@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { LOCALE_NAMES, routing, type Locale } from "@/i18n/routing";
 
@@ -68,23 +68,76 @@ export function LanguageRow({ className, iconClassName }: { className: string; i
   );
 }
 
-/** Header button: globe + the other language's code ("FR" on English pages, "EN" on French ones). */
+/** Header language menu: shows the CURRENT language ("🌐 EN ▾") and opens a list to pick another. */
 export function LanguageButton({ className = "" }: { className?: string }) {
   const t = useTranslations("common.language");
   const { locale, go, pending } = useSwitch();
-  const other = routing.locales.find((l) => l !== locale) ?? routing.defaultLocale;
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && (setOpen(false), root.current?.querySelector("button")?.focus());
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <button
-      aria-label={t("switchTo", { language: LOCALE_NAMES[other].name })}
-      className={`h-10 px-3 rounded-full items-center gap-1 font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-60 ${className}`}
-      disabled={pending}
-      lang={other}
-      onClick={() => go(other)}
-      title={LOCALE_NAMES[other].name}
-      type="button"
-    >
-      <span aria-hidden="true" className="material-symbols-outlined text-xl">language</span>
-      {LOCALE_NAMES[other].short}
-    </button>
+    <div className={`relative ${className}`} ref={root}>
+      <button
+        aria-controls={menuId}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`${t("label")}: ${LOCALE_NAMES[locale].name}`}
+        className="h-10 pl-3 pr-2 rounded-full inline-flex items-center gap-1 font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-60"
+        disabled={pending}
+        onClick={() => setOpen((o) => !o)}
+        type="button"
+      >
+        <span aria-hidden="true" className="material-symbols-outlined text-xl">language</span>
+        {LOCALE_NAMES[locale].short}
+        <span aria-hidden="true" className={`material-symbols-outlined text-lg transition-transform ${open ? "rotate-180" : ""}`}>expand_more</span>
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-2 w-44 p-1.5 rounded-2xl bg-surface-container-lowest border border-surface-container-high shadow-[0_20px_36px_-6px_rgba(83,72,62,0.14)] z-50"
+          id={menuId}
+          role="menu"
+        >
+          {routing.locales.map((l) => (
+            <button
+              aria-checked={l === locale}
+              className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl font-label-lg text-label-lg text-left transition-colors ${
+                l === locale ? "text-primary bg-[#EBF3EF]" : "text-on-surface hover:bg-surface-container-low"
+              }`}
+              key={l}
+              lang={l}
+              onClick={() => {
+                setOpen(false);
+                go(l);
+              }}
+              role="menuitemradio"
+              type="button"
+            >
+              <span className="flex items-center gap-2">
+                <span className="font-label-sm text-label-sm text-on-surface-variant w-6">{LOCALE_NAMES[l].short}</span>
+                {LOCALE_NAMES[l].name}
+              </span>
+              {l === locale && (
+                <span aria-hidden="true" className="material-symbols-outlined text-lg">
+                  check
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

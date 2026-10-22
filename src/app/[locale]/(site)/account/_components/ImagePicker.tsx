@@ -111,9 +111,9 @@ export function ImagePicker({
             <span className="material-symbols-outlined text-primary text-4xl">{fallbackIcon}</span>
           )}
         </div>
-        <div className="flex flex-col gap-space-xs">
+        <div className="flex flex-col gap-space-xs min-w-0">
           <div className="flex flex-wrap gap-space-xs">
-            <label className="inline-flex items-center justify-center gap-1 h-9 px-space-md rounded-full font-label-md text-label-md bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4] cursor-pointer transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary">
+            <label className="inline-flex items-center justify-center gap-1 min-h-9 py-1 px-space-md max-w-full text-center rounded-full font-label-md text-label-md bg-[#EBF3EF] text-primary-container border border-[#C8DDD4] hover:bg-[#DCECE4] cursor-pointer transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary">
               <span className={`material-symbols-outlined text-base ${busy ? "animate-spin" : ""}`}>{busy ? "autorenew" : "upload"}</span>
               {preview ? t("change") : t("upload")}
               <input accept="image/jpeg,image/png,image/webp" className="sr-only" name={name} onChange={onChange} ref={inputRef} type="file" />

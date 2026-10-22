@@ -26,10 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const FILLED = { fontVariationSettings: "'FILL' 1" } as const;
 
-// Marketing floors from the design: real platform stats replace them once they're bigger.
-const MARKETING_BOOKINGS = 25_000;
-const MARKETING_RATING = 4.96;
-const MARKETING_PARENTS = 4_200;
+// Social proof is shown only once it's real: completed bookings and reviews from the database. Until then the hero
+// shows how sitters are vetted instead (no invented numbers — Competition Act).
+const MIN_BOOKINGS_FOR_STATS = 100;
+const MIN_REVIEWS_FOR_RATING = 20;
 
 const SERVICE_CARDS = [
   {
@@ -103,7 +103,6 @@ function Stars({ count = 5 }: { count?: number }) {
 }
 
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
-const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 
 export default async function Home() {
   const [city, cities, sitters, testimonials, stats, t, locale] = await Promise.all([
@@ -119,9 +118,7 @@ export default async function Home() {
     new Intl.NumberFormat(intlLocale(locale), { minimumFractionDigits: digits?.min, maximumFractionDigits: digits?.max }).format(n);
   const highlight = (c: React.ReactNode) => <span className="font-semibold text-secondary">{c}</span>;
 
-  const bookings = Math.max(stats.completedBookings, MARKETING_BOOKINGS);
-  const rating = stats.completedBookings >= MARKETING_BOOKINGS ? stats.avgRating : MARKETING_RATING;
-  const parents = Math.max(stats.completedBookings, MARKETING_PARENTS);
+  const showStats = stats.realCompletedBookings >= MIN_BOOKINGS_FOR_STATS && stats.realReviews >= MIN_REVIEWS_FOR_RATING;
   const defaultHood = defaultHoodOf(city)?.slug;
   const now = new Date();
 
@@ -159,25 +156,27 @@ export default async function Home() {
                 <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl leading-relaxed">
                   {t("hero.intro")}
                 </p>
-                <div className="flex flex-wrap items-center gap-space-lg pt-space-xs text-on-surface-variant">
-                  <div className="flex items-center -space-x-3">
-                    <img alt={t("hero.avatarAlt1")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-03.jpg" />
-                    <img alt={t("hero.avatarAlt2")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-04.jpg" />
-                    <img alt={t("hero.avatarAlt3")} className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container-high" src="/images/img-05.jpg" />
-                    <div className="w-11 h-11 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shadow-sm">
-                      {t("hero.parents", { count: num(Number((parents / 1000).toFixed(1)), { max: 1 }) })}
-                    </div>
-                  </div>
-                  <div>
+                {showStats ? (
+                  <div className="flex flex-wrap items-center gap-space-lg pt-space-xs text-on-surface-variant">
                     <div className="flex items-center gap-1 text-secondary">
                       <Stars />
-                      <span className="font-title-md text-title-md text-on-surface ml-1">{t("hero.rating", { rating: num(rating, { min: 2, max: 2 }), max: num(5, { min: 1, max: 1 }) })}</span>
+                      <span className="font-title-md text-title-md text-on-surface ml-1">{t("hero.rating", { rating: num(stats.realAvgRating, { min: 2, max: 2 }), max: num(5, { min: 1, max: 1 }) })}</span>
                     </div>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      {t("hero.bookings", { count: num(bookings) })}
-                    </p>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">{t("hero.bookings", { count: num(stats.realCompletedBookings) })}</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-start gap-space-sm pt-space-xs max-w-xl">
+                    <span className="w-11 h-11 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm">
+                      <span aria-hidden="true" className="material-symbols-outlined text-2xl" style={FILLED}>
+                        verified_user
+                      </span>
+                    </span>
+                    <div>
+                      <p className="font-title-md text-title-md text-on-surface">{t("hero.reviewedTitle")}</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{t("hero.reviewedText")}</p>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Right Hero Visual Collage */}
               <div className="max-lg:order-3 lg:col-span-5 relative">
@@ -188,20 +187,17 @@ export default async function Home() {
                     <div className="flex items-center gap-space-sm">
                       <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
                         <span className="material-symbols-outlined text-2xl" style={FILLED}>
-                          location_on
+                          directions_walk
                         </span>
                       </div>
                       <div>
-                        <div className="font-label-lg text-label-lg text-on-surface">{t("hero.liveWalk")}</div>
-                        <div className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                          Maple & Olive (Woodbine Beach)
-                        </div>
+                        <div className="font-label-lg text-label-lg text-on-surface">{t("hero.sampleWalk")}</div>
+                        <div className="font-body-sm text-body-sm text-on-surface-variant">Maple & Olive · Woodbine Beach</div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 whitespace-nowrap">
-                      <span className="font-headline-sm text-headline-sm text-primary">{formatDistance(2.4, locale)}</span>
-                      <span className="block font-label-sm text-label-sm text-on-surface-variant">38 min</span>
+                    <div className="text-right shrink-0 whitespace-nowrap flex flex-col items-end gap-1">
+                      <span className="font-headline-sm text-headline-sm text-primary">30 min</span>
+                      <span className="px-2 py-0.5 rounded-full bg-surface-container-high font-label-sm text-label-sm text-on-surface-variant">{t("hero.example")}</span>
                     </div>
                   </div>
                 </div>
@@ -218,9 +214,9 @@ export default async function Home() {
             <div className="max-lg:order-2">
               <HomeSearch
                 defaultCity={city.slug}
-                defaultEnd={isoDay(addDays(now, 20))}
+                defaultEnd=""
                 defaultHood={defaultHood}
-                defaultStart={isoDay(addDays(now, 16))}
+                defaultStart=""
                 hoods={cities.flatMap((c) => c.neighbourhoods.map((n) => ({ slug: n.slug, name: n.name, city: c.slug, cityLabel: `${c.name}, ${c.provinceCode}` })))}
                 today={isoDay(now)}
               />

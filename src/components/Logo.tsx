@@ -31,7 +31,8 @@ export function Logo({ href = "/" }: { href?: string }) {
   const t = useTranslations("misc.logo");
   return (
     <Link aria-label={t("home")} className="flex items-center shrink-0 transition-transform duration-300 hover:scale-[1.02]" href={href}>
-      <LogoFull height={44} priority />
+      {/* 32px on the smallest phones, 36px on phones, 44px from sm up (!important beats the inline size) */}
+      <LogoFull className="!h-8 min-[380px]:!h-9 sm:!h-11 !w-auto" height={44} priority />
     </Link>
   );
 }

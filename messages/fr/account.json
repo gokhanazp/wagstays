@@ -80,8 +80,8 @@
       "otherAnimals": "Avec les autres animaux",
       "feeding": "Consignes d'alimentation",
       "notes": "Notes pour le gardien",
-      "gps": "Suivi GPS",
-      "gpsOn": "GPS en direct et photos activés",
+      "gps": "Nouvelles",
+      "gpsOn": "Nouvelles par message demandées",
       "gpsOff": "Désactivé",
       "emergency": "Contact d'urgence",
       "vet": "Clinique vétérinaire",
@@ -401,11 +401,26 @@
   },
   "support": {
     "categories": {
-      "BOOKING_ISSUE": { "label": "Problème de réservation", "hint": "Absence, retard, soins non conformes, problème d'horaire" },
-      "PAYMENT": { "label": "Paiements et remboursements", "hint": "Frais, remboursements, WagPoints, versements" },
-      "SAFETY": { "label": "Problème de sécurité", "hint": "Blessure, animal perdu, situation dangereuse — traité en priorité" },
-      "ACCOUNT": { "label": "Compte", "hint": "Connexion, profil, vérification" },
-      "OTHER": { "label": "Autre chose", "hint": "Tout ce qui ne correspond pas aux choix ci-dessus" }
+      "BOOKING_ISSUE": {
+        "label": "Problème de réservation",
+        "hint": "Absence, retard, soins non conformes, problème d'horaire"
+      },
+      "PAYMENT": {
+        "label": "Paiements et remboursements",
+        "hint": "Frais, remboursements, WagPoints, versements"
+      },
+      "SAFETY": {
+        "label": "Problème de sécurité",
+        "hint": "Blessure, animal perdu, situation dangereuse — traité en priorité"
+      },
+      "ACCOUNT": {
+        "label": "Compte",
+        "hint": "Connexion, profil, vérification"
+      },
+      "OTHER": {
+        "label": "Autre chose",
+        "hint": "Tout ce qui ne correspond pas aux choix ci-dessus"
+      }
     },
     "statuses": {
       "OPEN": "Ouverte",

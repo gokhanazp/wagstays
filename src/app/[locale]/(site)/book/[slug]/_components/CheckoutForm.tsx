@@ -689,7 +689,7 @@ export function CheckoutForm({
                 />
               </div>
               <div className="flex flex-col gap-space-xs">
-                <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="card-number">
+                <label className="font-label-md text-label-md text-on-surface font-semibold flex flex-wrap items-center justify-between gap-x-space-sm gap-y-1" htmlFor="card-number">
                   <span>{t("payment.cardNumber")}</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2">
                     {BRANDS.map((b) => (

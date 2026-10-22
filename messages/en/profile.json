@@ -57,21 +57,37 @@
   "trust": {
     "title": "WagStays Safety & Verification Standards",
     "notVerified": "Not yet verified",
+    "howChecked": "How this was checked: {title}",
+    "pendingDetail": "WagStays has no record of this check for {name} yet.",
     "id": {
       "title": "Government ID Verified",
-      "note": "Official photo ID checked"
+      "note": "Official photo ID checked",
+      "detailApplication": "WagStays reviewed a government-issued photo ID that {name} uploaded with their application (approved {date}).",
+      "detailTeam": "The WagStays team marked {name}'s government-issued photo ID as checked. This profile isn't linked to an online application, so the date of the check isn't shown."
     },
     "police": {
       "title": "Police Vulnerable Sector Check",
-      "note": "Clear record, police-issued"
+      "note": "Police-issued, reviewed by WagStays",
+      "detailApplication": "{name} uploaded a Police Vulnerable Sector Check, issued by the police, with their application. WagStays reviewed it before approving (approved {date}). WagStays doesn't run the check itself.",
+      "detailTeam": "The WagStays team marked {name}'s Police Vulnerable Sector Check as checked. The check is issued by the police, not by WagStays. This profile isn't linked to an online application, so the date isn't shown."
     },
     "firstAid": {
       "title": "Pet First Aid & CPR",
-      "note": "Emergency care certified"
+      "noteSitter": "Provided by the sitter",
+      "noteTeam": "Added by the WagStays team",
+      "detailSitter": "Provided by the sitter: {name} said on their application that they have pet first aid & CPR training. WagStays hasn't checked a certificate.",
+      "detailTeam": "Added to this profile by the WagStays team. No certificate is on file online, so the issuer and date aren't shown."
     },
     "interview": {
       "title": "Interview Passed",
-      "note": "In-person behaviour assessment"
+      "note": "Meet & Greet with WagStays",
+      "detail": "{name} had a Meet & Greet with the WagStays team ({date}) before their application was approved."
+    },
+    "approved": {
+      "title": "Profile Approved",
+      "note": "Reviewed by the WagStays team",
+      "detailApplication": "The WagStays team reviewed {name}'s application and approved it ({date}). No interview is on record.",
+      "detailTeam": "The WagStays team approved {name}'s profile before it went live. No interview is on record for this profile."
     }
   },
   "about": {
@@ -175,7 +191,13 @@
     },
     "usualHours": "{name}'s usual hours",
     "closed": "Closed",
-    "timeNote": "Times are in {zone} time · book at least {hours} h ahead."
+    "timeNote": "Times are in {zone} time · book at least {hours} h ahead.",
+    "dayLabel": {
+      "available": "{date} — available",
+      "full": "{date} — fully booked",
+      "away": "{date} — away",
+      "closed": "{date} — not working"
+    }
   },
   "booking": {
     "title": "Book with {name}",

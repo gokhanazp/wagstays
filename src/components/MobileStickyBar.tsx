@@ -27,11 +27,11 @@ export function MobileStickyBar({ targetId, children }: { targetId: string; chil
       // Keep the hidden bar out of the tab order.
       inert={reached}
     >
-      <div className="flex items-center justify-between gap-space-md max-w-xl mx-auto">{children}</div>
+      <div className="flex items-center justify-between gap-space-sm min-[380px]:gap-space-md max-w-xl mx-auto [&>*:first-child]:min-w-0">{children}</div>
     </div>
   );
 }
 
 /** The bar's primary pill button (matches MobileBookBar's "Book Now"). */
 export const STICKY_BAR_BTN =
-  "h-12 px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-[0_6px_16px_rgba(162,62,36,0.3)] active:scale-[0.98] transition-transform whitespace-nowrap shrink-0";
+  "h-12 px-space-md min-[380px]:px-space-lg rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-[0_6px_16px_rgba(162,62,36,0.3)] active:scale-[0.98] transition-transform whitespace-nowrap shrink-0";

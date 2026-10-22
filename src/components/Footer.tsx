@@ -19,7 +19,6 @@ const SERVICES = [
   { label: "catVisits", href: "/sitters?service=drop-in" },
   { label: "boarding", href: "/sitters?service=boarding" },
   { label: "dayCare", href: "/sitters?service=day-care" },
-  { label: "petTaxi", href: "/sitters" },
   { label: "pricing", href: "/pricing" },
 ] as const;
 

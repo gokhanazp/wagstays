@@ -240,7 +240,7 @@ export function SearchTopBar({
             </button>
           </div>
           <button
-            className="flex-1 xl:flex-none w-full xl:w-auto h-12 sm:h-14 px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
+            className="flex-1 min-w-0 xl:flex-none w-full xl:w-auto h-12 sm:h-14 px-space-md sm:px-space-xl rounded-full bg-secondary text-on-secondary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95 disabled:opacity-70"
             disabled={pending}
             onClick={apply}
             type="button"

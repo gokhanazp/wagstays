@@ -1,7 +1,7 @@
 {
   "meta": {
     "defaultTitle": "WagStays — Trusted Pet Sitters & Dog Walkers in Toronto",
-    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Background-checked sitters, live GPS walk tracking and vet care coverage on every booking."
+    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Every sitter is reviewed by our team, with a free Meet & Greet and vet care coverage on every booking."
   },
   "nav": {
     "findSitter": "Find a Sitter",
@@ -59,7 +59,6 @@
       "catVisits": "Cat Visits",
       "boarding": "In-Home Boarding",
       "dayCare": "Doggy Day Care",
-      "petTaxi": "Pet Taxi",
       "pricing": "How pricing works"
     },
     "safety": "Safety & Standards",

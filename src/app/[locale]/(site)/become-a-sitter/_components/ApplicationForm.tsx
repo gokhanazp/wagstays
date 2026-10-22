@@ -1,18 +1,28 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { startTransition, useActionState, useEffect, useState, type ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { startTransition, useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { submitApplication } from "@/app/actions/application";
 import { Select } from "@/components/forms/Select";
 import { MobileStickyBar, STICKY_BAR_BTN } from "@/components/MobileStickyBar";
 import { PET_SIZE_LABELS, PET_SIZES, type ServiceType } from "@/lib/constants";
 import { SERVICE_PRICE_RULES } from "@/lib/sitter-application";
 import { PetKindPicker } from "@/components/PetKinds";
+import { isPetKind } from "@/lib/pets";
+import { intlLocale } from "@/i18n/routing";
 import { FileUploadRow, HomePhotos } from "./Uploads";
+import { bool, draftKey, loadDraft, removeDraft, saveDraft, str, type DraftData } from "./draft";
 
 type Prefill = { firstName: string; lastName: string; email: string; phone: string };
 
-type Props = { neighbourhoods: { id: string; label: string }[]; prefill: Prefill; isLoggedIn: boolean; sidebar: ReactNode };
+type Props = {
+  neighbourhoods: { id: string; label: string }[];
+  prefill: Prefill;
+  isLoggedIn: boolean;
+  sidebar: ReactNode;
+  /** keys the localStorage draft per account; null = signed-out (anonymous draft) */
+  userId?: string | null;
+};
 
 const SERVICES: {
   type: ServiceType;
@@ -52,6 +62,28 @@ const STEPS = [
   { key: "verification", icon: "shield", anchor: "section-verification" },
 ] as const;
 
+const DRAFT_DEBOUNCE_MS = 600;
+
+const initialServices = () =>
+  Object.fromEntries(
+    SERVICES.map((s) => [s.type, { on: s.defaultOn, price: String(SERVICE_PRICE_RULES[s.type].suggested) }]),
+  ) as Record<ServiceType, { on: boolean; price: string }>;
+const initialSizes = () => Object.fromEntries(PET_SIZES.map((s) => [s, s !== "GIANT"])) as Record<(typeof PET_SIZES)[number], boolean>;
+const initialCerts = () => Object.fromEntries(CERTS.map((c) => [c, false])) as Record<(typeof CERTS)[number], boolean>;
+const initialCriteria = () =>
+  Object.fromEntries(HOME_CRITERIA.map((c) => [c.name, false])) as Record<(typeof HOME_CRITERIA)[number]["name"], boolean>;
+
+/** Copies the booleans of a restored record onto `base`, ignoring unknown keys and wrong types. */
+function pickBools<T extends Record<string, boolean>>(base: T, saved: unknown): T {
+  if (!saved || typeof saved !== "object") return base;
+  const out = { ...base };
+  for (const k of Object.keys(base) as (keyof T & string)[]) {
+    const v = (saved as Record<string, unknown>)[k];
+    if (bool(v)) (out as Record<string, boolean>)[k] = v;
+  }
+  return out;
+}
+
 const BIO_MIN = 80;
 const BIO_MAX = 500;
 
@@ -85,22 +117,22 @@ function SectionLabel({ icon, children }: { icon: string; children: ReactNode })
 const phoneOk = (v: string) => v.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length === 10;
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }: Props) {
+export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar, userId = null }: Props) {
   const t = useTranslations("apply.form");
+  const locale = useLocale();
   const tc = useTranslations("common");
   const [state, formAction, pending] = useActionState(submitApplication, undefined);
   const [cleared, setCleared] = useState<Set<string>>(new Set());
 
   // Controlled fields that drive the step tracker
   const [personal, setPersonal] = useState({ ...prefill, neighbourhood: "" });
-  const [services, setServices] = useState(() =>
-    Object.fromEntries(
-      SERVICES.map((s) => [s.type, { on: s.defaultOn, price: String(SERVICE_PRICE_RULES[s.type].suggested) }]),
-    ) as Record<ServiceType, { on: boolean; price: string }>,
-  );
+  const [services, setServices] = useState(initialServices);
   const [experience, setExperience] = useState("3-6");
   const [kinds, setKinds] = useState<string[]>(["DOG"]);
+  const [sizes, setSizes] = useState(initialSizes);
+  const [certs, setCerts] = useState(initialCerts);
   const [homeType, setHomeType] = useState("HOUSE_WITH_YARD");
+  const [criteria, setCriteria] = useState(initialCriteria);
   const [bio, setBio] = useState("");
   const [idDoc, setIdDoc] = useState("");
   // Storage folder for this form session's uploads (applications/<draftId>/ in the private bucket)
@@ -108,6 +140,130 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
   const [vscDoc, setVscDoc] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeAccuracy, setAgreeAccuracy] = useState(false);
+
+  // ── Draft autosave (localStorage) ──────────────────────────────────────────────────────────────────────────
+  // Plain values only: no uploads (they can't be restored), no account email, no legal declarations.
+  const storageKey = draftKey(userId);
+  const draft: DraftData = {
+    firstName: personal.firstName,
+    lastName: personal.lastName,
+    ...(isLoggedIn ? {} : { email: personal.email }),
+    phone: personal.phone,
+    neighbourhood: personal.neighbourhood,
+    services,
+    experience,
+    kinds,
+    sizes,
+    certs,
+    homeType,
+    criteria,
+    bio,
+  };
+  const draftJson = JSON.stringify(draft);
+  const [pristineJson] = useState(draftJson);
+  const [hydrated, setHydrated] = useState(false);
+  const [restoredAt, setRestoredAt] = useState<number | null>(null);
+  // bumping it remounts the form body, which resets the upload widgets on "Start over"
+  const [formKey, setFormKey] = useState(0);
+  const lastSaved = useRef(draftJson);
+  const pendingJson = useRef<string | null>(null);
+  // the first render after a restore shows the saved values: adopt them as "saved" instead of re-saving
+  const adoptRestored = useRef(false);
+
+  const flushDraft = useCallback(() => {
+    const json = pendingJson.current;
+    if (json === null) return;
+    pendingJson.current = null;
+    lastSaved.current = json;
+    if (json === pristineJson) removeDraft(storageKey);
+    else saveDraft(storageKey, JSON.parse(json) as DraftData);
+  }, [pristineJson, storageKey]);
+
+  // Restore after hydration (localStorage isn't available during SSR), through the same state the
+  // progress bar and step tracker compute from.
+  useEffect(() => {
+    const saved = loadDraft(storageKey);
+    if (saved) {
+      const d = saved.data as Partial<Record<keyof DraftData, unknown>>;
+      const svc = initialServices();
+      if (d.services && typeof d.services === "object") {
+        for (const s of SERVICES) {
+          const v = (d.services as Record<string, { on?: unknown; price?: unknown }>)[s.type];
+          if (v && bool(v.on) && str(v.price)) svc[s.type] = { on: v.on, price: v.price };
+        }
+      }
+      const restoredKinds = Array.isArray(d.kinds) ? d.kinds.filter(isPetKind) : null;
+      /* eslint-disable react-hooks/set-state-in-effect -- one-off restore from browser storage after hydration */
+      setPersonal((p) => ({
+        firstName: str(d.firstName) ? d.firstName : p.firstName,
+        lastName: str(d.lastName) ? d.lastName : p.lastName,
+        email: !isLoggedIn && str(d.email) ? d.email : p.email,
+        phone: str(d.phone) ? d.phone : p.phone,
+        neighbourhood:
+          str(d.neighbourhood) && neighbourhoods.some((n) => n.id === d.neighbourhood) ? d.neighbourhood : p.neighbourhood,
+      }));
+      setServices(svc);
+      if (str(d.experience) && (EXPERIENCE as readonly string[]).includes(d.experience)) setExperience(d.experience);
+      if (restoredKinds) setKinds(restoredKinds);
+      setSizes(pickBools(initialSizes(), d.sizes));
+      setCerts(pickBools(initialCerts(), d.certs));
+      if (str(d.homeType) && HOME_TYPES.some((h) => h.value === d.homeType)) setHomeType(d.homeType);
+      setCriteria(pickBools(initialCriteria(), d.criteria));
+      if (str(d.bio)) setBio(d.bio.slice(0, BIO_MAX));
+      setRestoredAt(saved.savedAt);
+      adoptRestored.current = true;
+    }
+    setHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per storage key
+  }, [storageKey]);
+
+  // Debounced save while the user types
+  useEffect(() => {
+    if (!hydrated) return;
+    if (adoptRestored.current) {
+      adoptRestored.current = false;
+      lastSaved.current = draftJson;
+    }
+    if (draftJson === lastSaved.current) {
+      pendingJson.current = null;
+      return;
+    }
+    pendingJson.current = draftJson;
+    const id = window.setTimeout(flushDraft, DRAFT_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [draftJson, hydrated, flushDraft]);
+
+  // Don't lose the last keystrokes when the tab closes or the user navigates away
+  useEffect(() => {
+    window.addEventListener("pagehide", flushDraft);
+    return () => {
+      window.removeEventListener("pagehide", flushDraft);
+      flushDraft();
+    };
+  }, [flushDraft]);
+
+  function startOver() {
+    pendingJson.current = null;
+    lastSaved.current = pristineJson;
+    removeDraft(storageKey);
+    setPersonal({ ...prefill, neighbourhood: "" });
+    setServices(initialServices());
+    setExperience("3-6");
+    setKinds(["DOG"]);
+    setSizes(initialSizes());
+    setCerts(initialCerts());
+    setHomeType("HOUSE_WITH_YARD");
+    setCriteria(initialCriteria());
+    setBio("");
+    setIdDoc("");
+    setVscDoc("");
+    setAgreeTerms(false);
+    setAgreeAccuracy(false);
+    setCleared(new Set());
+    setRestoredAt(null);
+    setFormKey((k) => k + 1);
+  }
 
   const err = (name: string) => (cleared.has(name) ? undefined : state?.fieldErrors?.[name]?.[0]);
 
@@ -140,6 +296,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    flushDraft();
     const fd = new FormData(e.currentTarget);
     setCleared(new Set());
     startTransition(() => formAction(fd));
@@ -160,6 +317,45 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
 
   return (
     <>
+      {restoredAt !== null && (
+        <div
+          className="mb-space-md flex flex-col sm:flex-row sm:items-center gap-space-sm p-space-md rounded-2xl bg-primary-fixed/60 text-on-surface shadow-xs"
+          role="status"
+        >
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <span className="material-symbols-outlined text-primary text-xl mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+              history
+            </span>
+            <div className="min-w-0">
+              <p className="font-label-lg text-label-lg text-on-surface">
+                {/* en-CA times end in "a.m."/"p.m.": don't double the sentence's closing period */}
+                {t("draft.restored", {
+                  time: new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium", timeStyle: "short" }).format(restoredAt),
+                }).replace(/\.\.$/, ".")}
+              </p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">{t("draft.filesNote")}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              className="px-space-md py-2 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md hover:bg-surface-container transition-colors flex items-center gap-1"
+              onClick={startOver}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-base">restart_alt</span>
+              {t("draft.startOver")}
+            </button>
+            <button
+              aria-label={t("draft.dismissAria")}
+              className="w-9 h-9 rounded-full text-on-surface-variant hover:bg-surface-container flex items-center justify-center"
+              onClick={() => setRestoredAt(null)}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+        </div>
+      )}
       <section aria-label={t("stepsAria")} className="mb-space-lg md:mb-space-xl">
         <div className="bg-surface-container-lowest p-space-md md:p-space-lg rounded-2xl shadow-sm">
           {/* Mobile: four compact icon + title tiles in one row; md+: the full cards with status line */}
@@ -240,6 +436,7 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
           <form
             className="flex flex-col gap-space-xl"
             id="sitterApplicationForm"
+            key={formKey}
             noValidate
             onChange={onChange}
             onSubmit={onSubmit}
@@ -467,9 +664,10 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                           pets
                         </span>
                         <input
+                          checked={sizes[size]}
                           className="w-5 h-5 accent-primary rounded cursor-pointer"
-                          defaultChecked={size !== "GIANT"}
                           name={SIZE_FIELDS[size]}
+                          onChange={(e) => setSizes((p) => ({ ...p, [size]: e.target.checked }))}
                           type="checkbox"
                         />
                       </div>
@@ -492,7 +690,13 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                       className="flex items-start gap-3 p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer"
                       key={c}
                     >
-                      <input className="mt-1 w-5 h-5 accent-primary rounded shrink-0" name={c} type="checkbox" />
+                      <input
+                        checked={certs[c]}
+                        className="mt-1 w-5 h-5 accent-primary rounded shrink-0"
+                        name={c}
+                        onChange={(e) => setCerts((p) => ({ ...p, [c]: e.target.checked }))}
+                        type="checkbox"
+                      />
                       <div className="flex flex-col">
                         <span className="font-label-lg text-label-lg text-on-surface">{t(`experience.certs.${c}.title`)}</span>
                         <span className="font-body-sm text-body-sm text-on-surface-variant">{t(`experience.certs.${c}.blurb`)}</span>
@@ -540,7 +744,13 @@ export function ApplicationForm({ neighbourhoods, prefill, isLoggedIn, sidebar }
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-1">
                   {HOME_CRITERIA.map((c) => (
                     <label className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-low cursor-pointer" key={c.name}>
-                      <input className="w-5 h-5 accent-primary rounded shrink-0" name={c.name} type="checkbox" />
+                      <input
+                        checked={criteria[c.name]}
+                        className="w-5 h-5 accent-primary rounded shrink-0"
+                        name={c.name}
+                        onChange={(e) => setCriteria((p) => ({ ...p, [c.name]: e.target.checked }))}
+                        type="checkbox"
+                      />
                       <span className="material-symbols-outlined text-primary text-xl">{c.icon}</span>
                       <span className="font-label-lg text-label-lg text-on-surface">{t(`home.criteria.${c.name}`)}</span>
                     </label>

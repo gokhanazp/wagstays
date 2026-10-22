@@ -17,6 +17,8 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
   const href = `/sitters/${sitter.slug}`;
   const price = sitter.price!;
   const petNote = petLimitBadge(price, locale);
+  // "≈ $214 total · 3 nights, 2 dogs" when the search has dates and/or several pets (src/lib/queries.ts estimateFor)
+  const est = sitter.estimate;
   return (
     <article className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row gap-space-lg group">
       {/* Photo Gallery Column */}
@@ -92,6 +94,22 @@ export function SitterResultCard({ sitter }: { sitter: SitterCard }) {
               <span className="font-label-sm text-label-sm text-outline">{t(`perUnit.${asUnit(price.unit)}`)}</span>
             </div>
           </div>
+          {est && (
+            <p
+              className="flex flex-wrap items-baseline justify-between gap-x-space-sm gap-y-0.5 px-3 py-2 rounded-2xl bg-surface-container-low"
+              data-testid="price-estimate"
+              title={formatMoney(est.totalCents, { exact: true, locale })}
+            >
+              <span className="font-label-md text-label-md text-on-surface-variant">
+                {t.rich("estimate.line", {
+                  amount: formatMoney(Math.round(est.totalCents / 100) * 100, { locale }),
+                  details: t("estimate.details", { type: est.type, units: est.units, kind: est.petWord, pets: est.petCount }),
+                  b: (c) => <strong className="text-primary font-bold">{c}</strong>,
+                })}
+              </span>
+              <span className="font-label-sm text-label-sm text-outline">{t("estimate.includes")}</span>
+            </p>
+          )}
           {(sitter.availableLabel || petNote) && (
             <div className="flex flex-wrap gap-1.5">
               {sitter.availableLabel && (

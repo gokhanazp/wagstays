@@ -281,9 +281,9 @@
       "notes": "Special Notes & Message to Your Sitter",
       "notesDefault": "Please don't let him off-leash on the grass at Kew Gardens — always keep him on the long line. There's a water bowl in the backpack; he loves a drink when you rest around the 20-minute mark.",
       "notesPlaceholder": "e.g. Never off-leash at the park. We'd love it if you wiped his paws with the damp cloth by the door when you get back…",
-      "gpsTitle": "Live GPS Tracking & Photo Updates",
-      "gpsText": "Get a live map of the route plus at least 3 adorable photos or videos, sent by text and in the app.",
-      "gpsLabel": "Live GPS tracking and photo updates"
+      "gpsTitle": "Updates During the Booking",
+      "gpsText": "Ask your sitter to check in by message during the booking. You'll get a notification each time they write.",
+      "gpsLabel": "Ask my sitter for updates by message"
     },
     "payment": {
       "title": "Secure Payment Method",

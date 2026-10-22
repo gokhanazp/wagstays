@@ -1,5 +1,6 @@
 import { AvailabilityCalendar } from "./_components/AvailabilityCalendar";
 import { PriceDetails } from "@/components/pricing/PriceDetails";
+import { InfoTip } from "@/components/pricing/InfoTip";
 import { MobileBookBar } from "./_components/MobileBookBar";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -182,11 +183,53 @@ export default async function SitterProfilePage({ params }: Props) {
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
 
+  // Trust badges: each one explains what was actually checked, by whom, based on the record behind it.
+  // An approved online application carries the uploaded documents (reviewed by WagStays) and the sitter's own
+  // first-aid answer; flags set without one were set by the WagStays team, so we don't show a date or a document.
+  const app = sitter.application?.status === "APPROVED" ? sitter.application : null;
+  const monthYear = (d: Date) => d.toLocaleDateString(intlLocale(locale), { month: "short", year: "numeric", timeZone: sitter.city.timeZone });
+  const approved = app?.reviewedAt ? monthYear(app.reviewedAt) : null;
+  const metAt = app?.meetGreetAt && app.reviewedAt && app.meetGreetAt <= app.reviewedAt ? app.meetGreetAt : null;
+  const name = first;
+  const pendingDetail = t("trust.pendingDetail", { name });
   const trust = [
-    { icon: "badge", title: t("trust.id.title"), note: t("trust.id.note"), ok: sitter.idVerified },
-    { icon: "gavel", title: t("trust.police.title"), note: t("trust.police.note"), ok: sitter.backgroundChecked },
-    { icon: "medical_services", title: t("trust.firstAid.title"), note: t("trust.firstAid.note"), ok: sitter.firstAidCertified },
-    { icon: "psychology", title: t("trust.interview.title"), note: t("trust.interview.note"), ok: sitter.status === "ACTIVE" },
+    {
+      icon: "badge",
+      title: t("trust.id.title"),
+      note: t("trust.id.note"),
+      ok: sitter.idVerified,
+      detail: app?.idDocumentName && approved ? t("trust.id.detailApplication", { name, date: approved }) : t("trust.id.detailTeam", { name }),
+    },
+    {
+      icon: "gavel",
+      title: t("trust.police.title"),
+      note: t("trust.police.note"),
+      ok: sitter.backgroundChecked,
+      detail:
+        app?.backgroundCheckName && approved ? t("trust.police.detailApplication", { name, date: approved }) : t("trust.police.detailTeam", { name }),
+    },
+    {
+      icon: "medical_services",
+      title: t("trust.firstAid.title"),
+      note: app?.certFirstAid ? t("trust.firstAid.noteSitter") : t("trust.firstAid.noteTeam"),
+      ok: sitter.firstAidCertified,
+      detail: app?.certFirstAid ? t("trust.firstAid.detailSitter", { name }) : t("trust.firstAid.detailTeam", { name }),
+    },
+    metAt
+      ? {
+          icon: "psychology",
+          title: t("trust.interview.title"),
+          note: t("trust.interview.note"),
+          ok: sitter.status === "ACTIVE",
+          detail: t("trust.interview.detail", { name, date: monthYear(metAt) }),
+        }
+      : {
+          icon: "how_to_reg",
+          title: t("trust.approved.title"),
+          note: t("trust.approved.note"),
+          ok: sitter.status === "ACTIVE",
+          detail: approved ? t("trust.approved.detailApplication", { name, date: approved }) : t("trust.approved.detailTeam", { name }),
+        },
   ];
 
   const home = [
@@ -398,7 +441,16 @@ export default async function SitterProfilePage({ params }: Props) {
                       key={tr.title}
                     >
                       <span className={`material-symbols-outlined text-2xl ${tr.ok ? "text-primary" : "text-outline"}`}>{tr.ok ? tr.icon : "pending"}</span>
-                      <span className="font-label-md text-label-md text-on-surface font-semibold">{tr.title}</span>
+                      <span className="font-label-md text-label-md text-on-surface font-semibold">
+                        {tr.title}
+                        <InfoTip
+                          body={tr.ok ? tr.detail : pendingDetail}
+                          className="ml-0.5"
+                          label={t("trust.howChecked", { title: tr.title })}
+                          showPricingLink={false}
+                          title={tr.title}
+                        />
+                      </span>
                       <span className="font-label-sm text-label-sm text-on-surface-variant">{tr.ok ? tr.note : t("trust.notVerified")}</span>
                     </div>
                   ))}
@@ -587,7 +639,7 @@ export default async function SitterProfilePage({ params }: Props) {
               </div>
 
               {/* Reviews */}
-              <div className="bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-xl" id="reviews">
+              <div className="w-full min-w-0 bg-surface-container-lowest p-space-lg sm:p-space-xl rounded-3xl shadow-sm flex flex-col gap-space-xl" id="reviews">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md pb-space-sm">
                   <div>
                     <div className="flex items-center gap-2">
@@ -601,14 +653,14 @@ export default async function SitterProfilePage({ params }: Props) {
                       {t("reviews.summary", { count: sitter.reviewCount })}
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-space-md">
+                  <div className="grid grid-cols-3 gap-space-xs sm:gap-space-md">
                     {[
                       { label: t("reviews.communication"), value: sitter.ratingCommunication },
                       { label: t("reviews.reliability"), value: sitter.ratingReliability },
                       { label: t("reviews.care"), value: sitter.ratingCare },
                     ].map((r) => (
-                      <div className="bg-surface-container p-3 rounded-2xl text-center" key={r.label}>
-                        <span className="font-label-sm text-label-sm text-on-surface-variant block">{r.label}</span>
+                      <div className="min-w-0 bg-surface-container p-2 sm:p-3 rounded-2xl text-center" key={r.label}>
+                        <span className="font-label-sm text-label-sm text-on-surface-variant block [overflow-wrap:anywhere] hyphens-auto">{r.label}</span>
                         <span className="font-title-md text-title-md text-primary font-bold">{(r.value || sitter.rating).toLocaleString(intlLocale(locale), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★</span>
                       </div>
                     ))}

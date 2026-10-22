@@ -250,7 +250,13 @@ export function HomeSearch({
               onClick={() => setDatesOpen((o) => !o)}
               type="button"
             >
-              {start ? fmtDay(start, locale) : t("start")} – {end ? fmtDay(end, locale) : t("end")}
+              {start || end ? (
+                <>
+                  {start ? fmtDay(start, locale) : t("start")} – {end ? fmtDay(end, locale) : t("end")}
+                </>
+              ) : (
+                <span className="text-outline">{t("addDates")}</span>
+              )}
             </button>
           </div>
           <RangePanel

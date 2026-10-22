@@ -17,7 +17,7 @@ const TONES: Record<Tone, string> = {
 
 export function StatusChip({ tone = "neutral", icon, children }: { tone?: Tone; icon?: string; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1 h-7 px-3 rounded-full font-label-md text-label-md whitespace-nowrap ${TONES[tone]}`}>
+    <span className={`inline-flex items-center gap-1 min-h-7 py-0.5 px-3 max-w-full rounded-full font-label-md text-label-md leading-tight sm:whitespace-nowrap ${TONES[tone]}`}>
       {icon && <span className="material-symbols-outlined text-sm">{icon}</span>}
       {children}
     </span>

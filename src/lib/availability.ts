@@ -155,6 +155,11 @@ export async function isSitterFreeForRange(sitterId: string, from: string, to: s
 
 /** Batch version used by search: ids of the sitters free for the range (stays need `petCount` free places). */
 export async function freeSittersForRange(sitterIds: string[], from: string, to: string | null | undefined, serviceType?: string, petCount = 1) {
+  return (await freeSittersWithSnapshots(sitterIds, from, to, serviceType, petCount)).free;
+}
+
+/** freeSittersForRange plus the loaded snapshots (search uses them to price the searched dates). */
+export async function freeSittersWithSnapshots(sitterIds: string[], from: string, to: string | null | undefined, serviceType?: string, petCount = 1) {
   const end = to && to >= from ? to : from;
   const [snaps, services] = await Promise.all([
     loadSnapshots(sitterIds, from, end > from ? end : addDays(from, 1)),
@@ -169,5 +174,5 @@ export async function freeSittersForRange(sitterIds: string[], from: string, to:
     if (from < todayIn(snap.timeZone, now)) continue;
     if (services.some((s) => s.sitterId === id && isFreeForRange(snap, from, end, s.type, s.durationMins, now, petCount))) free.add(id);
   }
-  return free;
+  return { free, snaps };
 }

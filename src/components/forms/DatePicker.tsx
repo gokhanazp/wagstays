@@ -58,6 +58,8 @@ export function Calendar({
   onRangeChange,
   isDateDisabled,
   dayClassName,
+  dayLabel,
+  dayDecoration,
 }: {
   mode?: "single" | "range";
   value?: string;
@@ -72,6 +74,10 @@ export function Calendar({
   isDateDisabled?: (iso: string) => boolean;
   /** Extra classes for a day button (e.g. availability colouring in a read-only preview). */
   dayClassName?: (iso: string) => string | undefined;
+  /** Accessible name for a day button (e.g. "Thursday, October 23 — available"); defaults to the full date. */
+  dayLabel?: (iso: string) => string | undefined;
+  /** Extra decorative content inside a day button (e.g. an availability dot). */
+  dayDecoration?: (iso: string) => React.ReactNode;
 }) {
   const t = useTranslations("common.forms");
   const locale = useLocale();
@@ -127,7 +133,10 @@ export function Calendar({
                 key={i}
               >
                 <button
-                  aria-label={d.toLocaleDateString(intlLocale(locale), { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  aria-label={
+                    dayLabel?.(toIso(d)) ??
+                    d.toLocaleDateString(intlLocale(locale), { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+                  }
                   aria-pressed={isStart || isEnd}
                   className={`w-10 h-10 rounded-full font-label-lg text-label-lg transition-all ${
                     isStart || isEnd
@@ -143,6 +152,7 @@ export function Calendar({
                   type="button"
                 >
                   {d.getDate()}
+                  {dayDecoration?.(toIso(d))}
                 </button>
               </div>
             );

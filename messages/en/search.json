@@ -43,6 +43,9 @@
   },
   "filters": {
     "title": "Filters",
+    "activeCount": "{count, plural, one {# active filter} other {# active filters}}",
+    "close": "Close filters",
+    "showResults": "{count, plural, =0 {No sitters match} one {Show # sitter} other {Show # sitters}}",
     "reset": "Reset",
     "rate": {
       "DOG_WALKING": "Hourly Rate",
@@ -126,7 +129,12 @@
       "VISIT": "/ per visit"
     },
     "message": "Message",
-    "viewProfile": "View Profile"
+    "viewProfile": "View Profile",
+    "estimate": {
+      "line": "<b>≈ {amount} total</b> · {details}",
+      "details": "{type, select, BOARDING {{units, plural, one {# night} other {# nights}}} DAY_CARE {{units, plural, one {# day} other {# days}}} DOG_WALKING {{units, plural, one {# walk} other {# walks}}} other {{units, plural, one {# visit} other {# visits}}}}, {kind, select, DOG {{pets, plural, one {# dog} other {# dogs}}} CAT {{pets, plural, one {# cat} other {# cats}}} other {{pets, plural, one {# pet} other {# pets}}}}",
+      "includes": "incl. fees & tax"
+    }
   },
   "map": {
     "recentre": "Recentre map",

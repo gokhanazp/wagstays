@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "WagStays — Gardiens d'animaux et promeneurs de chiens de confiance à Toronto",
-    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Antécédents vérifiés, suivi GPS des promenades en direct et couverture vétérinaire pour chaque réservation."
+    "description": "Réservez des gardiens d'animaux et des promeneurs de chiens vérifiés et attentionnés près de chez vous à Toronto. Chaque gardien est examiné par notre équipe, avec une rencontre préalable gratuite et une couverture vétérinaire à chaque réservation."
   },
   "hero": {
     "badge": "La plateforme de soins pour animaux préférée de {city}",
@@ -16,8 +16,11 @@
     "rating": "{rating} / {max}",
     "bookings": "Plus de {count} réservations réussies",
     "photoAlt": "Un golden retriever joyeux joue à la balle avec un promeneur dans un parc ensoleillé",
-    "liveWalk": "Promenade en cours",
-    "vetCovered": "Soins vétérinaires couverts"
+    "vetCovered": "Soins vétérinaires couverts",
+    "sampleWalk": "Promenade de l'après-midi réservée",
+    "example": "Exemple",
+    "reviewedTitle": "Chaque gardien est examiné par notre équipe",
+    "reviewedText": "Candidature, documents et rencontre préalable avant d'accepter des réservations."
   },
   "search": {
     "where": "Où cherchez-vous?",
@@ -36,9 +39,10 @@
     "removePet": "Retirer un animal",
     "addPet": "Ajouter un animal",
     "submit": "Trouver un gardien 🐾",
-    "trustVerified": "Identité et adresse vérifiées à 100 %",
+    "trustVerified": "Chaque gardien examiné par notre équipe",
     "trustVet": "Couverture vétérinaire WagShield gratuite jusqu'à {amount}",
-    "trustUpdates": "Photos et vidéos en direct chaque jour"
+    "trustUpdates": "Des nouvelles de votre gardien par message",
+    "addDates": "Ajouter des dates"
   },
   "services": {
     "eyebrow": "Des soins professionnels",
@@ -55,9 +59,9 @@
       "DOG_WALKING": {
         "eyebrow": "Le plus populaire",
         "title": "Promenade de chiens",
-        "body": "Suivi GPS du trajet en direct, nouvelles des besoins, pauses eau fraîche et plein d'aventures à renifler.",
+        "body": "Promenades individuelles avec pauses pipi, eau fraîche et plein d'aventures à renifler — votre promeneur vous donne des nouvelles par message.",
         "chip1": "30 / 60 min",
-        "chip2": "Carte GPS",
+        "chip2": "Nouvelles par message",
         "chip3": "Promenades solo"
       },
       "BOARDING": {
@@ -119,9 +123,9 @@
       "chip": "Première rencontre 100 % gratuite"
     },
     "step3": {
-      "title": "Détendez-vous avec des nouvelles en direct",
-      "body": "Des photos adorables toute la journée, des cartes GPS des promenades et des rapports de repas vous font vivre chaque moment de bonheur en temps réel.",
-      "chip": "Notifications quotidiennes en direct"
+      "title": "Détendez-vous, il est entre bonnes mains",
+      "body": "Votre gardien vous donne des nouvelles par message pendant la réservation, et vous êtes averti chaque fois qu'il écrit.",
+      "chip": "Messages et notifications"
     },
     "pricingNote": "Des prix clairs, sans surprise — le tarif du gardien, plus des frais fixes, la couverture vétérinaire WagShield et la TVH.",
     "pricingLink": "Comment fonctionnent les prix"

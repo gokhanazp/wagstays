@@ -95,6 +95,7 @@ export default async function SittersPage({ searchParams }: { searchParams: Prom
               filters={filters}
               kindCounts={result.kindCounts}
               medicalCount={result.medicalCount}
+              total={total}
               priceRange={PRICE_RANGE}
               serviceCounts={result.serviceCounts}
             />

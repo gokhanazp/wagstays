@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "WagStays — Trusted Pet Sitters & Dog Walkers in Toronto",
-    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Background-checked sitters, live GPS walk tracking and vet care coverage on every booking."
+    "description": "Book verified, loving pet sitters and dog walkers near you in Toronto. Every sitter is reviewed by our team, with a free Meet & Greet and vet care coverage on every booking."
   },
   "hero": {
     "badge": "{city}'s Most Loved Pet Care Platform",
@@ -16,8 +16,11 @@
     "rating": "{rating} / {max}",
     "bookings": "{count}+ happy bookings completed",
     "photoAlt": "A happy Golden Retriever playing catch with a dog walker in a sunny park",
-    "liveWalk": "Live Walk in Progress",
-    "vetCovered": "Vet Care Covered"
+    "vetCovered": "Vet Care Covered",
+    "sampleWalk": "Afternoon walk booked",
+    "example": "Example",
+    "reviewedTitle": "Every sitter reviewed by our team",
+    "reviewedText": "Application, documents and a Meet & Greet before they can take bookings."
   },
   "search": {
     "where": "Where are you looking?",
@@ -36,9 +39,10 @@
     "removePet": "Remove a pet",
     "addPet": "Add a pet",
     "submit": "Find a Sitter 🐾",
-    "trustVerified": "100% ID & Address Verification",
+    "trustVerified": "Every Sitter Reviewed by Our Team",
     "trustVet": "Free WagShield Vet Cover up to {amount}",
-    "trustUpdates": "Daily Live Photo & Video Updates"
+    "trustUpdates": "Updates from Your Sitter by Message",
+    "addDates": "Add dates"
   },
   "services": {
     "eyebrow": "Professional Care Options",
@@ -55,9 +59,9 @@
       "DOG_WALKING": {
         "eyebrow": "Most Popular",
         "title": "Dog Walking",
-        "body": "Live GPS route tracking, pee & poop updates, fresh-water breaks and plenty of sniffing adventures.",
+        "body": "Solo walks with potty breaks, fresh water and plenty of sniffing adventures — your walker checks in by message.",
         "chip1": "30 / 60 min",
-        "chip2": "GPS Map",
+        "chip2": "Message Updates",
         "chip3": "Solo Walks"
       },
       "BOARDING": {
@@ -119,9 +123,9 @@
       "chip": "100% Free First Meeting"
     },
     "step3": {
-      "title": "Relax with Live Updates",
-      "body": "Adorable photos all day long, GPS walk maps and meal reports let you follow every happy moment as it happens.",
-      "chip": "Daily Live Notifications"
+      "title": "Relax While They're in Good Hands",
+      "body": "Your sitter keeps you posted by message during the booking, and you get a notification whenever they write.",
+      "chip": "Message & Push Updates"
     },
     "pricingNote": "Clear prices, no surprises — the sitter's rate plus a flat fee, WagShield vet cover and HST.",
     "pricingLink": "How pricing works"

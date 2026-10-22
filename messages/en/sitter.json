@@ -200,7 +200,7 @@
     "meetGreetRequested": "Meet & Greet requested first",
     "weekOf": "Week {index} of {total}",
     "repeatsWeekly": "Repeats weekly",
-    "gpsOn": "GPS updates on",
+    "gpsOn": "Owner asked for updates by message",
     "youEarn": "You earn",
     "message": "Message {name}",
     "reportProblem": "Report a problem",
@@ -282,7 +282,7 @@
     "noTags": "No tags yet.",
     "icon": "Icon",
     "tag": "Tag",
-    "tagPlaceholder": "e.g. Live GPS Tracking",
+    "tagPlaceholder": "e.g. Large Yard",
     "tagCount": "{count}/{max} tags — these appear on your search card."
   },
   "profileForm": {

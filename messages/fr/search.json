@@ -43,6 +43,9 @@
   },
   "filters": {
     "title": "Filtres",
+    "activeCount": "{count, plural, one {# filtre actif} other {# filtres actifs}}",
+    "close": "Fermer les filtres",
+    "showResults": "{count, plural, =0 {Aucun gardien} one {Afficher # gardien} other {Afficher # gardiens}}",
     "reset": "Réinitialiser",
     "rate": {
       "DOG_WALKING": "Tarif horaire",
@@ -126,7 +129,12 @@
       "VISIT": "/ visite"
     },
     "message": "Message",
-    "viewProfile": "Voir le profil"
+    "viewProfile": "Voir le profil",
+    "estimate": {
+      "line": "<b>≈ {amount} au total</b> · {details}",
+      "details": "{type, select, BOARDING {{units, plural, one {# nuit} other {# nuits}}} DAY_CARE {{units, plural, one {# jour} other {# jours}}} DOG_WALKING {{units, plural, one {# promenade} other {# promenades}}} other {{units, plural, one {# visite} other {# visites}}}}, {kind, select, DOG {{pets, plural, one {# chien} other {# chiens}}} CAT {{pets, plural, one {# chat} other {# chats}}} other {{pets, plural, one {# animal} other {# animaux}}}}",
+      "includes": "frais et taxes inclus"
+    }
   },
   "map": {
     "recentre": "Recentrer la carte",

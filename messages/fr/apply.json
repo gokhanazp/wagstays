@@ -228,6 +228,12 @@
       "submitting": "Envoi…",
       "submit": "Envoyer",
       "continue": "Continuer"
+    },
+    "draft": {
+      "restored": "Nous avons restauré votre brouillon du {time}.",
+      "filesNote": "Les fichiers et photos téléversés ne sont pas conservés dans le brouillon; veuillez les ajouter de nouveau.",
+      "startOver": "Recommencer",
+      "dismissAria": "Fermer"
     }
   },
   "uploads": {

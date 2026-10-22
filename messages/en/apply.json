@@ -228,6 +228,12 @@
       "submitting": "Submitting…",
       "submit": "Submit",
       "continue": "Continue"
+    },
+    "draft": {
+      "restored": "We restored your draft from {time}.",
+      "filesNote": "Uploaded files and photos aren't saved with your draft, so please add them again.",
+      "startOver": "Start over",
+      "dismissAria": "Dismiss"
     }
   },
   "uploads": {

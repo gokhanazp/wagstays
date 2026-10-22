@@ -80,8 +80,8 @@
       "otherAnimals": "Around other animals",
       "feeding": "Feeding rules",
       "notes": "Notes for the sitter",
-      "gps": "GPS updates",
-      "gpsOn": "Live GPS + photo updates on",
+      "gps": "Updates",
+      "gpsOn": "Updates by message requested",
       "gpsOff": "Off",
       "emergency": "Emergency contact",
       "vet": "Vet clinic",
@@ -401,11 +401,26 @@
   },
   "support": {
     "categories": {
-      "BOOKING_ISSUE": { "label": "Booking issue", "hint": "No-show, lateness, care not as agreed, schedule problems" },
-      "PAYMENT": { "label": "Payment & refunds", "hint": "Charges, refunds, WagPoints, payouts" },
-      "SAFETY": { "label": "Safety concern", "hint": "Injury, lost pet, unsafe situation — handled first" },
-      "ACCOUNT": { "label": "Account", "hint": "Sign-in, profile, verification" },
-      "OTHER": { "label": "Something else", "hint": "Anything that doesn't fit above" }
+      "BOOKING_ISSUE": {
+        "label": "Booking issue",
+        "hint": "No-show, lateness, care not as agreed, schedule problems"
+      },
+      "PAYMENT": {
+        "label": "Payment & refunds",
+        "hint": "Charges, refunds, WagPoints, payouts"
+      },
+      "SAFETY": {
+        "label": "Safety concern",
+        "hint": "Injury, lost pet, unsafe situation — handled first"
+      },
+      "ACCOUNT": {
+        "label": "Account",
+        "hint": "Sign-in, profile, verification"
+      },
+      "OTHER": {
+        "label": "Something else",
+        "hint": "Anything that doesn't fit above"
+      }
     },
     "statuses": {
       "OPEN": "Open",
