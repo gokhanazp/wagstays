@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getOrigin } from "@/lib/origin";
+import { emailLinkTarget } from "@/lib/origin";
 import { signOut } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { emit } from "@/lib/events";
@@ -11,7 +11,7 @@ import { getPlatformSettings } from "@/lib/settings";
 import { REF_COOKIE, findReferrer, generateReferralCode } from "@/lib/referrals";
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/i18n/server";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 type T = Awaited<ReturnType<typeof getTranslations<"auth.errors">>>;
 
@@ -50,8 +50,9 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
     email,
     password,
     options: {
-      data: { firstName, lastName },
-      emailRedirectTo: `${await getOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
+      // `locale` picks the language of Supabase's auth emails (templates read .Data.locale)
+      data: { firstName, lastName, locale: await getLocale() },
+      emailRedirectTo: await emailLinkTarget(next),
     },
   });
   if (error || !data.user) return { error: error?.message ?? t("createFailed") };
@@ -95,6 +96,10 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
     if (error.code === "user_banned") return { error: t("suspended") };
     return { error: t("badCredentials") };
   }
+  // keep the auth-email language in step with the language the user signs in with
+  const locale = await getLocale();
+  const { data: current } = await supabase.auth.getUser();
+  if (current.user && current.user.user_metadata?.locale !== locale) await supabase.auth.updateUser({ data: { locale } });
   const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
   redirect(await localizedPath(account?.suspended ? "/suspended" : safeNext(formData.get("next"))));
 }
@@ -112,7 +117,7 @@ export async function requestPasswordReset(_: AuthState, formData: FormData): Pr
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${await getOrigin()}/auth/callback?next=/set-password`,
+    redirectTo: await emailLinkTarget("/set-password"),
   });
   return { checkEmail: parsed.data.email };
 }
@@ -126,7 +131,7 @@ export async function resendConfirmation(_: AuthState, formData: FormData): Prom
   const { error } = await supabase.auth.resend({
     type: "signup",
     email: parsed.data.email,
-    options: { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/` },
+    options: { emailRedirectTo: await emailLinkTarget("/") },
   });
   if (error?.code === "over_email_send_rate_limit") return { error: t("rateLimited") };
   return { checkEmail: parsed.data.email };

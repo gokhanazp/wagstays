@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { localizedPath } from "@/i18n/server";
 
 /**
  * Absolute origin for links in auth emails (sign-up confirmation, password reset).
@@ -15,4 +16,13 @@ export async function getOrigin() {
     return `${proto}://${host}`;
   }
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3100").replace(/\/$/, "");
+}
+
+/**
+ * Where Supabase auth emails send the user: /auth/confirm (token-hash verification, works on any device — unlike the
+ * PKCE /auth/callback, which needs the browser that started the flow) and then `next`, in the current language.
+ * The email templates append `&token_hash=…&type=…` to this URL ({{ .RedirectTo }}).
+ */
+export async function emailLinkTarget(next: string) {
+  return `${await getOrigin()}/auth/confirm?next=${encodeURIComponent(await localizedPath(next))}`;
 }

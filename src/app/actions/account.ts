@@ -1,7 +1,7 @@
 "use server";
 
 import { getTranslations } from "next-intl/server";
-import { getOrigin } from "@/lib/origin";
+import { emailLinkTarget } from "@/lib/origin";
 import { verifyPassword } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "@/i18n/revalidate";
@@ -351,7 +351,7 @@ export async function changeEmail(_: FormState, formData: FormData): Promise<For
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser(
     { email },
-    { emailRedirectTo: `${await getOrigin()}/auth/callback?next=/account/settings` },
+    { emailRedirectTo: await emailLinkTarget("/account/settings") },
   );
   if (error) return { error: error.message };
   return { ok: true, message: t("email.check", { email }) };
