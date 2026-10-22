@@ -61,7 +61,13 @@ model User {
   referredBy   User?               @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
   referrals    User[]              @relation("Referrals")
   deletedAt    DateTime?           // account closed (PIPEDA erasure): personal data anonymised
+  locale       String              @default("en") // "en" | "fr" — language of emails; updated at sign-up, login and language switch
+  // Email notification preferences (account settings). Security/account emails can't be turned off.
+  emailBookings Boolean            @default(true)  // requests, confirmations, cancellations, review requests
+  emailMessages Boolean            @default(true)  // new messages (throttled per conversation)
+  emailReminders Boolean           @default(true)  // day-before reminders
   createdAt    DateTime            @default(now())
+  emailLogs    EmailLog[]
   pets         Pet[]
   sitter       SitterProfile?
   bookings     Booking[]
@@ -453,7 +459,31 @@ model ApplicationService {
 model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
+  // CASL proof of express consent: when (createdAt), where (source), what they agreed to (consentText), language
+  locale         String    @default("en")
+  source         String?   // e.g. "coming-soon", "footer"
+  consentText    String?
+  unsubscribedAt DateTime?
   createdAt DateTime @default(now())
+}
+
+// Every app email sent (or suppressed) — for de-duplication (reminders, message throttling) and support.
+model EmailLog {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  to             String
+  kind           String   // e.g. "booking.request", "message.new", "reminder.owner"
+  bookingId      String?
+  conversationId String?
+  status         String   // "sent" | "skipped" | "failed" | "dev"
+  providerId     String?  // Resend email id
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([kind, bookingId])
+  @@index([conversationId, userId, createdAt])
+  @@index([userId, createdAt])
 }
 
 // Single-row platform configuration edited from /admin/settings (id is always "default").

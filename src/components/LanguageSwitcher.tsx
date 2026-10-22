@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { LOCALE_NAMES, routing, type Locale } from "@/i18n/routing";
+import { saveLocalePreference } from "@/app/actions/locale";
 
 function useSwitch() {
   const locale = useLocale() as Locale;
@@ -17,6 +18,7 @@ function useSwitch() {
     const qs = params.toString();
     // next-intl updates the WAG_LOCALE cookie on a locale switch, so the choice sticks for unprefixed links
     start(() => router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { locale: next, scroll: false }));
+    void saveLocalePreference(next).catch(() => {}); // emails follow the site language for signed-in users
   };
   return { locale, go, pending };
 }

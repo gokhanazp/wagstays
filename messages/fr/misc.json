@@ -48,5 +48,25 @@
     "notifyText": "Un seul courriel au lancement. Jamais de pourriel.",
     "becomeSitter": "Envie de devenir gardien avec nous? Les candidatures ouvriront au lancement.",
     "copyright": "© 2026 WagStays Technologies Inc."
+  },
+  "unsubscribe": {
+    "metaTitle": "Désabonnement",
+    "title": "Se désabonner des courriels",
+    "confirm": "Vous ne recevrez plus de {category} de WagStays.",
+    "newsletterConfirm": "Vous ne recevrez plus les nouvelles de WagStays par courriel.",
+    "button": "Me désabonner",
+    "doneTitle": "Vous êtes désabonné",
+    "done": "Vous ne recevrez plus de {category}.",
+    "newsletterDone": "Vous ne recevrez plus les nouvelles de WagStays. Vous avez changé d'avis? Vous pouvez vous réabonner en tout temps.",
+    "always": "Les courriels liés au compte, à la sécurité et aux paiements sont toujours envoyés.",
+    "manage": "Gérer tous mes courriels",
+    "home": "Aller sur WagStays",
+    "invalidTitle": "Ce lien n'est pas valide",
+    "invalid": "Le lien de désabonnement est incomplet ou a été modifié. Réessayez avec le lien de votre plus récent courriel, ou gérez vos courriels dans les paramètres de votre compte.",
+    "categories": {
+      "bookings": "courriels de suivi des réservations",
+      "messages": "courriels de nouveaux messages",
+      "reminders": "courriels de rappel"
+    }
   }
 }

@@ -1,0 +1,88 @@
+{
+  "service": "{type, select, DOG_WALKING {Dog Walking} BOARDING {Overnight Boarding} DAY_CARE {Doggy Day Care} other {Drop-In Visits}}",
+  "noun": "{type, select, DOG_WALKING {walk} BOARDING {stay} DAY_CARE {day care} other {visit}}",
+  "series": "{count} weekly {type, select, DOG_WALKING {walks} DAY_CARE {day care bookings} other {visits}}",
+  "details": {
+    "service": "Service",
+    "when": "When",
+    "schedule": "Schedule",
+    "starts": "Starts",
+    "pets": "{count, plural, one {Pet} other {Pets}}",
+    "youEarn": "You earn",
+    "total": "Total",
+    "noteFrom": "Note from {name}",
+    "reason": "Reason"
+  },
+  "request": {
+    "subject": "New booking request from {owner}",
+    "subjectMeet": "New Meet & Greet request from {owner}",
+    "title": "New booking request",
+    "titleMeet": "New Meet & Greet request",
+    "preheader": "{owner} would like you to care for {pets}.",
+    "body": "{owner} would like to book you for {pets}'s {noun}. Have a look and reply when you can, so they can plan ahead.",
+    "bodySeries": "{owner} would like to book you for {series} with {pets}. Have a look and reply when you can, so they can plan ahead.",
+    "bodyMeet": "{owner} would like a free Meet & Greet with you before {pets}'s {noun}. Have a look at the request and say hello.",
+    "button": "Review request",
+    "note": "The booking page has the full care details for {pets}."
+  },
+  "nudge": {
+    "subject": "{owner} is waiting for your reply",
+    "title": "A request is waiting for you",
+    "preheader": "{owner} asked you to care for {pets}.",
+    "body": "{owner} asked you to care for {pets} and hasn't heard back yet. A quick yes or no helps them plan.",
+    "button": "Review request"
+  },
+  "confirmed": {
+    "subject": "{sitter} accepted your booking 🎉",
+    "title": "Your booking is confirmed",
+    "preheader": "{sitter} is all set to care for {pets}.",
+    "body": "Great news! {sitter} accepted {pets}'s {noun}.",
+    "bodySeries": "Great news! {sitter} accepted {series} for {pets}.",
+    "tip": "You can message {sitter} any time from your booking.",
+    "button": "View booking"
+  },
+  "declined": {
+    "subject": "{sitter} isn't available this time",
+    "title": "{sitter} can't take this booking",
+    "preheader": "Let's find {pets} another great sitter.",
+    "body": "Sorry, {sitter} can't take {pets}'s {noun} this time. There are plenty of other trusted sitters nearby who'd love to meet {pets}.",
+    "button": "Find another sitter"
+  },
+  "cancelled": {
+    "subjectByOwner": "{owner} cancelled {pets}'s {noun}",
+    "subjectBySitter": "{sitter} cancelled {pets}'s {noun}",
+    "subjectByAdmin": "{pets}'s {noun} was cancelled",
+    "title": "Booking cancelled",
+    "preheader": "{pets}'s {noun} on {date} is cancelled.",
+    "bodyByOwner": "{owner} cancelled {pets}'s {noun}. Those dates are open again on your calendar.",
+    "bodyBySitter": "Sorry, {sitter} had to cancel {pets}'s {noun}. You can find another sitter for the same dates.",
+    "bodyByAdmin": "WagStays cancelled {pets}'s {noun}. If you have any questions, our support team is happy to help.",
+    "points": "{amount} in WagPoints is back in your wallet.",
+    "buttonView": "View booking",
+    "buttonFind": "Find another sitter"
+  },
+  "completed": {
+    "ownerSubject": "How was {pets}'s {noun} with {sitter}?",
+    "ownerTitle": "How did it go?",
+    "ownerPreheader": "Tell other pet parents about {sitter}.",
+    "ownerBody": "{sitter} marked {pets}'s {noun} as complete. We hope it went wonderfully! A short review helps {sitter} and other pet parents in your neighbourhood.",
+    "ownerButton": "Leave a review",
+    "sitterSubject": "Thanks for caring for {pets}!",
+    "sitterTitle": "Nice work!",
+    "sitterPreheader": "How was it working with {owner}?",
+    "sitterBody": "{pets}'s {noun} is complete. Thank you for taking such good care of them.",
+    "sitterAsk": "How was it working with {owner}? Your rating only takes a minute and helps keep WagStays great for sitters.",
+    "sitterButton": "Rate {owner}"
+  },
+  "reminder": {
+    "ownerSubject": "Tomorrow: {pets}'s {noun} with {sitter}",
+    "ownerTitle": "See you tomorrow!",
+    "ownerPreheader": "{sitter} is caring for {pets} tomorrow.",
+    "ownerBody": "Just a reminder that {sitter} is caring for {pets} tomorrow. Need to change something? Message {sitter} from your booking.",
+    "sitterSubject": "Tomorrow: {pets}'s {noun} for {owner}",
+    "sitterTitle": "You're on tomorrow",
+    "sitterPreheader": "{pets}'s {noun} starts tomorrow.",
+    "sitterBody": "Just a reminder that you're caring for {pets} tomorrow. The booking page has the meeting address and care notes.",
+    "button": "View booking"
+  }
+}

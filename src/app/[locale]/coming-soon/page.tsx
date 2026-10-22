@@ -75,7 +75,7 @@ export default async function ComingSoonPage({ params }: { params: Promise<{ loc
             <h2 className="font-headline-sm text-headline-sm text-on-surface">{t("notifyTitle")}</h2>
             <p className="font-body-md text-body-md text-on-surface-variant">{t("notifyText")}</p>
           </div>
-          <NewsletterForm />
+          <NewsletterForm source="coming-soon" />
           <p className="font-body-sm text-body-sm text-on-surface-variant border-t border-[#EFE7DE] pt-space-md flex items-start gap-2">
             <span aria-hidden="true" className="material-symbols-outlined text-lg text-primary">volunteer_activism</span>
             {t("becomeSitter")}

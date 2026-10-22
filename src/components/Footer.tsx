@@ -97,7 +97,7 @@ export async function Footer() {
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 {t("newsletterText")}
               </p>
-              <NewsletterForm />
+              <NewsletterForm source="footer" />
             </div>
           </div>
         </div>

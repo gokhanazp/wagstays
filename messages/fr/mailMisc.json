@@ -1,0 +1,103 @@
+{
+  "message": {
+    "subject": "{name} vous a envoyé un message",
+    "preheader": "Ouvrez WagStays pour le lire et y répondre.",
+    "title": "{name} vous a envoyé un message",
+    "intro": "Voici un aperçu de ce que {name} a écrit:",
+    "button": "Lire et répondre",
+    "note": "Pour ne pas encombrer votre boîte de réception, nous vous écrivons au plus une fois toutes les 30 minutes par conversation."
+  },
+  "ticket": {
+    "subject": "Nous avons répondu à votre demande: {subject}",
+    "preheader": "Le soutien WagStays vous a répondu.",
+    "title": "Nous avons répondu à votre demande",
+    "intro": "Notre équipe de soutien a répondu à votre demande. Ouvrez-la pour lire la réponse et dites-nous si vous avez besoin d'autre chose.",
+    "reference": "Demande",
+    "subjectLabel": "Objet",
+    "button": "Voir ma demande"
+  },
+  "welcome": {
+    "subject": "Bienvenue chez WagStays 🐾",
+    "title": "Bienvenue chez WagStays!",
+    "owner": {
+      "preheader": "Votre compte est prêt. Voici comment trouver le bon gardien.",
+      "intro": "Votre courriel est confirmé et votre compte est prêt. Voici comment commencer:",
+      "stepPet": "1. Ajoutez votre animal: parlez aux gardiens de sa routine, de ses petites manies et de ses gâteries préférées.",
+      "stepSitter": "2. Trouvez un gardien: parcourez des gardiens de confiance près de chez vous, dont les antécédents ont été vérifiés.",
+      "stepMeet": "3. Réservez une rencontre préalable gratuite: faites connaissance avec votre gardien avant la première réservation, sans frais.",
+      "pending": "Pour le moment, nous examinons les nouveaux comptes un par un. Vous pouvez parcourir les gardiens en attendant; nous vous écrirons dès que vous pourrez réserver.",
+      "button": "Trouver un gardien",
+      "secondary": "Ajouter mon animal"
+    },
+    "sitter": {
+      "preheader": "Plus qu'une étape pour devenir gardien chez WagStays.",
+      "intro": "Votre courriel est confirmé. Plus qu'une étape pour devenir gardien chez WagStays: terminez votre candidature.",
+      "next": "Une fois envoyée, vous réserverez une courte rencontre préalable vidéo avec notre équipe, et nous examinerons vos documents.",
+      "button": "Terminer ma candidature",
+      "inReview": "Votre candidature {code} est en cours d'examen. Vous pouvez en suivre l'état en tout temps.",
+      "statusButton": "Suivre ma candidature"
+    }
+  },
+  "application": {
+    "codeLabel": "Code de suivi",
+    "statusButton": "Suivre ma candidature",
+    "received": {
+      "subject": "Nous avons bien reçu votre candidature",
+      "preheader": "Votre code de suivi est {code}.",
+      "title": "Nous avons bien reçu votre candidature",
+      "intro": "Merci d'avoir posé votre candidature comme gardien chez WagStays! Notre équipe l'examine en ce moment.",
+      "next": "Prochaine étape: réservez votre rencontre préalable vidéo de 15 minutes avec notre équipe à partir de votre page de suivi.",
+      "note": "Gardez votre code de suivi à portée de main: vous en aurez besoin pour suivre votre candidature."
+    },
+    "meetGreet": {
+      "subject": "Votre rencontre préalable est prévue le {when}",
+      "subjectChanged": "Votre rencontre préalable a été déplacée au {when}",
+      "preheader": "À bientôt, le {when}.",
+      "title": "Votre rencontre préalable est réservée",
+      "titleChanged": "Votre rencontre préalable a une nouvelle heure",
+      "intro": "Il s'agit d'un appel vidéo de 15 minutes avec notre équipe pour faire connaissance et répondre à vos questions.",
+      "link": "Nous vous enverrons le lien de l'appel vidéo avant votre rendez-vous.",
+      "date": "Date",
+      "time": "Heure",
+      "timeValue": "{time} (heure de Toronto)",
+      "note": "Besoin d'une autre heure? Vous pouvez la changer à partir de votre page de suivi.",
+      "when": "{date} à {time}"
+    },
+    "approved": {
+      "subject": "Bienvenue dans l'équipe de gardiens WagStays 🎉",
+      "preheader": "Votre profil de gardien est en ligne.",
+      "title": "Bienvenue dans l'équipe de gardiens WagStays",
+      "intro": "Bonne nouvelle: votre candidature est approuvée et votre profil de gardien est en ligne!",
+      "next": "Rendez-vous dans votre tableau de bord de gardien pour indiquer vos disponibilités, vérifier vos services et ajouter des photos pour que les propriétaires apprennent à vous connaître.",
+      "button": "Aller à mon tableau de bord",
+      "newAccount": "Première connexion? Sur la page de connexion, choisissez « Mot de passe oublié? » avec cette adresse courriel pour créer votre mot de passe."
+    },
+    "rejected": {
+      "subject": "Une mise à jour sur votre candidature WagStays",
+      "preheader": "Merci d'avoir posé votre candidature chez WagStays.",
+      "title": "Une mise à jour sur votre candidature",
+      "intro": "Merci d'avoir posé votre candidature comme gardien chez WagStays et du temps que vous y avez consacré.",
+      "body": "Après un examen attentif, nous ne sommes pas en mesure d'y donner suite pour le moment.",
+      "contact": "Une question? Écrivez-nous à {email}. Nous serons heureux de vous aider.",
+      "button": "Nous joindre"
+    }
+  },
+  "account": {
+    "approved": {
+      "subject": "Vous pouvez maintenant réserver 🐾",
+      "preheader": "Votre compte WagStays est approuvé.",
+      "title": "Vous pouvez maintenant réserver",
+      "intro": "Bonne nouvelle: votre compte WagStays est approuvé. Vous pouvez maintenant réserver des gardiens.",
+      "next": "Vous n'avez pas encore ajouté votre animal? Commencez par là pour que les gardiens sachent de qui ils prendront soin.",
+      "button": "Trouver un gardien"
+    },
+    "rejected": {
+      "subject": "Une mise à jour sur votre compte WagStays",
+      "preheader": "À propos des réservations sur WagStays.",
+      "title": "Une mise à jour sur votre compte",
+      "intro": "Merci de vous être joint à WagStays. Après examen, nous ne sommes pas en mesure d'approuver votre compte pour les réservations pour le moment. Vous pouvez tout de même parcourir les gardiens.",
+      "contact": "Vous croyez qu'il s'agit d'une erreur ou vous avez une question? Notre équipe de soutien est là pour vous aider.",
+      "button": "Joindre le soutien"
+    }
+  }
+}

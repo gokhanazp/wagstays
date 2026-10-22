@@ -82,7 +82,9 @@
     "label": "Email address",
     "submit": "Subscribe",
     "subscribed": "Subscribed!",
-    "invalidEmail": "Please enter a valid email."
+    "invalidEmail": "Please enter a valid email.",
+    "consent": "By subscribing, you agree to receive WagStays news by email. Unsubscribe anytime.",
+    "privacy": "Privacy Policy"
   },
   "pager": {
     "prev": "Prev",

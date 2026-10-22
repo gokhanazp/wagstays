@@ -1,0 +1,11 @@
+{
+  "welcome": {
+    "subject": "You're on the WagStays list 🐾",
+    "preheader": "Thanks for subscribing — we'll keep you posted.",
+    "title": "Thanks for subscribing!",
+    "p1": "You're on the list. We'll email you when WagStays opens in Toronto, plus the occasional update on new sitters, neighbourhoods and offers.",
+    "p2": "No spam, and you can unsubscribe anytime with the link at the bottom of every email.",
+    "button": "Visit WagStays",
+    "reason": "You're receiving this because {email} subscribed to WagStays news."
+  }
+}

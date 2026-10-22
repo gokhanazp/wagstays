@@ -1,0 +1,19 @@
+{
+  "hi": "Bonjour {name},",
+  "hiNoName": "Bonjour,",
+  "buttonFallback": "Le bouton ne fonctionne pas? Copiez ce lien dans votre navigateur :",
+  "footer": {
+    "company": "WagStays Technologies Inc. · Toronto (Ontario)",
+    "privacy": "Politique de confidentialité",
+    "help": "Aide et soutien",
+    "why": "Vous recevez ce courriel parce que vous avez un compte WagStays.",
+    "manage": "Paramètres des courriels",
+    "unsubscribe": "Se désabonner de ces courriels"
+  },
+  "categories": {
+    "bookings": "les mises à jour de réservation",
+    "messages": "les courriels de nouveaux messages",
+    "reminders": "les rappels",
+    "newsletter": "les nouvelles de WagStays"
+  }
+}

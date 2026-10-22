@@ -44,6 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: "/admin/users", label: "Users", icon: "group", badge: pendingUsers },
             { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
             { href: "/admin/cities", label: "Cities", icon: "location_city" },
+            { href: "/admin/newsletter", label: "Newsletter", icon: "mark_email_read" },
             { href: "/admin/settings", label: "Platform Settings", icon: "tune" },
             { href: "/admin/audit", label: "Audit Log", icon: "history" },
           ]}

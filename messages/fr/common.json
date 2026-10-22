@@ -82,7 +82,9 @@
     "label": "Adresse courriel",
     "submit": "S'abonner",
     "subscribed": "Abonnement confirmé!",
-    "invalidEmail": "Veuillez entrer une adresse courriel valide."
+    "invalidEmail": "Veuillez entrer une adresse courriel valide.",
+    "consent": "En vous abonnant, vous acceptez de recevoir les nouvelles de WagStays par courriel. Désabonnement en tout temps.",
+    "privacy": "Politique de confidentialité"
   },
   "pager": {
     "prev": "Préc.",

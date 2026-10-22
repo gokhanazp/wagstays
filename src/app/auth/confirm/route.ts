@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { emit } from "@/lib/events";
 
 // Token-hash variant of email links (used by admin-generated links and custom email templates).
 export async function GET(request: NextRequest) {
@@ -11,8 +12,11 @@ export async function GET(request: NextRequest) {
   const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
   if (tokenHash && type) {
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    if (!error) {
+      if (type === "signup" && data.user) emit({ type: "user.emailConfirmed", userId: data.user.id }); // welcome email
+      return NextResponse.redirect(`${origin}${next}`);
+    }
   }
   return NextResponse.redirect(`${origin}/login?error=link`);
 }

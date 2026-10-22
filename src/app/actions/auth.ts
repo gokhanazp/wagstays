@@ -68,11 +68,12 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
   const referredById = referrer && referrer.id !== data.user.id ? referrer.id : null;
   // Optional manual vetting of new pet parents (sitters are vetted through their application instead).
   const approvalStatus = role === "OWNER" && (await getPlatformSettings()).requireOwnerApproval ? "PENDING" : "APPROVED";
-  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role, approvalStatus, referralCode: await generateReferralCode(), referredById } });
+  await db.user.create({ data: { id: data.user.id, email, firstName, lastName, role, approvalStatus, locale: await getLocale(), referralCode: await generateReferralCode(), referredById } });
   if (jar.has(REF_COOKIE)) jar.delete(REF_COOKIE);
   emit({ type: "user.signedUp", userId: data.user.id });
 
   if (!data.session) return { checkEmail: email };
+  emit({ type: "user.emailConfirmed", userId: data.user.id }); // no confirmation step (email confirmation off)
   redirect(await localizedPath(next));
 }
 
@@ -100,6 +101,7 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
   const locale = await getLocale();
   const { data: current } = await supabase.auth.getUser();
   if (current.user && current.user.user_metadata?.locale !== locale) await supabase.auth.updateUser({ data: { locale } });
+  if (current.user) await db.user.updateMany({ where: { id: current.user.id, NOT: { locale } }, data: { locale } });
   const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
   redirect(await localizedPath(account?.suspended ? "/suspended" : safeNext(formData.get("next"))));
 }

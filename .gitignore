@@ -57,3 +57,4 @@ prisma/*.db-journal
 /playwright-report/
 /blob-report/
 .preview-access
+.email-outbox/

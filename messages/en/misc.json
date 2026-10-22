@@ -48,5 +48,25 @@
     "notifyText": "One email when we launch. No spam, ever.",
     "becomeSitter": "Want to sit pets with us? Sitter applications open at launch.",
     "copyright": "© 2026 WagStays Technologies Inc."
+  },
+  "unsubscribe": {
+    "metaTitle": "Unsubscribe",
+    "title": "Unsubscribe from emails",
+    "confirm": "You'll stop receiving {category} from WagStays.",
+    "newsletterConfirm": "You'll stop receiving WagStays news by email.",
+    "button": "Unsubscribe",
+    "doneTitle": "You're unsubscribed",
+    "done": "You won't receive {category} anymore.",
+    "newsletterDone": "You won't receive WagStays news anymore. Changed your mind? You can subscribe again anytime.",
+    "always": "Account, security and payment emails are still sent.",
+    "manage": "Manage all email settings",
+    "home": "Go to WagStays",
+    "invalidTitle": "This link isn't valid",
+    "invalid": "The unsubscribe link is incomplete or has been changed. Try the link in your latest email again, or manage your emails from your account settings.",
+    "categories": {
+      "bookings": "booking update emails",
+      "messages": "new message emails",
+      "reminders": "reminder emails"
+    }
   }
 }

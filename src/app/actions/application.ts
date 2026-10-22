@@ -13,6 +13,7 @@ import { formatMoney } from "@/lib/format";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/i18n/server";
+import { emailApplicationReceived, sendLater } from "@/lib/events/email-misc";
 
 export type ApplicationState =
   | { error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -120,10 +121,11 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
   if (user?.suspended) return { error: t("suspended") };
 
   let trackingCode = "";
+  let applicationId = "";
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = `WS-${randomInt(10000, 100000)}`;
     try {
-      await db.sitterApplication.create({
+      ({ id: applicationId } = await db.sitterApplication.create({
         data: {
           ...data,
           neighbourhood: hood!.name,
@@ -134,7 +136,8 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
           backgroundCheckName: uploads.backgroundOk ? data.backgroundCheckName : null,
           files: { create: uploads.files },
         },
-      });
+        select: { id: true },
+      }));
       trackingCode = code;
       break;
     } catch (e) {
@@ -143,6 +146,7 @@ export async function submitApplication(_: ApplicationState, formData: FormData)
     }
   }
   if (!trackingCode) return { error: t("saveFailed") };
+  sendLater(() => emailApplicationReceived(applicationId, locale));
 
   redirect(await localizedPath(`/become-a-sitter/submitted?code=${encodeURIComponent(trackingCode)}`));
 }

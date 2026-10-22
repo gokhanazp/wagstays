@@ -612,5 +612,18 @@
       "browser": "Navigateur",
       "deviceOn": "{browser} sur {os}"
     }
+  },
+  "emailPrefs": {
+    "title": "Notifications par courriel",
+    "intro": "Choisissez les courriels que WagStays vous envoie.",
+    "bookings": "Suivi des réservations",
+    "bookingsHint": "Demandes, confirmations, modifications, annulations et demandes d'avis.",
+    "messages": "Nouveaux messages",
+    "messagesHint": "Quand quelqu'un vous écrit sur WagStays.",
+    "reminders": "Rappels",
+    "remindersHint": "Un rappel la veille du début d'une réservation.",
+    "always": "Les courriels liés au compte, à la sécurité et aux paiements sont toujours envoyés.",
+    "save": "Enregistrer",
+    "saved": "Préférences de courriel enregistrées."
   }
 }

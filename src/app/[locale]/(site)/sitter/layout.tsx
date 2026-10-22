@@ -10,10 +10,11 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function SitterLayout({ children }: { children: React.ReactNode }) {
   const { user, profile } = await requireSitter();
-  const [pending, unread, t] = await Promise.all([
+  const [pending, unread, t, tNav] = await Promise.all([
     db.booking.count({ where: { sitterId: profile.id, status: "PENDING" } }),
     getUnreadCount(user.id),
     getTranslations("sitter.layout"),
+    getTranslations("common.nav"),
   ]);
   return (
     <DashboardShell
@@ -25,6 +26,7 @@ export default async function SitterLayout({ children }: { children: React.React
         { href: "/sitter/availability", label: t("nav.availability"), icon: "calendar_month" },
         { href: "/sitter/reviews", label: t("nav.reviews"), icon: "reviews" },
         { href: "/messages", label: t("nav.messages"), icon: "chat_bubble", badge: unread },
+        { href: "/account/settings", label: tNav("accountSettings"), icon: "manage_accounts" },
         { href: "/account/support", label: t("nav.support"), icon: "support_agent" },
       ]}
       subtitle={profile.status === "ACTIVE" ? t("accepting") : t("paused")}

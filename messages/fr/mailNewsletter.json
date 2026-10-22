@@ -1,0 +1,11 @@
+{
+  "welcome": {
+    "subject": "Vous êtes inscrit à la liste WagStays 🐾",
+    "preheader": "Merci de votre abonnement — nous vous tiendrons au courant.",
+    "title": "Merci de votre abonnement!",
+    "p1": "Vous êtes sur la liste. Nous vous écrirons dès l'ouverture de WagStays à Toronto, avec à l'occasion des nouvelles sur les gardiens, les quartiers et nos offres.",
+    "p2": "Aucun pourriel, et vous pouvez vous désabonner en tout temps grâce au lien au bas de chaque courriel.",
+    "button": "Visiter WagStays",
+    "reason": "Vous recevez ce courriel parce que {email} s'est abonné aux nouvelles de WagStays."
+  }
+}

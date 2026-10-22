@@ -1,0 +1,19 @@
+{
+  "hi": "Hi {name},",
+  "hiNoName": "Hi there,",
+  "buttonFallback": "Button not working? Copy this link into your browser:",
+  "footer": {
+    "company": "WagStays Technologies Inc. · Toronto, Ontario",
+    "privacy": "Privacy Policy",
+    "help": "Help & Support",
+    "why": "You're receiving this because you have a WagStays account.",
+    "manage": "Email settings",
+    "unsubscribe": "Unsubscribe from these emails"
+  },
+  "categories": {
+    "bookings": "booking updates",
+    "messages": "new message emails",
+    "reminders": "reminders",
+    "newsletter": "WagStays news"
+  }
+}

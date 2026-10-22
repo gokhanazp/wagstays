@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { formatRelativeDayTime, isBookableSlot } from "@/lib/meet-greet";
+import { emailMeetGreetBooked, sendLater } from "@/lib/events/email-misc";
 
 const schema = (invalidCode: string) =>
   z.object({
@@ -32,7 +33,7 @@ export async function bookMeetGreet(code: string, slotISO: string): Promise<Book
 
   const application = await db.sitterApplication.findUnique({
     where: { trackingCode: parsed.data.code },
-    select: { id: true, status: true },
+    select: { id: true, status: true, meetGreetAt: true },
   });
   if (!application) return { ok: false, error: t("notFound") };
   if (application.status !== "IN_REVIEW" && application.status !== "MEET_GREET") {
@@ -44,6 +45,9 @@ export async function bookMeetGreet(code: string, slotISO: string): Promise<Book
     where: { id: application.id },
     data: { meetGreetAt, status: "MEET_GREET" },
   });
+  if (application.meetGreetAt?.getTime() !== meetGreetAt.getTime()) {
+    sendLater(() => emailMeetGreetBooked(application.id, { changed: !!application.meetGreetAt, requestLocale: locale }));
+  }
   revalidatePath("/become-a-sitter/submitted");
   return { ok: true, label: formatRelativeDayTime(meetGreetAt, now, undefined, locale) };
 }

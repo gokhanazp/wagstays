@@ -9,6 +9,7 @@ import { getPlatformSettings } from "@/lib/settings";
 import { BTN, Card, PageHeader, formatDateTime } from "@/components/ui";
 import { CloseAccountCard, DataExportCard } from "../_components/PrivacySettings";
 import { EmailForm, PasswordForm, ProfileForm } from "../_components/SettingsForms";
+import { EmailPrefsCard } from "../_components/EmailPrefsCard";
 import { NotificationsSection } from "@/components/pwa/NotificationsSection";
 
 export async function generateMetadata() {
@@ -18,10 +19,11 @@ export async function generateMetadata() {
 
 export default async function AccountSettingsPage() {
   const user = await requireUser();
-  const [settings, blockers, sitter, t, tc, locale] = await Promise.all([
+  const [settings, blockers, sitter, prefs, t, tc, locale] = await Promise.all([
     getPlatformSettings(),
     deletionBlockers(user.id),
     db.sitterProfile.findUnique({ where: { userId: user.id }, select: { id: true } }),
+    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { emailBookings: true, emailMessages: true, emailReminders: true } }),
     getTranslations("account.settings"),
     getTranslations("common"),
     getLocale(),
@@ -37,6 +39,7 @@ export default async function AccountSettingsPage() {
           <ProfileForm user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl }} />
           <EmailForm email={user.email} />
           <PasswordForm />
+          <EmailPrefsCard prefs={prefs} />
           <NotificationsSection />
           <DataExportCard />
           <CloseAccountCard

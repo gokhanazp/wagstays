@@ -3,12 +3,15 @@
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { subscribe } from "@/app/actions/newsletter";
+import { Link } from "@/i18n/navigation";
 
-export function NewsletterForm() {
+/** `source` is stored with the CASL consent record (where the person signed up). */
+export function NewsletterForm({ source }: { source: "coming-soon" | "footer" }) {
   const t = useTranslations("common.newsletter");
   const [state, action, pending] = useActionState(subscribe, undefined);
   return (
     <form action={action} className="flex flex-col gap-space-xs">
+      <input name="source" type="hidden" value={source} />
       <input
         aria-label={t("label")}
         className="w-full h-11 px-space-md rounded-full bg-surface-container-lowest font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none ring-1 ring-outline-variant focus:ring-2 focus:ring-primary"
@@ -26,6 +29,12 @@ export function NewsletterForm() {
         {state?.ok ? t("subscribed") : t("submit")}
       </button>
       {state?.error && <p className="font-body-sm text-body-sm text-error px-space-sm">{state.error}</p>}
+      <p className="font-body-sm text-body-sm text-on-surface-variant px-space-sm">
+        {t("consent")}{" "}
+        <Link className="underline hover:text-primary" href="/privacy">
+          {t("privacy")}
+        </Link>
+      </p>
     </form>
   );
 }

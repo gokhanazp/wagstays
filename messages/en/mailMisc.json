@@ -1,0 +1,103 @@
+{
+  "message": {
+    "subject": "{name} sent you a message",
+    "preheader": "Open WagStays to read it and reply.",
+    "title": "{name} sent you a message",
+    "intro": "Here's a preview of what {name} wrote:",
+    "button": "Read and reply",
+    "note": "To keep your inbox calm, we email you at most once every 30 minutes per conversation."
+  },
+  "ticket": {
+    "subject": "We replied to your request: {subject}",
+    "preheader": "There's a new reply from WagStays support.",
+    "title": "We replied to your request",
+    "intro": "Our support team replied to your request. Open it to read the reply and let us know if you need anything else.",
+    "reference": "Request",
+    "subjectLabel": "Subject",
+    "button": "View my request"
+  },
+  "welcome": {
+    "subject": "Welcome to WagStays 🐾",
+    "title": "Welcome to WagStays!",
+    "owner": {
+      "preheader": "Your account is ready. Here's how to find the right sitter.",
+      "intro": "Your email is confirmed and your account is ready. Here's how to get started:",
+      "stepPet": "1. Add your pet: tell sitters about their routine, quirks and favourite treats.",
+      "stepSitter": "2. Find a sitter: browse trusted, background-checked sitters near you.",
+      "stepMeet": "3. Book a free Meet & Greet: meet your sitter before the first booking, at no cost.",
+      "pending": "We're reviewing new accounts by hand right now. You can browse sitters in the meantime, and we'll email you as soon as you're approved to book.",
+      "button": "Find a sitter",
+      "secondary": "Add my pet"
+    },
+    "sitter": {
+      "preheader": "One more step to start sitting with WagStays.",
+      "intro": "Your email is confirmed. One more step to start sitting with WagStays: finish your sitter application.",
+      "next": "Once it's in, you'll book a short video Meet & Greet with our team, and we'll review your documents.",
+      "button": "Finish my application",
+      "inReview": "Your application {code} is in review. You can check its status at any time.",
+      "statusButton": "Check my application"
+    }
+  },
+  "application": {
+    "codeLabel": "Tracking code",
+    "statusButton": "Check my application",
+    "received": {
+      "subject": "We received your application",
+      "preheader": "Your tracking code is {code}.",
+      "title": "We received your application",
+      "intro": "Thanks for applying to sit with WagStays! Our team is now reviewing your application.",
+      "next": "Next step: book your 15-minute video Meet & Greet with our team from your status page.",
+      "note": "Keep your tracking code handy: you'll need it to check your status."
+    },
+    "meetGreet": {
+      "subject": "Your Meet & Greet is booked for {when}",
+      "subjectChanged": "Your Meet & Greet was moved to {when}",
+      "preheader": "See you on {when}.",
+      "title": "Your Meet & Greet is booked",
+      "titleChanged": "Your Meet & Greet has a new time",
+      "intro": "It's a 15-minute video call with our team to get to know you and answer your questions.",
+      "link": "We'll email you the video call link before your appointment.",
+      "date": "Date",
+      "time": "Time",
+      "timeValue": "{time} (Toronto time)",
+      "note": "Need a different time? You can change it from your status page.",
+      "when": "{date}, {time}"
+    },
+    "approved": {
+      "subject": "Welcome to the WagStays sitter team 🎉",
+      "preheader": "Your sitter profile is live.",
+      "title": "Welcome to the WagStays sitter team",
+      "intro": "Great news: your application is approved and your sitter profile is live!",
+      "next": "Head to your sitter dashboard to set your availability, review your services and add photos so pet parents can get to know you.",
+      "button": "Go to my sitter dashboard",
+      "newAccount": "First time signing in? On the login page, choose “Forgot your password?” with this email address to set your password."
+    },
+    "rejected": {
+      "subject": "An update on your WagStays application",
+      "preheader": "Thank you for applying to sit with WagStays.",
+      "title": "An update on your application",
+      "intro": "Thank you for applying to sit with WagStays and for the time you put into your application.",
+      "body": "After careful review, we're not able to move forward with it right now.",
+      "contact": "Have a question? Write to us at {email}. We're happy to help.",
+      "button": "Contact us"
+    }
+  },
+  "account": {
+    "approved": {
+      "subject": "You're all set to book 🐾",
+      "preheader": "Your WagStays account is approved.",
+      "title": "You're all set to book",
+      "intro": "Good news: your WagStays account is approved. You can now book sitters.",
+      "next": "Haven't added your pet yet? Do it first so sitters know who they'll be caring for.",
+      "button": "Find a sitter"
+    },
+    "rejected": {
+      "subject": "An update on your WagStays account",
+      "preheader": "About booking on WagStays.",
+      "title": "An update on your account",
+      "intro": "Thanks for joining WagStays. After reviewing your account, we're not able to approve it for booking right now. You can still browse sitters.",
+      "contact": "Think this is a mistake, or have a question? Our support team is happy to help.",
+      "button": "Contact support"
+    }
+  }
+}

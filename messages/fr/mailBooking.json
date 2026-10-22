@@ -1,0 +1,88 @@
+{
+  "service": "{type, select, DOG_WALKING {Promenade de chiens} BOARDING {Pension de nuit} DAY_CARE {Garderie pour chiens} other {Visites à domicile}}",
+  "noun": "{type, select, DOG_WALKING {promenade} BOARDING {pension} DAY_CARE {garderie} other {visite}}",
+  "series": "{count} {type, select, DOG_WALKING {promenades hebdomadaires} DAY_CARE {réservations de garderie hebdomadaires} other {visites hebdomadaires}}",
+  "details": {
+    "service": "Service",
+    "when": "Quand",
+    "schedule": "Horaire",
+    "starts": "Début",
+    "pets": "{count, plural, one {Animal} other {Animaux}}",
+    "youEarn": "Vos revenus",
+    "total": "Total",
+    "noteFrom": "Note de {name}",
+    "reason": "Raison"
+  },
+  "request": {
+    "subject": "Nouvelle demande de réservation de {owner}",
+    "subjectMeet": "Nouvelle demande de rencontre préalable de {owner}",
+    "title": "Nouvelle demande de réservation",
+    "titleMeet": "Nouvelle demande de rencontre préalable",
+    "preheader": "{owner} aimerait vous confier {pets}.",
+    "body": "{owner} aimerait réserver avec vous pour la {noun} de {pets}. Jetez-y un coup d'œil et répondez dès que possible pour l'aider à s'organiser.",
+    "bodySeries": "{owner} aimerait réserver avec vous {series} avec {pets}. Jetez-y un coup d'œil et répondez dès que possible pour l'aider à s'organiser.",
+    "bodyMeet": "{owner} aimerait faire une rencontre préalable gratuite avec vous avant la {noun} de {pets}. Consultez la demande et présentez-vous.",
+    "button": "Voir la demande",
+    "note": "La page de la réservation contient tous les détails des soins pour {pets}."
+  },
+  "nudge": {
+    "subject": "{owner} attend votre réponse",
+    "title": "Une demande vous attend",
+    "preheader": "{owner} vous a demandé de garder {pets}.",
+    "body": "{owner} vous a demandé de garder {pets} et attend toujours votre réponse. Un oui ou un non rapide l'aidera à s'organiser.",
+    "button": "Voir la demande"
+  },
+  "confirmed": {
+    "subject": "{sitter} a accepté votre réservation 🎉",
+    "title": "Votre réservation est confirmée",
+    "preheader": "Tout est prêt pour que {sitter} prenne soin de {pets}.",
+    "body": "Bonne nouvelle! {sitter} a accepté la {noun} de {pets}.",
+    "bodySeries": "Bonne nouvelle! {sitter} a accepté {series} pour {pets}.",
+    "tip": "Vous pouvez écrire à {sitter} en tout temps depuis votre réservation.",
+    "button": "Voir la réservation"
+  },
+  "declined": {
+    "subject": "{sitter} n'est pas disponible cette fois-ci",
+    "title": "{sitter} ne peut pas accepter cette réservation",
+    "preheader": "Trouvons un autre excellent gardien pour {pets}.",
+    "body": "Désolés, {sitter} ne peut pas s'occuper de la {noun} de {pets} cette fois-ci. Bien d'autres gardiens de confiance près de chez vous seraient ravis de rencontrer {pets}.",
+    "button": "Trouver un autre gardien"
+  },
+  "cancelled": {
+    "subjectByOwner": "{owner} a annulé la {noun} de {pets}",
+    "subjectBySitter": "{sitter} a annulé la {noun} de {pets}",
+    "subjectByAdmin": "La {noun} de {pets} a été annulée",
+    "title": "Réservation annulée",
+    "preheader": "La {noun} de {pets} du {date} est annulée.",
+    "bodyByOwner": "{owner} a annulé la {noun} de {pets}. Ces dates sont de nouveau libres dans votre calendrier.",
+    "bodyBySitter": "Désolés, {sitter} a dû annuler la {noun} de {pets}. Vous pouvez trouver un autre gardien pour les mêmes dates.",
+    "bodyByAdmin": "WagStays a annulé la {noun} de {pets}. Si vous avez des questions, notre équipe de soutien se fera un plaisir de vous aider.",
+    "points": "{amount} en WagPoints ont été remis dans votre portefeuille.",
+    "buttonView": "Voir la réservation",
+    "buttonFind": "Trouver un autre gardien"
+  },
+  "completed": {
+    "ownerSubject": "Comment s'est passée la {noun} de {pets} avec {sitter}?",
+    "ownerTitle": "Comment ça s'est passé?",
+    "ownerPreheader": "Parlez de {sitter} aux autres propriétaires.",
+    "ownerBody": "{sitter} a indiqué que la {noun} de {pets} est terminée. Nous espérons que tout s'est merveilleusement bien passé! Un court avis aide {sitter} et les autres propriétaires de votre quartier.",
+    "ownerButton": "Laisser un avis",
+    "sitterSubject": "Merci d'avoir pris soin de {pets}!",
+    "sitterTitle": "Beau travail!",
+    "sitterPreheader": "Comment s'est passée votre expérience avec {owner}?",
+    "sitterBody": "La {noun} de {pets} est terminée. Merci d'en avoir pris si bien soin.",
+    "sitterAsk": "Comment s'est passée votre expérience avec {owner}? Votre note ne prend qu'une minute et aide à garder WagStays agréable pour les gardiens.",
+    "sitterButton": "Noter {owner}"
+  },
+  "reminder": {
+    "ownerSubject": "Demain: {noun} de {pets} avec {sitter}",
+    "ownerTitle": "À demain!",
+    "ownerPreheader": "{sitter} prend soin de {pets} demain.",
+    "ownerBody": "Petit rappel: {sitter} prend soin de {pets} demain. Un changement à faire? Écrivez à {sitter} depuis votre réservation.",
+    "sitterSubject": "Demain: {noun} de {pets} pour {owner}",
+    "sitterTitle": "Vous êtes de service demain",
+    "sitterPreheader": "La {noun} de {pets} commence demain.",
+    "sitterBody": "Petit rappel: vous prenez soin de {pets} demain. La page de la réservation contient l'adresse de rencontre et les notes de soins.",
+    "button": "Voir la réservation"
+  }
+}

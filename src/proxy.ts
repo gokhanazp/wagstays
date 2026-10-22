@@ -12,7 +12,8 @@ const PRIVATE = ["/admin", "/account", "/sitter", "/messages", "/favourites", "/
 const NO_LOCALE = ["/admin", "/api", "/auth", "/r", "/offline", "/preview", "/manifest.webmanifest", "/sitemap.xml", "/robots.txt", "/sw.js"];
 
 // Reachable without the preview cookie while the site is in "coming soon" mode
-const GATE_OPEN = ["/coming-soon", "/fr/coming-soon", "/preview", "/api/cron", "/auth", "/offline", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/sw.js"];
+// legal pages stay public before launch (CASL: the privacy policy must be reachable from the consent form)
+const GATE_OPEN = ["/coming-soon", "/fr/coming-soon", "/unsubscribe", "/fr/unsubscribe", "/preview", "/api/cron", "/api/email", "/auth", "/offline", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/sw.js", "/privacy", "/fr/privacy", "/terms", "/fr/terms", "/pipeda", "/fr/pipeda"];
 
 const intl = createIntlMiddleware(routing);
 const under = (pathname: string, base: string) => pathname === base || pathname.startsWith(`${base}/`);

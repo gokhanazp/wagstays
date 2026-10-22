@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { getAdminOrNull } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { sendPush } from "@/lib/push";
+import { emailAccountApproval, sendLater } from "@/lib/events/email-misc";
 
 // Manual approval of pet parents (PlatformSettings.requireOwnerApproval). Approve / reject are audited.
 
@@ -33,6 +34,7 @@ export async function approveUser(userId: string): Promise<SimpleResult> {
   await db.user.update({ where: { id: user.id }, data: { approvalStatus: "APPROVED", approvedAt: new Date(), approvalNote: null } });
   await audit(admin.id, "user.approve", "User", user.id, { email: user.email, before: { approvalStatus: user.approvalStatus }, after: { approvalStatus: "APPROVED" } });
   await sendPush(user.id, { title: "You're approved 🐾", body: "You're approved — you can now book sitters on WagStays.", url: "/sitters", tag: "account-approval" });
+  sendLater(() => emailAccountApproval(user.id, "approved"));
   revalidateApproval(user.id);
   return { ok: true };
 }
@@ -54,6 +56,7 @@ export async function rejectUser(_: ApprovalState, formData: FormData): Promise<
 
   await db.user.update({ where: { id: user.id }, data: { approvalStatus: "REJECTED", approvedAt: null, approvalNote: reason } });
   await audit(admin.id, "user.reject", "User", user.id, { email: user.email, reason, before: { approvalStatus: user.approvalStatus }, after: { approvalStatus: "REJECTED" } });
+  if (user.approvalStatus !== "REJECTED") sendLater(() => emailAccountApproval(user.id, "rejected"));
   revalidateApproval(user.id);
   return { ok: true, message: "Account rejected — they can browse but can't book." };
 }

@@ -12,6 +12,7 @@ import { DEFAULT_TIME_ZONE } from "@/lib/constants";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 import { parseServiceAddons } from "@/lib/service-addons";
 import { ApprovalError, approveApplicationTx, fromZonedInput } from "@/lib/sitter-approval";
+import { emailApplicationApproved, emailApplicationRejected, emailMeetGreetBooked, sendLater } from "@/lib/events/email-misc";
 
 export type AdminFormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -69,6 +70,7 @@ export async function scheduleMeetGreet(_: AdminFormState, formData: FormData): 
     before: { status: app.status, meetGreetAt: app.meetGreetAt },
     after: { status: "MEET_GREET", meetGreetAt: at },
   });
+  if (app.meetGreetAt?.getTime() !== at.getTime()) sendLater(() => emailMeetGreetBooked(app.id, { changed: !!app.meetGreetAt }));
   revalidateApplication(app.id);
   return { ok: true, message: app.meetGreetAt ? "Meet & Greet rescheduled." : "Meet & Greet scheduled." };
 }
@@ -127,6 +129,7 @@ export async function approveApplication(_: AdminFormState, formData: FormData):
     before,
     after: { status: "APPROVED", sitterProfileId: profile.id, slug: profile.slug, userId: user.id, createdUser },
   });
+  sendLater(() => emailApplicationApproved(parsed.data.applicationId, { newAccount: createdUser }));
   revalidateApplication(parsed.data.applicationId);
   revalidateSitter(profile.id, profile.slug);
   const setup = createdUser ? await createPasswordLink(user.email).catch(() => null) : null;
@@ -167,6 +170,7 @@ export async function rejectApplication(_: AdminFormState, formData: FormData): 
     before: { status: app.status },
     after: { status: "REJECTED", reason: parsed.data.reason },
   });
+  sendLater(() => emailApplicationRejected(app.id));
   revalidateApplication(app.id);
   return { ok: true, message: "Application rejected." };
 }
