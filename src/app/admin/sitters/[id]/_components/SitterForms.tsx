@@ -42,6 +42,31 @@ export type SitterFormValues = {
   professionalTrainer: boolean;
 };
 
+/**
+ * Sitters are independent contractors: prices, services and pets change only at their request. The admin must tick
+ * the box and note the request; the sitter gets a confirmation email.
+ */
+function OnRequestFields({ error }: { error?: string }) {
+  return (
+    <div className="flex flex-col gap-space-xs p-space-sm rounded-xl bg-tertiary-fixed/40">
+      <label className="inline-flex items-start gap-space-xs cursor-pointer">
+        <input className="accent-primary w-4 h-4 mt-0.5" name="requestedBySitter" type="checkbox" />
+        <span className="font-label-md text-label-md text-on-surface">The sitter asked for this change</span>
+      </label>
+      <input
+        aria-label="Sitter's request"
+        className={`${INPUT} h-10`}
+        maxLength={500}
+        name="requestNote"
+        placeholder="How and when they asked, e.g. “Support ticket WS-1234, Nov 13: raise walk price to $35”"
+      />
+      <span className={`font-body-sm text-body-sm ${error ? "text-error" : "text-on-surface-variant"}`}>
+        {error ?? "Sitters set their own prices, services and pets — only change these when they ask. They'll get an email confirming the change."}
+      </span>
+    </div>
+  );
+}
+
 const SECTION = "flex flex-col gap-space-md";
 const H3 = "font-label-lg text-label-lg uppercase tracking-wide text-on-surface-variant";
 
@@ -160,7 +185,8 @@ export function ServiceRowForm({
 }) {
   const [state, action, pending] = useActionState(updateService, undefined);
   const fe = state?.fieldErrors;
-  const err = fe?.price?.[0] ?? fe?.additionalPet?.[0] ?? fe?.maxPets?.[0] ?? fe?.holiday?.[0] ?? fe?.puppy?.[0] ?? state?.error;
+  const requestErr = fe?.requestNote?.[0];
+  const err = fe?.price?.[0] ?? fe?.additionalPet?.[0] ?? fe?.maxPets?.[0] ?? fe?.holiday?.[0] ?? fe?.puppy?.[0] ?? (requestErr ? undefined : state?.error);
   const [multi, setMulti] = useState(service.additionalPetPriceCents != null);
   const dollars = (c: number | null) => (c == null ? "" : c / 100);
   const small = `${INPUT} pl-7 h-10`;
@@ -217,6 +243,7 @@ export function ServiceRowForm({
           <input className={small} defaultValue={dollars(service.puppyPriceCents)} inputMode="decimal" name="puppy" placeholder="—" step="0.01" type="number" />
         </label>
       </div>
+      <OnRequestFields error={requestErr} />
       {err && <span className="font-body-sm text-body-sm text-error">{err}</span>}
       {state?.ok && state.message && <span className="font-body-sm text-body-sm text-primary">{state.message}</span>}
     </form>
@@ -237,7 +264,8 @@ export function SpeciesForm({ sitterId, kinds, offersDogWalking }: { sitterId: s
         Shown on the profile, used by search filters and enforced at booking.{offersDogWalking && " Dogs are locked while Dog Walking is active."}
       </p>
       <PetKindPicker defaultValue={kinds} locked={offersDogWalking ? ["DOG"] : []} lockedHint="Dog Walking is active" />
-      <Feedback state={state} />
+      <OnRequestFields error={state?.fieldErrors?.requestNote?.[0]} />
+      {!state?.fieldErrors?.requestNote && <Feedback state={state} />}
       <div className="flex justify-end">
         <button className={`${BTN.small} bg-[#EBF3EF] text-primary border border-[#C8DDD4] hover:bg-[#DCECE4]`} disabled={pending} type="submit">
           {pending ? "Saving…" : "Save pets"}

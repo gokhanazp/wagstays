@@ -40,6 +40,7 @@ export default async function TermsPage() {
         <>
           <p>{t("marketplace.p1")}</p>
           <p>{t("marketplace.p2")}</p>
+          <p>{t("marketplace.p3")}</p>
         </>
       ),
     },
@@ -101,7 +102,12 @@ export default async function TermsPage() {
     {
       id: "messaging",
       title: t("messaging.title"),
-      body: <p>{t("messaging.p1")}</p>,
+      body: (
+        <>
+          <p>{t("messaging.p1")}</p>
+          <p>{t("messaging.p2")}</p>
+        </>
+      ),
     },
     {
       id: "wagshield",

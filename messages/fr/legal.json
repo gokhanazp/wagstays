@@ -28,7 +28,8 @@
     "marketplace": {
       "title": "WagStays est une place de marché",
       "p1": "WagStays met en relation des propriétaires d'animaux (les « Propriétaires ») et des fournisseurs indépendants de soins aux animaux (les « Gardiens »). Les Gardiens sont des entrepreneurs indépendants, et non des employés ou des mandataires de WagStays. Chaque réservation est un contrat conclu directement entre le Propriétaire et le Gardien; WagStays fournit les outils pour trouver, réserver, payer et communiquer.",
-      "p2": "Nous vérifions les Gardiens comme il est décrit sur notre site (par exemple, une pièce d'identité avec photo émise par le gouvernement et une vérification des antécédents en vue d'un travail auprès de personnes vulnérables), mais nous ne garantissons pas la qualité, la sécurité ou la légalité des services."
+      "p2": "Nous vérifions les Gardiens comme il est décrit sur notre site (par exemple, une pièce d'identité avec photo émise par le gouvernement et une vérification des antécédents en vue d'un travail auprès de personnes vulnérables), mais nous ne garantissons pas la qualité, la sécurité ou la légalité des services.",
+      "p3": "Les Gardiens décident eux-mêmes d'offrir ou non leurs services et à quelles conditions : ils fixent leurs propres prix, services, disponibilités, zone de service et façon de prendre soin des animaux, et peuvent accepter ou refuser toute demande. WagStays ne dirige ni ne supervise la façon dont les Gardiens fournissent leurs services."
     },
     "accounts": {
       "title": "Comptes et admissibilité",
@@ -59,7 +60,8 @@
     },
     "messaging": {
       "title": "Messages et avis",
-      "p1": "Utilisez la messagerie WagStays pour discuter des réservations. Pour protéger la communauté, nous pouvons examiner les messages qui nous sont signalés ou repérés par des outils de sécurité automatisés. Les avis doivent refléter une expérience réelle. Nous pouvons retirer tout contenu qui enfreint les présentes Conditions."
+      "p1": "Utilisez la messagerie WagStays pour discuter des réservations. Pour protéger la communauté, nous pouvons examiner les messages qui nous sont signalés ou repérés par des outils de sécurité automatisés. Les avis doivent refléter une expérience réelle. Nous pouvons retirer tout contenu qui enfreint les présentes Conditions.",
+      "p2": "Contenu des profils. Pour corriger des erreurs de fait évidentes, retirer du contenu qui enfreint les présentes Conditions, protéger les personnes et les animaux ou respecter la loi, nous pouvons modifier ou masquer du contenu du profil d'un Gardien (par exemple du texte, des photos, des étiquettes ou des compétences). Nous informerons le Gardien par courriel de ce qui a changé et pourquoi. Nous ne modifions jamais les prix, les services ou les disponibilités d'un Gardien, sauf à sa demande."
     },
     "wagshield": {
       "title": "Protection WagShield",

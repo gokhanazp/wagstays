@@ -12,7 +12,7 @@ import { DEFAULT_TIME_ZONE } from "@/lib/constants";
 import { PET_KINDS, normalizeKinds } from "@/lib/pets";
 import { parseServiceAddons } from "@/lib/service-addons";
 import { ApprovalError, approveApplicationTx, fromZonedInput } from "@/lib/sitter-approval";
-import { emailApplicationApproved, emailApplicationRejected, emailMeetGreetBooked, sendLater } from "@/lib/events/email-misc";
+import { emailApplicationApproved, emailApplicationRejected, emailMeetGreetBooked, emailSitterProfileEdited, sendLater, type ProfileEditField } from "@/lib/events/email-misc";
 
 export type AdminFormState =
   | { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string[] | undefined> }
@@ -270,6 +270,8 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
   const svc = await db.service.findUnique({ where: { id: parsed.data.serviceId }, include: { sitter: { select: { id: true, slug: true } } } });
   if (!svc) return { error: "Service not found." };
 
+  const request = onRequest(formData);
+  if ("error" in request) return request;
   const priceCents = Math.round(parsed.data.price * 100);
   const active = parsed.data.active;
   const addons = parseServiceAddons(Object.fromEntries(formData) as Record<string, FormDataEntryValue>, priceCents, svc.type);
@@ -295,9 +297,12 @@ export async function updateService(_: AdminFormState, formData: FormData): Prom
     sitterId: svc.sitterId,
     before: { priceCents: svc.priceCents, active: svc.active, ...beforeRates },
     after: { priceCents, active, ...rates },
+    requestedBySitter: request.note,
   });
+  const owner = await db.sitterProfile.findUnique({ where: { id: svc.sitterId }, select: { userId: true } });
+  if (owner) sendLater(() => emailSitterProfileEdited(owner.userId, ["prices"], request.note, true));
   revalidateSitter(svc.sitter.id, svc.sitter.slug);
-  return { ok: true, message: "Saved." };
+  return { ok: true, message: "Saved — the sitter has been emailed a confirmation." };
 }
 
 const SpeciesSchema = z.object({
@@ -316,10 +321,12 @@ export async function updateSitterSpecies(_: AdminFormState, formData: FormData)
     const fieldErrors = z.flattenError(parsed.error).fieldErrors;
     return { error: Object.values(fieldErrors).flat()[0] ?? "Please check the form.", fieldErrors };
   }
+  const request = onRequest(formData);
+  if ("error" in request) return request;
   const { sitterId, kinds } = parsed.data;
   const sitter = await db.sitterProfile.findUnique({
     where: { id: sitterId },
-    select: { id: true, slug: true, species: { select: { kind: true } }, services: { where: { type: "DOG_WALKING", active: true }, select: { id: true } } },
+    select: { id: true, slug: true, userId: true, species: { select: { kind: true } }, services: { where: { type: "DOG_WALKING", active: true }, select: { id: true } } },
   });
   if (!sitter) return { error: "Sitter not found." };
   if (!kinds.includes("DOG") && sitter.services.length) {
@@ -331,7 +338,111 @@ export async function updateSitterSpecies(_: AdminFormState, formData: FormData)
     db.sitterSpecies.deleteMany({ where: { sitterId, kind: { notIn: kinds } } }),
     db.sitterSpecies.createMany({ data: kinds.map((kind) => ({ sitterId, kind })), skipDuplicates: true }),
   ]);
-  await audit(admin.id, "sitter.species", "SitterProfile", sitterId, { before: { kinds: before }, after: { kinds } });
+  await audit(admin.id, "sitter.species", "SitterProfile", sitterId, { before: { kinds: before }, after: { kinds }, requestedBySitter: request.note });
+  sendLater(() => emailSitterProfileEdited(sitter.userId, ["pets"], request.note, true));
   revalidateSitter(sitterId, sitter.slug);
-  return { ok: true, message: "Pets updated." };
+  return { ok: true, message: "Pets updated — the sitter has been emailed a confirmation." };
+}
+
+// ---------------------------------------------------------------------------
+// Profile moderation (Terms → "Profile content"). Sitters are independent contractors: their prices, services and
+// availability only change at their own request (see onRequest); content edits always carry a reason, go to the
+// audit log and are emailed to the sitter.
+// ---------------------------------------------------------------------------
+
+/** Price/service/pet changes need "requested by the sitter" ticked plus a note describing the request. */
+function onRequest(formData: FormData): { note: string } | { error: string; fieldErrors: Record<string, string[]> } {
+  const requested = formData.get("requestedBySitter") === "on";
+  const note = String(formData.get("requestNote") ?? "").trim();
+  if (!requested || note.length < 10) {
+    return {
+      error: "Sitters set their own prices, services and pets. Only change these when the sitter asks — tick the box and note their request.",
+      fieldErrors: { requestNote: ["Describe the sitter's request (when and how they asked) — at least 10 characters."] },
+    };
+  }
+  return { note: note.slice(0, 500) };
+}
+
+const reasonField = z.string().trim().min(10, "Explain why (at least 10 characters) — the sitter will see this.").max(500, "Keep the reason under 500 characters.");
+
+const CONTENT_FIELDS = ["displayName", "headline", "bio", "about", "residentPetName", "locationNote", "serviceAreaNote", "homeTitle", "homeNote", "otherPetsNote", "yearsExperience"] as const;
+
+const ContentSchema = z.object({
+  sitterId: id,
+  reason: reasonField,
+  displayName: z.string().trim().min(2, "Enter a display name.").max(60),
+  headline: z.string().trim().min(3, "Headline is too short.").max(80),
+  bio: z.string().trim().min(20, "Bio needs at least 20 characters.").max(500),
+  about: optionalText(4000),
+  residentPetName: optionalText(40),
+  locationNote: optionalText(80),
+  serviceAreaNote: optionalText(200),
+  homeTitle: optionalText(60),
+  homeNote: optionalText(200),
+  otherPetsNote: optionalText(200),
+  yearsExperience: z.coerce.number().int().min(0).max(60),
+});
+
+/** Edits a sitter's profile text (moderation / factual corrections). */
+export async function updateSitterContent(_: AdminFormState, formData: FormData): Promise<AdminFormState> {
+  const admin = await getAdminOrNull();
+  if (!admin) return NOT_ALLOWED;
+  const parsed = ContentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Please fix the highlighted fields.", fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  const { sitterId, reason, ...next } = parsed.data;
+  const sitter = await db.sitterProfile.findUnique({ where: { id: sitterId } });
+  if (!sitter) return { error: "Sitter not found." };
+  const changed = CONTENT_FIELDS.filter((k) => (sitter[k] ?? null) !== (next[k] ?? null));
+  if (!changed.length) return { ok: true, message: "No changes to save." };
+  const before = Object.fromEntries(changed.map((k) => [k, sitter[k]]));
+  const after = Object.fromEntries(changed.map((k) => [k, next[k]]));
+  await db.sitterProfile.update({ where: { id: sitterId }, data: after });
+  await audit(admin.id, "sitter.content_edit", "SitterProfile", sitterId, { before, after, reason });
+  sendLater(() => emailSitterProfileEdited(sitter.userId, changed as ProfileEditField[], reason));
+  revalidateSitter(sitterId, sitter.slug);
+  return { ok: true, message: `Saved ${changed.length} change${changed.length === 1 ? "" : "s"} — the sitter has been emailed.` };
+}
+
+const PLACEHOLDER_AVATAR = "/brand/wagstays-mark.png";
+
+const RemoveSchema = z.object({
+  sitterId: id,
+  target: z.enum(["photo", "tag", "skill", "avatar"]),
+  targetId: z.string().trim().max(64).optional(),
+  reason: reasonField,
+});
+
+/** Removes a gallery photo, tag or skill, or replaces the profile photo with the WagStays placeholder. */
+export async function removeSitterContent(_: AdminFormState, formData: FormData): Promise<AdminFormState> {
+  const admin = await getAdminOrNull();
+  if (!admin) return NOT_ALLOWED;
+  const parsed = RemoveSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Please fix the highlighted fields.", fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  const { sitterId, target, targetId, reason } = parsed.data;
+  const sitter = await db.sitterProfile.findUnique({ where: { id: sitterId }, select: { id: true, slug: true, userId: true, avatarUrl: true } });
+  if (!sitter) return { error: "Sitter not found." };
+  let removed: unknown;
+  if (target === "avatar") {
+    if (sitter.avatarUrl === PLACEHOLDER_AVATAR) return { ok: true, message: "The profile photo is already the placeholder." };
+    await db.sitterProfile.update({ where: { id: sitterId }, data: { avatarUrl: PLACEHOLDER_AVATAR, cardPhotoUrl: null, mapPhotoUrl: null } });
+    removed = { avatarUrl: sitter.avatarUrl };
+  } else {
+    if (!targetId) return { error: "Nothing selected." };
+    const where = { id: targetId, sitterId };
+    const row =
+      target === "photo"
+        ? await db.sitterPhoto.findFirst({ where })
+        : target === "tag"
+          ? await db.sitterTag.findFirst({ where })
+          : await db.sitterSkill.findFirst({ where });
+    if (!row) return { error: "Already removed." };
+    if (target === "photo") await db.sitterPhoto.delete({ where: { id: targetId } });
+    else if (target === "tag") await db.sitterTag.delete({ where: { id: targetId } });
+    else await db.sitterSkill.delete({ where: { id: targetId } });
+    removed = row;
+  }
+  await audit(admin.id, `sitter.remove_${target}`, "SitterProfile", sitterId, { removed, reason });
+  sendLater(() => emailSitterProfileEdited(sitter.userId, [target], reason));
+  revalidateSitter(sitterId, sitter.slug);
+  return { ok: true, message: "Removed — the sitter has been emailed." };
 }

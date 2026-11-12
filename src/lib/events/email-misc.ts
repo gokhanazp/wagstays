@@ -321,3 +321,34 @@ export async function emailAccountApproval(userId: string, decision: "approved" 
       : { label: t("account.rejected.button"), url: emailUrl("/account/support/new", r.locale) },
   });
 }
+
+export type ProfileEditField =
+  | "displayName" | "headline" | "bio" | "about" | "residentPetName" | "locationNote" | "serviceAreaNote" | "homeTitle" | "homeNote"
+  | "otherPetsNote" | "yearsExperience" | "avatar" | "photo" | "tag" | "skill" | "prices" | "pets";
+
+/**
+ * Tells a sitter what an admin changed on their profile and why (Terms: profile content moderation).
+ * `byRequest` = the change was made at the sitter's own request (prices/services/pets can only change that way).
+ */
+export async function emailSitterProfileEdited(sitterUserId: string, changes: ProfileEditField[], reason: string, byRequest = false) {
+  const r = await getRecipient(sitterUserId);
+  if (!r || !changes.length) return;
+  const t = mailT(r.locale, "mailMisc");
+  await sendEmail({
+    to: r.email,
+    kind: "sitter.profile_edited",
+    userId: r.id,
+    locale: r.locale,
+    subject: byRequest ? t("profileEdit.subjectRequest") : t("profileEdit.subject"),
+    preheader: t("profileEdit.preheader"),
+    title: byRequest ? t("profileEdit.titleRequest") : t("profileEdit.title"),
+    name: r.firstName,
+    paragraphs: [byRequest ? t("profileEdit.introRequest") : t("profileEdit.intro")],
+    details: [
+      { label: t("profileEdit.changed"), value: [...new Set(changes)].map((c) => t(`profileEdit.fields.${c}`)).join(", ") },
+      { label: byRequest ? t("profileEdit.requestNote") : t("profileEdit.reason"), value: reason },
+    ],
+    button: { label: t("profileEdit.button"), url: emailUrl("/sitter/profile", r.locale) },
+    note: t("profileEdit.note"),
+  });
+}

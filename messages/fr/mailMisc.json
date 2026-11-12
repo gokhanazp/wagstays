@@ -99,5 +99,38 @@
       "contact": "Vous croyez qu'il s'agit d'une erreur ou vous avez une question? Notre équipe de soutien est là pour vous aider.",
       "button": "Joindre le soutien"
     }
+  },
+  "profileEdit": {
+    "subject": "Nous avons mis à jour votre profil WagStays",
+    "subjectRequest": "La modification de votre profil WagStays est faite",
+    "preheader": "Voici ce qui a changé et pourquoi.",
+    "title": "Nous avons modifié votre profil",
+    "titleRequest": "La modification demandée est faite",
+    "intro": "Notre équipe a mis à jour votre profil de gardien WagStays. Voici ce qui a changé et pourquoi.",
+    "introRequest": "Comme vous l'avez demandé, notre équipe a mis à jour votre profil de gardien WagStays.",
+    "changed": "Ce qui a changé",
+    "reason": "Pourquoi",
+    "requestNote": "Votre demande",
+    "button": "Voir mon profil",
+    "note": "Des questions, ou vous pensez qu'il s'agit d'une erreur? Écrivez-nous dans Aide et soutien et nous y jetterons un autre coup d'œil. Vous pouvez modifier votre profil en tout temps depuis votre tableau de bord de gardien.",
+    "fields": {
+      "displayName": "Nom affiché",
+      "headline": "Titre",
+      "bio": "Courte biographie",
+      "about": "À propos de vous",
+      "residentPetName": "Nom de votre animal",
+      "locationNote": "Note sur l'emplacement",
+      "serviceAreaNote": "Note sur la zone de service",
+      "homeTitle": "Titre du domicile",
+      "homeNote": "Description du domicile",
+      "otherPetsNote": "Note sur les autres animaux",
+      "yearsExperience": "Années d'expérience",
+      "avatar": "Photo de profil",
+      "photo": "Une photo de la galerie",
+      "tag": "Une étiquette du profil",
+      "skill": "Une compétence",
+      "prices": "Prix et options des services",
+      "pets": "Animaux acceptés"
+    }
   }
 }

@@ -99,5 +99,38 @@
       "contact": "Think this is a mistake, or have a question? Our support team is happy to help.",
       "button": "Contact support"
     }
+  },
+  "profileEdit": {
+    "subject": "We updated your WagStays profile",
+    "subjectRequest": "Your WagStays profile change is done",
+    "preheader": "Here's what changed and why.",
+    "title": "We made a change to your profile",
+    "titleRequest": "Your requested change is done",
+    "intro": "Our team updated your WagStays sitter profile. Here's what changed and why.",
+    "introRequest": "As you asked, our team updated your WagStays sitter profile.",
+    "changed": "What changed",
+    "reason": "Why",
+    "requestNote": "Your request",
+    "button": "Review my profile",
+    "note": "Questions or think this was a mistake? Reply through Help & Support and we'll take another look. You can edit your profile at any time from your sitter dashboard.",
+    "fields": {
+      "displayName": "Display name",
+      "headline": "Headline",
+      "bio": "Short bio",
+      "about": "About you",
+      "residentPetName": "Resident pet's name",
+      "locationNote": "Location note",
+      "serviceAreaNote": "Service area note",
+      "homeTitle": "Home title",
+      "homeNote": "Home description",
+      "otherPetsNote": "Other pets note",
+      "yearsExperience": "Years of experience",
+      "avatar": "Profile photo",
+      "photo": "A gallery photo",
+      "tag": "A profile tag",
+      "skill": "A skill",
+      "prices": "Service prices and options",
+      "pets": "Pets you accept"
+    }
   }
 }

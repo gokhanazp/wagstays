@@ -12,7 +12,7 @@ const DOCS = [
   { href: "/pipeda", key: "pipeda" },
 ] as const;
 
-export const LAST_UPDATED = new Date(2026, 9, 2);
+export const LAST_UPDATED = new Date(2026, 10, 13);
 
 export function LegalDocument({
   title,

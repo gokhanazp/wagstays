@@ -15,6 +15,7 @@ import {
 } from "@/lib/constants";
 import { BTN, Card, CardHeader, EmptyState, PageHeader, StatCard, StatusChip, TD, TH, Table, formatDate } from "@/components/ui";
 import { ServiceRowForm, SitterForm, SpeciesForm } from "./_components/SitterForms";
+import { RemoveContentButton, SitterContentForm } from "./_components/ModerationForms";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -34,6 +35,9 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
       services: { include: { _count: { select: { bookings: true } } } },
       application: { select: { id: true, trackingCode: true } },
       species: { select: { kind: true } },
+      photos: { orderBy: { sortOrder: "asc" } },
+      tags: { orderBy: { sortOrder: "asc" } },
+      skills: { orderBy: { sortOrder: "asc" } },
       _count: { select: { bookings: true, reviews: true, favorites: true } },
     },
   });
@@ -70,7 +74,7 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
                 <StatusChip tone={sitter.status === "ACTIVE" ? "success" : "neutral"}>{sitter.status === "ACTIVE" ? "Active" : "Paused"}</StatusChip>
                 <Link className={BTN.secondary} href={`/sitters/${sitter.slug}`} target="_blank">
                   <span className="material-symbols-outlined text-lg">open_in_new</span>
-                  Public profile
+                  View as a customer
                 </Link>
               </>
             }
@@ -202,6 +206,67 @@ export default async function AdminSitterPage({ params }: { params: Promise<{ id
             )}
           </Card>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-space-lg items-start">
+        <Card className="pb-space-lg">
+          <CardHeader icon="edit_note" title="Profile content (moderation)" />
+          <div className="pt-space-md">
+            <SitterContentForm
+              sitter={{
+                id: sitter.id,
+                displayName: sitter.displayName,
+                headline: sitter.headline,
+                bio: sitter.bio,
+                about: sitter.about,
+                residentPetName: sitter.residentPetName,
+                locationNote: sitter.locationNote,
+                serviceAreaNote: sitter.serviceAreaNote,
+                homeTitle: sitter.homeTitle,
+                homeNote: sitter.homeNote,
+                otherPetsNote: sitter.otherPetsNote,
+                yearsExperience: sitter.yearsExperience,
+              }}
+            />
+          </div>
+        </Card>
+
+        <Card className="pb-space-lg">
+          <CardHeader icon="photo_library" title="Photos, tags & skills" />
+          <div className="px-space-lg pt-space-md flex flex-col gap-space-lg">
+            <p className="font-body-sm text-body-sm text-on-surface-variant">Remove content that breaks our Terms. Each removal needs a reason and is emailed to the sitter.</p>
+            <div className="flex items-center gap-space-md">
+              <Image alt="Profile photo" className="w-16 h-16 rounded-2xl object-cover" height={64} src={sitter.avatarUrl} width={64} />
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <span className="font-label-lg text-label-lg text-on-surface">Profile photo</span>
+                <RemoveContentButton label="Replace with placeholder" sitterId={sitter.id} target="avatar" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-space-sm">
+              <span className="font-label-md text-label-md text-on-surface-variant">Gallery ({sitter.photos.length})</span>
+              {sitter.photos.length === 0 && <span className="font-body-sm text-body-sm text-on-surface-variant">No gallery photos.</span>}
+              {sitter.photos.map((ph) => (
+                <div className="flex items-start gap-space-md" key={ph.id}>
+                  <Image alt={ph.caption ?? ""} className="w-16 h-16 rounded-xl object-cover shrink-0" height={64} src={ph.url} width={64} />
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <span className="font-body-sm text-body-sm text-on-surface truncate">{ph.caption ?? "No caption"}</span>
+                    <RemoveContentButton sitterId={sitter.id} target="photo" targetId={ph.id} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-space-sm">
+              <span className="font-label-md text-label-md text-on-surface-variant">Tags & skills</span>
+              {sitter.tags.length + sitter.skills.length === 0 && <span className="font-body-sm text-body-sm text-on-surface-variant">None.</span>}
+              {[...sitter.tags.map((x) => ({ id: x.id, label: x.label, target: "tag" as const })), ...sitter.skills.map((x) => ({ id: x.id, label: `${x.emoji ?? ""} ${x.label}`.trim(), target: "skill" as const }))].map((x) => (
+                <div className="flex flex-wrap items-center justify-between gap-space-sm" key={x.id}>
+                  <StatusChip tone={x.target === "tag" ? "primary" : "neutral"}>{x.label}</StatusChip>
+                  <RemoveContentButton sitterId={sitter.id} target={x.target} targetId={x.id} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Card>

@@ -28,7 +28,8 @@
     "marketplace": {
       "title": "WagStays is a marketplace",
       "p1": "WagStays connects pet parents (\"Owners\") with independent pet care providers (\"Sitters\"). Sitters are independent contractors, not employees or agents of WagStays. Each booking is a contract directly between the Owner and the Sitter; WagStays provides the tools to find, book, pay and communicate.",
-      "p2": "We verify Sitters as described on our site (for example government-issued photo ID and a Police Vulnerable Sector Check), but we don't guarantee the quality, safety or legality of any service."
+      "p2": "We verify Sitters as described on our site (for example government-issued photo ID and a Police Vulnerable Sector Check), but we don't guarantee the quality, safety or legality of any service.",
+      "p3": "Sitters decide for themselves whether to offer care and on what terms: they set their own prices, services, availability, service area and the way they care for pets, and they can accept or decline any request. WagStays does not direct or supervise how Sitters provide their services."
     },
     "accounts": {
       "title": "Accounts and eligibility",
@@ -59,7 +60,8 @@
     },
     "messaging": {
       "title": "Messages and reviews",
-      "p1": "Use WagStays messaging to discuss bookings. To protect the community, we may review messages that are reported to us or flagged by automated safety tools. Reviews must reflect a genuine experience. We may remove content that breaks these Terms."
+      "p1": "Use WagStays messaging to discuss bookings. To protect the community, we may review messages that are reported to us or flagged by automated safety tools. Reviews must reflect a genuine experience. We may remove content that breaks these Terms.",
+      "p2": "Profile content. To correct clear factual errors, remove content that breaks these Terms, protect people and pets, or comply with the law, we may edit or hide content on a Sitter's profile (for example text, photos, tags or skills). We'll tell the Sitter by email what changed and why. We never change a Sitter's prices, services or availability unless the Sitter asks us to."
     },
     "wagshield": {
       "title": "WagShield Protection",
