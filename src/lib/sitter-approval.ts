@@ -131,7 +131,7 @@ export async function approveApplicationTx(tx: Tx, applicationId: string, defaul
       },
     });
     createdUser = true;
-  } else if (user.role !== "ADMIN") {
+  } else if (user.role !== "SITTER") {
     // An approved sitter has passed ID and police checks, so any pending pet-parent approval is settled too.
     user = await tx.user.update({
       where: { id: user.id },

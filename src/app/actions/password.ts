@@ -31,8 +31,8 @@ export async function setPassword(_: SetPasswordState, formData: FormData): Prom
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { error: error.code === "same_password" ? t("samePassword") : error.message };
-  const user = await db.user.findUnique({ where: { id: auth.id }, select: { role: true } });
-  redirect(await localizedPath(user?.role === "SITTER" ? "/sitter" : user?.role === "ADMIN" ? "/admin" : "/"));
+  const user = await db.user.findUnique({ where: { id: auth.id }, select: { role: true, isAdmin: true } });
+  redirect(await localizedPath(user?.isAdmin ? "/admin" : user?.role === "SITTER" ? "/sitter" : "/"));
 }
 
 /** Admin: issue a set-password link for a user (shown once in the admin UI). */

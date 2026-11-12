@@ -41,7 +41,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     where: { id },
     include: {
       services: true,
-      user: { select: { id: true, email: true, role: true, createdAt: true } },
+      user: { select: { id: true, email: true, role: true, isAdmin: true, createdAt: true } },
       sitterProfile: { select: { id: true, slug: true, displayName: true, status: true } },
       files: { orderBy: { createdAt: "asc" } },
     },
@@ -61,7 +61,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       include: { actor: { select: { firstName: true, lastName: true } } },
       orderBy: { createdAt: "asc" },
     }),
-    app.user ? null : db.user.findUnique({ where: { email: app.email.toLowerCase() }, select: { id: true, role: true, createdAt: true } }),
+    app.user ? null : db.user.findUnique({ where: { email: app.email.toLowerCase() }, select: { id: true, role: true, isAdmin: true, createdAt: true } }),
   ]);
   const tz = city.timeZone;
   const hood = city.neighbourhoods.find((n) => n.slug === app.neighbourhood || n.name === app.neighbourhood);
@@ -137,7 +137,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 label="WagStays account"
                 value={
                   account
-                    ? `${account.role === "ADMIN" ? "Admin" : account.role === "SITTER" ? "Sitter" : "Pet parent"} account since ${formatDate(account.createdAt, tz)}`
+                    ? `${account.isAdmin ? "Admin" : account.role === "SITTER" ? "Sitter" : "Pet parent"} account since ${formatDate(account.createdAt, tz)}`
                     : "No account yet — one will be created on approval"
                 }
               />

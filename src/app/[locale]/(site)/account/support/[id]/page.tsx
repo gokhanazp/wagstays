@@ -53,7 +53,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/[
   if (!ticket) notFound();
   if (ticket.openedById !== user.id) {
     // Admins handle other people's tickets from the admin panel; everyone else gets a 404.
-    if (user.role === "ADMIN") redirect(await localizedPath(`/admin/support/${ticket.id}`));
+    if (user.isAdmin) redirect(await localizedPath(`/admin/support/${ticket.id}`));
     notFound();
   }
 

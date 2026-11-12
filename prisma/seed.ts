@@ -309,7 +309,7 @@ async function main() {
 
 
   const admin = await db.user.create({
-    data: { id: await authUser("admin@wagstays.ca", "Admin", "WagStays"), email: "admin@wagstays.ca", firstName: "Admin", lastName: "WagStays", role: "ADMIN" },
+    data: { id: await authUser("admin@wagstays.ca", "Admin", "WagStays"), email: "admin@wagstays.ca", firstName: "Admin", lastName: "WagStays", isAdmin: true },
   });
 
   const emily = await db.user.create({

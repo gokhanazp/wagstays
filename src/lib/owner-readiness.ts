@@ -32,12 +32,12 @@ export const getOwnerReadiness = cache(async (userId: string, locale: string = "
   const [user, settings] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
-      select: { role: true, phone: true, approvalStatus: true, _count: { select: { pets: { where: { archivedAt: null } } } } },
+      select: { role: true, isAdmin: true, phone: true, approvalStatus: true, _count: { select: { pets: { where: { archivedAt: null } } } } },
     }),
     getPlatformSettings(),
   ]);
   if (!user) return { ready: false, steps: [], phone: null };
-  if (user.role === "ADMIN") return { ready: true, steps: [], phone: user.phone };
+  if (user.isAdmin) return { ready: true, steps: [], phone: user.phone };
 
   const phone = normalizeNaPhone(user.phone);
   const steps: ReadinessStep[] = [

@@ -50,7 +50,10 @@ model User {
   lastName     String
   phone        String?
   avatarUrl    String?
-  role         String              @default("OWNER") // OWNER | SITTER | ADMIN
+  // Capabilities can be combined: every account can book care (pet parent); role "SITTER" = also a sitter
+  // (approved sitter, has/gets a SitterProfile); isAdmin = also has the admin panel.
+  role         String              @default("OWNER") // OWNER | SITTER
+  isAdmin      Boolean             @default(false)
   suspended    Boolean             @default(false)
   approvalStatus String            @default("APPROVED") // APPROVED | PENDING | REJECTED — pet parents, only used when PlatformSettings.requireOwnerApproval is on
   approvedAt   DateTime?

@@ -23,7 +23,7 @@ export async function Header() {
   const unread = user ? await getUnreadCount(user.id) : 0;
   const [t, locale] = await Promise.all([getTranslations("common"), getLocale()]);
   const badge = user
-    ? user.role === "ADMIN" && !user._count.pets
+    ? user.isAdmin && !user._count.pets
       ? t("header.badgeAdmin")
       : user.role === "SITTER" && !user._count.pets
         ? t("header.badgeSitter")
@@ -41,7 +41,7 @@ export async function Header() {
       ]
     : [];
   // the admin panel is English-only and lives outside the locale routes, so it gets a plain link
-  const adminLink = user?.role === "ADMIN" ? { href: "/admin", label: t("nav.adminPanel"), icon: "admin_panel_settings", external: true } : null;
+  const adminLink = user?.isAdmin ? { href: "/admin", label: t("nav.adminPanel"), icon: "admin_panel_settings", external: true } : null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(83,72,62,0.05)]">

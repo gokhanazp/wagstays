@@ -41,8 +41,8 @@ async function onMessage(e: Extract<DomainEvent, { type: "message.sent" }>) {
   const r = await getRecipient(e.recipientId);
   if (!r || !wants(r, "messages")) return;
   if (await recentlyEmailed(e.conversationId, r.id)) return;
-  const sender = await db.user.findUnique({ where: { id: e.senderId }, select: { firstName: true, role: true } });
-  if (!sender || sender.role === "ADMIN") return; // no system/admin messages
+  const sender = await db.user.findUnique({ where: { id: e.senderId }, select: { firstName: true, role: true, isAdmin: true } });
+  if (!sender || sender.isAdmin) return; // no system/admin messages
 
   await sleep(MESSAGE_READ_WAIT_MS);
   const [conv, message] = await Promise.all([
@@ -126,9 +126,9 @@ async function onEmailConfirmed(e: Extract<DomainEvent, { type: "user.emailConfi
   if (await wasSent({ kind: "welcome", userId: e.userId })) return;
   const [r, user] = await Promise.all([
     getRecipient(e.userId),
-    db.user.findUnique({ where: { id: e.userId }, select: { role: true, approvalStatus: true, sitter: { select: { id: true } } } }),
+    db.user.findUnique({ where: { id: e.userId }, select: { role: true, isAdmin: true, approvalStatus: true, sitter: { select: { id: true } } } }),
   ]);
-  if (!r || !user || user.role === "ADMIN") return;
+  if (!r || !user || user.isAdmin) return;
   const t = mailT(r.locale, "mailMisc");
   const base = { to: r.email, kind: "welcome", userId: r.id, idempotencyKey: `welcome:${r.id}`, locale: r.locale, subject: t("welcome.subject"), title: t("welcome.title"), name: r.firstName };
 

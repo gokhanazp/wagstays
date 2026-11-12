@@ -21,7 +21,7 @@ export async function requireUser(): Promise<CurrentUser> {
 /** Admins only. Non-admins get a 404 so the admin area isn't discoverable. */
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
-  if (user.role !== "ADMIN") notFound();
+  if (!user.isAdmin) notFound();
   return user;
 }
 
@@ -36,5 +36,5 @@ export async function requireSitter() {
 /** For server actions: returns null instead of redirecting. */
 export async function getAdminOrNull() {
   const user = await getCurrentUser();
-  return user && user.role === "ADMIN" && !user.suspended ? user : null;
+  return user && user.isAdmin && !user.suspended ? user : null;
 }

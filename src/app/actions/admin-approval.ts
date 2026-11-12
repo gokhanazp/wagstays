@@ -50,9 +50,9 @@ export async function rejectUser(_: ApprovalState, formData: FormData): Promise<
   const parsed = RejectSchema.safeParse({ userId: formData.get("userId"), reason: formData.get("reason") ?? "" });
   if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors };
   const { userId, reason } = parsed.data;
-  const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: true, approvalStatus: true, deletedAt: true } });
+  const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: true, isAdmin: true, approvalStatus: true, deletedAt: true } });
   if (!user || user.deletedAt) return { error: "User not found." };
-  if (user.id === admin.id || user.role === "ADMIN") return { error: "Admin accounts can't be rejected." };
+  if (user.id === admin.id || user.isAdmin) return { error: "Admin accounts can't be rejected." };
 
   await db.user.update({ where: { id: user.id }, data: { approvalStatus: "REJECTED", approvedAt: null, approvalNote: reason } });
   await audit(admin.id, "user.reject", "User", user.id, { email: user.email, reason, before: { approvalStatus: user.approvalStatus }, after: { approvalStatus: "REJECTED" } });

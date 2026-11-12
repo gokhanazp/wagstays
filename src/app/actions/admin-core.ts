@@ -7,7 +7,6 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getAdminOrNull } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { ROLES } from "@/lib/constants";
 import { CANADIAN_TIME_ZONES, kebab } from "@/lib/admin-core";
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/i18n/server";
@@ -273,25 +272,44 @@ export async function saveSettings(_: FormState, formData: FormData): Promise<Fo
 // ---------------------------------------------------------------------------
 
 async function activeAdminCount() {
-  return db.user.count({ where: { role: "ADMIN", suspended: false } });
+  return db.user.count({ where: { isAdmin: true, suspended: false } });
 }
 
-export async function setUserRole(_: FormState, formData: FormData): Promise<FormState> {
+/** Roles combine: pet parent (everyone), sitter (`role`), admin (`isAdmin`). Checkbox form on /admin/users/[id]. */
+export async function setUserRoles(_: FormState, formData: FormData): Promise<FormState> {
   const admin = await getAdminOrNull();
   if (!admin) return { error: NOT_ALLOWED };
-  const parsed = z.object({ userId: z.string().min(1), role: z.enum(ROLES, { error: "Choose a role." }) }).safeParse(raw(formData));
-  if (!parsed.success) return { error: "Choose a valid role." };
-  const { userId, role } = parsed.data;
-  const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) return { error: "User not found." };
-  if (user.role === role) return { ok: true, message: "No changes." };
-  if (user.id === admin.id) return { error: "You can't change your own role. Ask another admin." };
-  if (user.role === "ADMIN" && !user.suspended && (await activeAdminCount()) <= 1) return { error: "This is the last active admin — promote someone else first." };
-  await db.user.update({ where: { id: userId }, data: { role } });
-  await audit(admin.id, "user.role", "User", userId, { email: user.email, before: { role: user.role }, after: { role } });
-  revalidatePath(`/admin/users/${userId}`);
+  const parsed = z.object({ userId: z.string().min(1) }).safeParse(raw(formData));
+  if (!parsed.success) return { error: "Invalid request." };
+  const sitter = formData.get("sitter") === "on";
+  const isAdmin = formData.get("admin") === "on";
+  const user = await db.user.findUnique({ where: { id: parsed.data.userId }, include: { sitter: { select: { id: true, status: true } } } });
+  if (!user || user.deletedAt) return { error: "User not found." };
+  const wasSitter = user.role === "SITTER";
+  if (wasSitter === sitter && user.isAdmin === isAdmin) return { ok: true, message: "No changes." };
+  if (user.isAdmin && !isAdmin) {
+    if (user.id === admin.id) return { error: "You can't remove your own admin access. Ask another admin." };
+    if (!user.suspended && (await activeAdminCount()) <= 1) return { error: "This is the last active admin — give someone else admin access first." };
+  }
+  const notes: string[] = [];
+  await db.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: user.id }, data: { role: sitter ? "SITTER" : "OWNER", isAdmin } });
+    // Turning sitting off hides the profile from search (it's paused, not deleted, so it can come back).
+    if (wasSitter && !sitter && user.sitter?.status === "ACTIVE") {
+      await tx.sitterProfile.update({ where: { id: user.sitter.id }, data: { status: "PAUSED" } });
+      notes.push("sitter profile paused");
+    }
+  });
+  if (sitter && !wasSitter) notes.push(user.sitter ? `sitter profile is ${user.sitter.status.toLowerCase()}` : "no sitter profile yet — they'll be asked to complete the sitter application");
+  await audit(admin.id, "user.roles", "User", user.id, {
+    email: user.email,
+    before: { sitter: wasSitter, admin: user.isAdmin },
+    after: { sitter, admin: isAdmin },
+  });
+  revalidatePath(`/admin/users/${user.id}`);
   revalidatePath("/admin/users");
-  return { ok: true, message: `Role changed to ${role.toLowerCase()}.` };
+  const summary = ["Pet parent", ...(sitter ? ["Sitter"] : []), ...(isAdmin ? ["Admin"] : [])].join(" + ");
+  return { ok: true, message: `Roles saved: ${summary}${notes.length ? ` (${notes.join("; ")})` : ""}.` };
 }
 
 export async function setUserSuspended(userId: string, suspended: boolean): Promise<SimpleResult> {
@@ -303,7 +321,7 @@ export async function setUserSuspended(userId: string, suspended: boolean): Prom
   if (!user) return { error: "User not found." };
   if (user.suspended === parsed.data.suspended) return { ok: true };
   if (user.id === admin.id) return { error: "You can't suspend your own account." };
-  if (parsed.data.suspended && user.role === "ADMIN" && (await activeAdminCount()) <= 1) return { error: "This is the last active admin and can't be suspended." };
+  if (parsed.data.suspended && user.isAdmin && (await activeAdminCount()) <= 1) return { error: "This is the last active admin and can't be suspended." };
   // Suspension is enforced by the app (requireUser → /suspended), not by a Supabase ban, so a suspended person can
   // still sign in to reach /suspended and close their account. Lift any ban left from earlier versions.
   if (!parsed.data.suspended) await createSupabaseAdminClient().auth.admin.updateUserById(user.id, { ban_duration: "none" });

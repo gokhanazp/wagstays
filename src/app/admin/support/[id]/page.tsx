@@ -32,6 +32,7 @@ export default async function AdminTicketPage({ params }: PageProps<"/admin/supp
           email: true,
           phone: true,
           role: true,
+          isAdmin: true,
           suspended: true,
           createdAt: true,
           wagPointsCents: true,
@@ -175,7 +176,7 @@ export default async function AdminTicketPage({ params }: PageProps<"/admin/supp
           </Card>
 
           <Card className="pb-space-lg">
-            <CardHeader icon="person" title={u.role === "ADMIN" ? "Opened by (admin)" : u.sitter ? "Opened by (sitter)" : "Opened by"} />
+            <CardHeader icon="person" title={u.isAdmin ? "Opened by (admin)" : u.sitter ? "Opened by (sitter)" : "Opened by"} />
             <dl className="px-space-lg pt-space-md flex flex-col gap-space-sm font-body-sm text-body-sm">
               <Row label="Name">
                 <Link className="text-primary hover:underline" href={`/admin/users/${u.id}`}>

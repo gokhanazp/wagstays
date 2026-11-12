@@ -7,7 +7,8 @@ import { getPlatformSettings } from "@/lib/settings";
 import { isValidNaPhone } from "@/lib/phone";
 import { approveUser } from "@/app/actions/admin-approval";
 import { Select } from "@/components/forms/Select";
-import { APPROVAL_LABEL, ROLE_LABEL, ROLE_TONE } from "./_components/roles";
+import { APPROVAL_LABEL, ROLE_LABEL } from "./_components/roles";
+import { RoleChips } from "./_components/RoleChips";
 import { ConfirmButton } from "../_components/ConfirmButton";
 import { BTN, Card, EmptyState, INPUT, PageHeader, Pager, StatusChip, TD, TH, Table, formatDate } from "@/components/ui";
 
@@ -41,6 +42,7 @@ const userSelect = {
   email: true,
   phone: true,
   role: true,
+  isAdmin: true,
   suspended: true,
   deletedAt: true,
   approvalStatus: true,
@@ -129,13 +131,15 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
       : tab === "sitters"
         ? { role: "SITTER" }
         : tab === "admins"
-          ? { role: "ADMIN" }
+          ? { isAdmin: true }
           : tab === "pending"
             ? { approvalStatus: "PENDING", deletedAt: null }
             : tab === "unconfirmed"
               ? UNCONFIRMED
             : role
-              ? { role }
+              ? role === "ADMIN"
+                ? { isAdmin: true }
+                : { role }
               : {};
   const where: Prisma.UserWhereInput = {
     AND: [
@@ -154,7 +158,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
     Promise.all([
       db.user.count({ where: { role: "OWNER" } }),
       db.user.count({ where: { role: "SITTER" } }),
-      db.user.count({ where: { role: "ADMIN" } }),
+      db.user.count({ where: { isAdmin: true } }),
       db.user.count({ where: { approvalStatus: "PENDING", deletedAt: null } }),
       db.user.count(),
       db.user.count({ where: UNCONFIRMED }),
@@ -462,7 +466,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
                         <UserCell u={u} />
                       </td>
                       <td className={TD}>
-                        <StatusChip tone={ROLE_TONE[u.role as keyof typeof ROLE_TONE] ?? "neutral"}>{ROLE_LABEL[u.role] ?? u.role}</StatusChip>
+                        <RoleChips isAdmin={u.isAdmin} petCount={u._count.pets} role={u.role} />
                       </td>
                       <td className={TD}>
                         <StatusChips u={u} />

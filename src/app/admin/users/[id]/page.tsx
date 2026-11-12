@@ -12,9 +12,9 @@ import { AuditList } from "../../_components/AuditList";
 import { auditInclude, toAuditRows } from "../../_components/audit-rows";
 import { setUserSuspended } from "@/app/actions/admin-core";
 import { PasswordLink } from "../_components/PasswordLink";
-import { RoleForm, WagPointsForm } from "../_components/UserControls";
+import { RolesForm, WagPointsForm } from "../_components/UserControls";
+import { RoleChips } from "../_components/RoleChips";
 import { WagPointsLedger } from "../_components/WagPointsLedger";
-import { ROLE_LABEL, ROLE_TONE } from "../_components/roles";
 import { OwnerReviewRow, ownerReviewInclude, ownerReviewModerationNotes } from "../../reviews/_components/OwnerReviewRow";
 import { getOwnerReputation } from "@/lib/owner-reputation";
 import { getOwnerReadiness } from "@/lib/owner-readiness";
@@ -44,7 +44,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
   });
   if (!user) notFound();
   const [activeAdmins, logs, ownerRep, ownerReviews, readiness, settings] = await Promise.all([
-    db.user.count({ where: { role: "ADMIN", suspended: false } }),
+    db.user.count({ where: { isAdmin: true, suspended: false } }),
     db.auditLog.findMany({ where: { entityType: "User", entityId: user.id }, orderBy: { createdAt: "desc" }, take: 10, include: auditInclude }),
     getOwnerReputation(user.id),
     db.ownerReview.findMany({ where: { ownerId: user.id }, include: ownerReviewInclude, orderBy: { createdAt: "desc" }, take: 20 }),
@@ -54,8 +54,8 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
   const ownerReviewNotes = await ownerReviewModerationNotes(ownerReviews.map((r) => r.id));
 
   const isSelf = user.id === admin.id;
-  const lastAdmin = user.role === "ADMIN" && !user.suspended && activeAdmins <= 1;
-  const roleLocked = isSelf ? "You can't change your own role." : lastAdmin ? "This is the last active admin — promote someone else first." : undefined;
+  const lastAdmin = user.isAdmin && !user.suspended && activeAdmins <= 1;
+  const roleLocked = user.isAdmin && isSelf ? "You can't remove your own admin access — ask another admin." : lastAdmin ? "Last active admin — give someone else admin access first." : undefined;
   const suspendLocked = isSelf ? "You can't suspend your own account." : lastAdmin && !user.suspended ? "The last active admin can't be suspended." : undefined;
   const name = `${user.firstName} ${user.lastName}`;
 
@@ -98,7 +98,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
         }
         description={
           <span className="inline-flex flex-wrap items-center gap-space-sm">
-            <StatusChip tone={ROLE_TONE[user.role as keyof typeof ROLE_TONE] ?? "neutral"}>{ROLE_LABEL[user.role] ?? user.role}</StatusChip>
+            <RoleChips isAdmin={user.isAdmin} petCount={user.pets.length} role={user.role} />
             {user.deletedAt ? (
               <StatusChip icon="person_off" tone="neutral">
                 Deleted {formatDate(user.deletedAt)}
@@ -141,7 +141,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
             ))}
           </dl>
           <div className="px-space-lg">
-            <RoleForm locked={roleLocked} role={user.role} userId={user.id} />
+            <RolesForm admin={user.isAdmin} adminLocked={roleLocked} sitter={user.role === "SITTER"} userId={user.id} />
           </div>
           <PasswordLink userId={user.id} />
           {user.sitter ? (
@@ -183,7 +183,7 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
         </Card>
       </div>
 
-      {user.role !== "ADMIN" && (
+      {!user.isAdmin && (
         <Card className="flex flex-col gap-space-md pb-space-lg">
           <div id="approval" className="scroll-mt-space-lg" />
           <CardHeader icon="how_to_reg" title="Approval & booking readiness" />

@@ -13,6 +13,7 @@ const userSelect = {
   lastName: true,
   avatarUrl: true,
   role: true,
+  isAdmin: true,
   suspended: true,
   phone: true,
   wagPointsCents: true,
