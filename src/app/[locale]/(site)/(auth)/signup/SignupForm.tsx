@@ -1,5 +1,6 @@
 "use client";
 
+import { ResendConfirmation } from "../login/ResendConfirmation";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
@@ -24,6 +25,11 @@ export function SignupForm({ next }: { next: string }) {
             {t.rich("signup.checkEmail", { email: state.checkEmail, b: (c) => <strong>{c}</strong> })}
           </span>
         </div>
+        <p className="flex items-start gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
+          <span className="material-symbols-outlined text-lg shrink-0">help</span>
+          {t("signup.spamHint")}
+        </p>
+        <ResendConfirmation email={state.checkEmail} />
         <Link className="font-label-lg text-label-lg text-primary hover:underline" href="/login">
           {t("backToLogin")}
         </Link>
