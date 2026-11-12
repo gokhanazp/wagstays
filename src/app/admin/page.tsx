@@ -40,6 +40,7 @@ export default async function AdminDashboard() {
     newOwnersCount,
     newOwners,
     notReadyCount,
+    unconfirmed,
   ] = await Promise.all([
     db.sitterProfile.count({ where: { status: "ACTIVE", user: { suspended: false } } }),
     db.user.count({ where: { role: "OWNER" } }),
@@ -74,6 +75,12 @@ export default async function AdminDashboard() {
       select: { id: true, firstName: true, lastName: true, email: true, createdAt: true, approvalStatus: true },
     }),
     db.user.count({ where: { role: "OWNER", deletedAt: null, suspended: false, OR: [{ phone: null }, { phone: "" }, { pets: { none: { archivedAt: null } } }] } }),
+    // signed up but never confirmed their email (≥ 30 min ago — gives the mail time to arrive)
+    db.user.findMany({
+      where: { emailConfirmedAt: null, deletedAt: null, createdAt: { lte: new Date(now.getTime() - 30 * 60_000) } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, createdAt: true },
+    }),
   ]);
   const hoodName = new Map(hoods.map((h) => [h.slug, h.name]));
 
@@ -119,6 +126,21 @@ export default async function AdminDashboard() {
         eyebrow="Admin"
         title="Dashboard"
       />
+
+      {unconfirmed.length > 0 && (
+        <Link
+          className="flex flex-wrap items-center gap-space-sm p-space-md rounded-2xl bg-tertiary-fixed/60 text-on-tertiary-fixed-variant hover:brightness-[0.98] transition"
+          href="/admin/users?tab=unconfirmed"
+        >
+          <span className="material-symbols-outlined text-xl">unsubscribe</span>
+          <span className="font-label-lg text-label-lg">
+            {unconfirmed.length} sign-up{unconfirmed.length === 1 ? "" : "s"} waiting for email confirmation
+          </span>
+          <span className="font-body-sm text-body-sm">
+            · oldest {formatDateTime(unconfirmed[0].createdAt)} — they can&apos;t log in yet. Review &amp; resend →
+          </span>
+        </Link>
+      )}
 
       <section aria-label="Key metrics" className="grid grid-cols-2 xl:grid-cols-4 gap-space-sm md:gap-space-md">
         <StatCard hint="Accepting bookings now" icon="volunteer_activism" label="Active sitters" value={activeSitters} />

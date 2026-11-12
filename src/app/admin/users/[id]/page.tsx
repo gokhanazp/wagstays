@@ -20,6 +20,7 @@ import { getOwnerReputation } from "@/lib/owner-reputation";
 import { getOwnerReadiness } from "@/lib/owner-readiness";
 import { getPlatformSettings } from "@/lib/settings";
 import { ApprovalControls } from "../_components/ApprovalControls";
+import { EmailDeliveryCard } from "../_components/EmailDeliveryCard";
 import { APPROVAL_LABEL } from "../_components/roles";
 
 export const metadata: Metadata = { title: "User" };
@@ -166,6 +167,8 @@ export default async function UserDetailPage({ params }: PageProps<"/admin/users
             )
           )}
         </Card>
+
+        <EmailDeliveryCard user={user} />
 
         <Card className="flex flex-col gap-space-md pb-space-lg">
           <CardHeader icon="toll" title="WagPoints Wallet" />

@@ -102,6 +102,8 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
   const { data: current } = await supabase.auth.getUser();
   if (current.user && current.user.user_metadata?.locale !== locale) await supabase.auth.updateUser({ data: { locale } });
   if (current.user) await db.user.updateMany({ where: { id: current.user.id, NOT: { locale } }, data: { locale } });
+  // signing in proves the address was confirmed (Supabase refuses unconfirmed logins) — covers older confirmation paths
+  if (current.user) await db.user.updateMany({ where: { id: current.user.id, emailConfirmedAt: null }, data: { emailConfirmedAt: new Date() } });
   const account = await db.user.findUnique({ where: { email: parsed.data.email }, select: { suspended: true } });
   redirect(await localizedPath(account?.suspended ? "/suspended" : safeNext(formData.get("next"))));
 }

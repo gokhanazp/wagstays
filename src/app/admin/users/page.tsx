@@ -21,6 +21,7 @@ const TABS = [
   { key: "sitters", label: "Sitters", icon: "volunteer_activism" },
   { key: "admins", label: "Admins", icon: "admin_panel_settings" },
   { key: "pending", label: "Pending approval", icon: "hourglass_top" },
+  { key: "unconfirmed", label: "Email not confirmed", icon: "unsubscribe" },
   { key: "all", label: "All", icon: "group" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -29,6 +30,9 @@ const ROLE_TAB: Record<string, TabKey> = { OWNER: "owners", SITTER: "sitters", A
 /** Pet parents who can't book yet: no phone on file or no (non-archived) pet. */
 const NOT_READY: Prisma.UserWhereInput = { OR: [{ phone: null }, { phone: "" }, { pets: { none: { archivedAt: null } } }] };
 const READY: Prisma.UserWhereInput = { AND: [{ phone: { not: null } }, { phone: { not: "" } }, { pets: { some: { archivedAt: null } } }] };
+
+/** Signed up but never clicked the confirmation link (can't log in yet). */
+const UNCONFIRMED: Prisma.UserWhereInput = { emailConfirmedAt: null, deletedAt: null };
 
 const userSelect = {
   id: true,
@@ -40,6 +44,7 @@ const userSelect = {
   suspended: true,
   deletedAt: true,
   approvalStatus: true,
+  emailConfirmedAt: true,
   createdAt: true,
   avatarUrl: true,
   sitter: { select: { id: true, status: true, rating: true, reviewCount: true, completedBookings: true } },
@@ -83,6 +88,11 @@ function StatusChips({ u }: { u: Row }) {
       ) : approval ? null : (
         <StatusChip tone="success">Active</StatusChip>
       )}
+      {!u.emailConfirmedAt && !u.deletedAt && (
+        <StatusChip icon="unsubscribe" tone="warning">
+          Email not confirmed
+        </StatusChip>
+      )}
       {approval && !u.deletedAt && (
         <StatusChip icon={approval.icon} tone={approval.tone}>
           {approval.label}
@@ -122,6 +132,8 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           ? { role: "ADMIN" }
           : tab === "pending"
             ? { approvalStatus: "PENDING", deletedAt: null }
+            : tab === "unconfirmed"
+              ? UNCONFIRMED
             : role
               ? { role }
               : {};
@@ -145,11 +157,12 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
       db.user.count({ where: { role: "ADMIN" } }),
       db.user.count({ where: { approvalStatus: "PENDING", deletedAt: null } }),
       db.user.count(),
+      db.user.count({ where: UNCONFIRMED }),
     ]),
     getPlatformSettings(),
   ]);
-  const [owners, sitters, admins, pending, all] = counts;
-  const tabCount: Record<TabKey, number> = { owners, sitters, admins, pending, all };
+  const [owners, sitters, admins, pending, all, unconfirmed] = counts;
+  const tabCount: Record<TabKey, number> = { owners, sitters, admins, pending, all, unconfirmed };
   const showPending = pending > 0 || settings.requireOwnerApproval || tab === "pending";
 
   const ownerRatings =
@@ -179,7 +192,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
   };
   const tabHref = (k: TabKey) => (k === "owners" ? "/admin/users" : `/admin/users?tab=${k}`);
   const filtered = !!(q || role || status || ready);
-  const noun = tab === "owners" ? "pet parent" : tab === "sitters" ? "sitter" : tab === "admins" ? "admin" : tab === "pending" ? "account awaiting approval" : "user";
+  const noun = tab === "owners" ? "pet parent" : tab === "sitters" ? "sitter" : tab === "admins" ? "admin" : tab === "pending" ? "account awaiting approval" : tab === "unconfirmed" ? "unconfirmed account" : "user";
   const plural = tab === "pending" ? "accounts awaiting approval" : `${noun}s`;
 
   return (
@@ -188,7 +201,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
 
       <nav aria-label="User groups" className="-mx-margin-mobile md:mx-0 px-margin-mobile md:px-0 overflow-x-auto">
         <ul className="flex gap-space-xs w-max md:w-auto md:flex-wrap">
-          {TABS.filter((t) => t.key !== "pending" || showPending).map((t) => {
+          {TABS.filter((t) => (t.key !== "pending" || showPending) && (t.key !== "unconfirmed" || unconfirmed > 0 || tab === "unconfirmed")).map((t) => {
             const active = t.key === tab;
             return (
               <li key={t.key}>

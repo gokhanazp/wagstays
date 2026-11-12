@@ -61,6 +61,7 @@ model User {
   referredBy   User?               @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
   referrals    User[]              @relation("Referrals")
   deletedAt    DateTime?           // account closed (PIPEDA erasure): personal data anonymised
+  emailConfirmedAt DateTime?       // mirrors Supabase auth email_confirmed_at (set on confirm/login; admin can confirm manually)
   locale       String              @default("en") // "en" | "fr" — language of emails; updated at sign-up, login and language switch
   // Email notification preferences (account settings). Security/account emails can't be turned off.
   emailBookings Boolean            @default(true)  // requests, confirmations, cancellations, review requests
@@ -465,6 +466,22 @@ model NewsletterSubscriber {
   consentText    String?
   unsubscribedAt DateTime?
   createdAt DateTime @default(now())
+}
+
+// Delivery events from the Resend webhook (app emails AND Supabase auth emails, which also go through Resend).
+// Lets admins see why someone never got their confirmation email (delayed, bounced, marked as spam).
+model EmailEvent {
+  id         String   @id @default(cuid())
+  providerId String   // Resend email id
+  to         String   // lower-cased recipient
+  type       String   // email.sent | email.delivered | email.delivery_delayed | email.bounced | email.complained | email.failed
+  subject    String?
+  detail     String?  // bounce / delay reason when Resend provides one
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([to, occurredAt])
+  @@index([providerId])
 }
 
 // Every app email sent (or suppressed) — for de-duplication (reminders, message throttling) and support.

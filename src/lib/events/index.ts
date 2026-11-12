@@ -1,5 +1,6 @@
 import "server-only";
 import { after } from "next/server";
+import { accountHandlers } from "./account";
 import { pointsHandlers } from "./points";
 import { notificationHandlers } from "./notifications";
 import { email_bookingHandlers } from "./email-booking";
@@ -22,7 +23,7 @@ export type DomainEvent =
 
 export type EventHandler = (event: DomainEvent) => Promise<void>;
 
-const handlers: EventHandler[] = [...pointsHandlers, ...notificationHandlers, ...email_bookingHandlers, ...email_miscHandlers];
+const handlers: EventHandler[] = [...accountHandlers, ...pointsHandlers, ...notificationHandlers, ...email_bookingHandlers, ...email_miscHandlers];
 
 async function run(event: DomainEvent) {
   for (const h of handlers) {
